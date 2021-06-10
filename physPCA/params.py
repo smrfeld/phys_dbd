@@ -1,11 +1,34 @@
 import numpy as np
 
-from dataclasses import dataclass
+from dataclasses import dataclass, astuple
 
 def normalize(vec: np.array) -> np.array:
     return vec / np.sqrt(np.sum(vec**2))
 
-@dataclass
+# Equality of np arrays in data class
+# https://stackoverflow.com/a/51743960/1427316
+def array_safe_eq(a, b) -> bool:
+    """Check if a and b are equal, even if they are numpy arrays"""
+    if a is b:
+        return True
+    if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
+        return a.shape == b.shape and (a == b).all()
+    try:
+        return a == b
+    except TypeError:
+        return NotImplemented
+
+def dc_eq(dc1, dc2) -> bool:
+   """checks if two dataclasses which hold numpy arrays are equal"""
+   if dc1 is dc2:
+        return True
+   if dc1.__class__ is not dc2.__class__:
+       return NotImplemented  # better than False
+   t1 = astuple(dc1)
+   t2 = astuple(dc2)
+   return all(array_safe_eq(a1, a2) for a1, a2 in zip(t1, t2))
+
+@dataclass(eq=False)
 class Params:
 
     wt: np.array
@@ -13,6 +36,9 @@ class Params:
     b: np.array
     muh: np.array
     sig2: float
+
+    def __eq__(self, other):
+        return dc_eq(self, other)
 
     @classmethod
     def fromPCA(cls, data: np.array, muh: np.array, varh_diag: np.array):
@@ -84,3 +110,44 @@ class Params:
 
         self.b = b2
         self.wt = wt2
+
+    def to_1d_arr(self) -> np.array:
+        x = np.concatenate([
+            self.wt.flatten(),
+            self.b,
+            np.array([self.sig2]),
+            self.muh,
+            self.varh_diag
+            ])
+        return x.flatten()
+
+    @classmethod
+    def from1dArr(cls, arr: np.array, nv: int, nh: int):
+        s = 0
+        e = s + nv*nh
+        wt_flat = arr[s:e]
+        wt = np.reshape(wt_flat,newshape=(nh,nv))
+
+        s = e
+        e = s + nv
+        b = arr[s:e]
+
+        s = e
+        e = s + 1
+        sig2 = arr[s:e][0]
+
+        s = e
+        e = s + nh
+        muh = arr[s:e]
+
+        s = e
+        e = s + nh
+        varh_diag = arr[s:e]
+
+        return cls(
+            wt=wt,
+            b=b,
+            sig2=sig2,
+            muh=muh,
+            varh_diag=varh_diag
+            )

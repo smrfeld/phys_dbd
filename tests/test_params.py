@@ -24,6 +24,21 @@ class TestParams:
         muh = np.zeros(1)
         varh_diag = np.ones(1)
         params = Params.fromPCA(data,muh,varh_diag)
-        print(params)
+
+    def test_convert(self):
+
+        data = ImportHelper.import_gillespie_ssa(
+            fnames=self.fnames,
+            time=self.time,
+            species=self.species
+        )
+
+        muh = np.zeros(1)
+        varh_diag = np.ones(1)
+        params = Params.fromPCA(data,muh,varh_diag)
+
+        arr = params.to_1d_arr()
+        params_back = Params.from1dArr(arr, nv=2, nh=1)
+        assert params == params_back
 
 TestParams().test_params()
