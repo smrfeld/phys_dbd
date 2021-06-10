@@ -1,6 +1,6 @@
-from physPCA.params import export_params_traj, import_params_traj
-from physPCA import Params, ImportHelper
+from physPCA import Params, ImportHelper, ParamsTraj
 import numpy as np
+import os
 
 class TestParams:
 
@@ -37,15 +37,21 @@ class TestParams:
     def test_export(self):
         params1 = self.import_params(0.4)
         params2 = self.import_params(0.5)
-        params_traj = [params1,params2]
-        export_params_traj("cache.txt", np.array([0.4,0.5]), params_traj)
+        pt = ParamsTraj(
+            times=np.array([0.4,0.5]),
+            params_traj=[params1,params2]
+            )
+        pt.export_params_traj("cache.txt")
 
         # import back
-        times, params_traj_back = import_params_traj("cache.txt",nv=2,nh=1)
+        pt_back = ParamsTraj.fromFile("cache.txt",nv=2,nh=1)
 
         # Check
-        assert len(params_traj) == len(params_traj_back)
-        for i in range(0,len(params_traj)):
-            assert params_traj[i] == params_traj_back[i]
+        assert len(pt.params_traj) == len(pt_back.params_traj)
+        for i in range(0,len(pt.params_traj)):
+            assert pt.params_traj[i] == pt_back.params_traj[i]
+
+        if os.path.exists("cache.txt"):
+            os.remove("cache.txt")
 
 TestParams().test_params()
