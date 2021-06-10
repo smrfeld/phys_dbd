@@ -1,4 +1,4 @@
-from physPCA import Params, ImportHelper, ParamsTraj
+from physPCA import Params, ImportHelper, ParamsTraj, ParamsTETraj
 import numpy as np
 import os
 
@@ -41,17 +41,43 @@ class TestParams:
             times=np.array([0.4,0.5]),
             params_traj=[params1,params2]
             )
-        pt.export_params_traj("cache.txt")
+        fname = "cache_params.txt"
+        pt.export(fname)
 
         # import back
-        pt_back = ParamsTraj.fromFile("cache.txt",nv=2,nh=1)
+        pt_back = ParamsTraj.fromFile(fname,nv=2,nh=1)
 
         # Check
         assert len(pt.params_traj) == len(pt_back.params_traj)
         for i in range(0,len(pt.params_traj)):
             assert pt.params_traj[i] == pt_back.params_traj[i]
 
-        if os.path.exists("cache.txt"):
-            os.remove("cache.txt")
+        if os.path.exists(fname):
+            os.remove(fname)
+
+    def test_deriv(self):
+        
+        pt = ParamsTraj(
+            times=np.array([0.2,0.3,0.4,0.5,0.6,0.7]),
+            params_traj=[
+                self.import_params(0.2),
+                self.import_params(0.3),
+                self.import_params(0.4),
+                self.import_params(0.5),
+                self.import_params(0.6),
+                self.import_params(0.7)
+                ]
+            )
+        
+        paramsTE_traj = pt.differentiate_with_TVR(
+            alpha=1.0,
+            no_opt_steps=10
+        )
+
+        # Export
+        fname = "cache_deriv.txt"
+        paramsTE_traj.export(fname)
+
+        paramsTE_traj_back = ParamsTETraj.fromFile(fname,nv=2,nh=1)
 
 TestParams().test_params()
