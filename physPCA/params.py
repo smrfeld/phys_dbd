@@ -1,6 +1,11 @@
+from .data_desc import DataDesc
+
 import numpy as np
+import pandas as pd
 
 from dataclasses import dataclass, astuple
+
+from typing import List,Tuple
 
 def normalize(vec: np.array) -> np.array:
     return vec / np.sqrt(np.sum(vec**2))
@@ -12,7 +17,7 @@ def array_safe_eq(a, b) -> bool:
     if a is b:
         return True
     if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
-        return a.shape == b.shape and (a == b).all()
+        return a.shape == b.shape and np.max(abs(a - b)) < 1e-8
     try:
         return a == b
     except TypeError:
@@ -36,6 +41,14 @@ class Params:
     b: np.array
     muh: np.array
     sig2: float
+
+    @property
+    def nv(self):
+        return len(self.b)
+
+    @property
+    def nh(self):
+        return len(self.muh)
 
     def __eq__(self, other):
         return dc_eq(self, other)
@@ -70,7 +83,7 @@ class Params:
             if abs(angle) < 0.5 * np.pi:
                 eigenvecs[:,i] *= -1
         
-        var_ml = (1.0 / (d-q)) * np.sum(eigenvals[q+1:d])
+        var_ml = (1.0 / (d-q)) * np.sum(eigenvals[q:d])
         uq = eigenvecs[:,:q]
         eigenvalsq = np.diag(eigenvals[:q])
         weight_ml = np.linalg.multi_dot([uq, np.sqrt(eigenvalsq - var_ml * np.eye(q))])
@@ -151,3 +164,62 @@ class Params:
             muh=muh,
             varh_diag=varh_diag
             )
+
+def convert_params_traj_to_pd(times: np.array, params_traj: List[Params]) -> pd.DataFrame:
+
+    # Get length of 1D representation
+    l = len(params_traj[0].to_1d_arr())
+
+    # Convert to np array
+    arr = np.zeros(shape=(len(params_traj),l))
+    for i,params in enumerate(params_traj):
+        arr[i] = params.to_1d_arr()
+
+    # Add times
+    arr = np.transpose(np.concatenate((np.array([times]),np.transpose(arr))))
+
+    # Convert to pandas
+    nv = params_traj[0].nv
+    nh = params_traj[0].nh
+    columns = ["t"]
+    for ih in range(0,nh):
+        for iv in range(0,nv):
+            columns += ["wt%d%d" % (ih,iv)]
+    for iv in range(0,nv):
+        columns += ["b%d" % iv]
+    columns += ["sig2"]
+    for ih in range(0,nh):
+        columns += ["muh%d" % ih]
+    for ih in range(0,nh):
+        columns += ["varh_diag%d" % ih]
+
+    df = pd.DataFrame(arr, columns=columns)
+    return df
+
+def export_params_traj(fname: str, times: np.array, params_traj: List[Params]):
+    
+    # Convert to pandas
+    df = convert_params_traj_to_pd(times, params_traj)
+
+    # Export pandas
+    df.to_csv(fname, sep=" ")
+
+def import_params_traj(fname: str, nv: int, nh: int) -> Tuple[np.array,List[Params]]:
+
+    # Import
+    df = pd.read_csv(fname, sep=" ")
+
+    # To numpy
+    arr = df.to_numpy()
+
+    params_traj = []
+    times = []
+    for arr1d in arr:
+        t = arr1d[1]
+        times.append(t)
+
+        arr1d0 = arr1d[2:]
+        params = Params.from1dArr(arr1d0, nv, nh)
+        params_traj.append(params)
+
+    return (np.array(times),params_traj)
