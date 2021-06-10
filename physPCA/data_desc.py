@@ -1,34 +1,34 @@
 from dataclasses import dataclass
 import numpy as np
 
+from typing import List
+
 @dataclass
 class DataDesc:
 
     no_seeds: int
-    vol_exp: float
-    tpt_start: int
-    tpt_max: int
-    tpt_interval: int
-    dt: float
-    tpts: np.array
+
+    time_start: float
+    time_end: float
+    time_interval: float
     times: np.array
-    no_tpts: int
+    no_times: int
+
+    species: List[str]
 
     def __init__(self, 
         no_seeds: int, 
-        vol_exp: float, 
-        tpt_start: int, 
-        tpt_max: int, 
-        tpt_interval: int, 
-        dt: float
+        time_start: float, 
+        time_end: float, 
+        time_interval: float, 
+        species: List[str]
         ):
         self.no_seeds = no_seeds
-        self.vol_exp = vol_exp
-        self.tpt_start = tpt_start
-        self.tpt_max = tpt_max
-        self.tpt_interval = tpt_interval
-        self.dt = dt
 
-        self.tpts = np.arange(tpt_start, tpt_max, tpt_interval)
-        self.times = self.dt * self.tpts
-        self.no_tpts = len(self.times)
+        self.time_start = time_start
+        self.time_end = time_end
+        self.time_interval = time_interval
+        self.times = np.arange(self.time_start,self.time_end,self.time_interval)
+        self.no_times = len(self.times)
+
+        self.species = species
