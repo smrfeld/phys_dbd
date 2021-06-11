@@ -59,7 +59,7 @@ class FourierLatentLayer(tf.keras.layers.Layer):
     # input_shape is the input in the call method
     # def build(self, input_shape):
     
-    @tf.function
+    # @tf.function
     def fourier_range(self):
         st = tf.math.reduce_sum(abs(self.sin_coeff))
         ct = tf.math.reduce_sum(abs(self.cos_coeff))
@@ -285,12 +285,17 @@ class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
         self.momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
 
     def call(self, inputs):
-        outputs1 = self.params0ToParamsLayer(inputs)
-        outputs2 = self.paramsToMomentsLayer(outputs1)
-        outputs3 = self.momentsToNMomentsLayer(outputs2)
-        return outputs3
+        params = self.params0ToParamsLayer(inputs)
+        moments = self.paramsToMomentsLayer(params)
+        nmoments = self.momentsToNMomentsLayer(moments)
 
-@tf.function
+        dall = {}
+        for d in [params,moments,nmoments]:
+            dall.update(d)
+        
+        return dall
+
+# @tf.function
 def unit_mat_sym(n: int, i: int, j: int):
     idx = i * n + j
     one_hot = tf.one_hot(indices=idx,depth=n*n, dtype='float32')
@@ -371,7 +376,7 @@ class BirthRxnLayer(tf.keras.layers.Layer):
             "nvarTE": nvarTE
         }
 
-@tf.function
+# @tf.function
 def nmoment3(mu, nvar, i, j, k):
     return -2.0*mu[i]*mu[j]*mu[k] + mu[i]*nvar[j,k] + mu[j]*nvar[i,k] + mu[k]*nvar[i,j]
 
@@ -387,23 +392,23 @@ class EatRxnLayer(tf.keras.layers.Layer):
         self.i_hunter = i_hunter
         self.i_prey = i_prey
 
-    @tf.function
+    # @tf.function
     def nvar_prey_prey(self, mu, nvar):
         n3 = nmoment3(mu,nvar,self.i_prey,self.i_prey,self.i_hunter)
         return unit_mat_sym(self.n, self.i_prey, self.i_prey) * ( -2.0*n3 + nvar[self.i_hunter, self.i_prey] )
 
-    @tf.function
+    # @tf.function
     def nvar_hunter_hunter(self, mu, nvar):
         n3 = nmoment3(mu,nvar,self.i_hunter,self.i_hunter,self.i_prey)
         return unit_mat_sym(self.n, self.i_hunter, self.i_hunter) * ( 2.0*n3 + nvar[self.i_hunter, self.i_prey] )
 
-    @tf.function
+    # @tf.function
     def nvar_hunter_prey(self, mu, nvar):
         n3hhp = nmoment3(mu,nvar,self.i_hunter,self.i_hunter,self.i_prey)
         n3hpp = nmoment3(mu,nvar,self.i_hunter,self.i_prey,self.i_prey)
         return unit_mat_sym(self.n, self.i_hunter, self.i_prey) * ( - n3hhp + n3hpp - nvar[self.i_hunter, self.i_prey] )
 
-    @tf.function
+    # @tf.function
     def nvar_loop(self, mu, nvar, j : int):
         um_prey = unit_mat_sym(self.n, self.i_prey, j)
         um_hunter = unit_mat_sym(self.n, self.i_hunter, j)
@@ -594,6 +599,9 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
         # Super
         super(ConvertNMomentsTEtoParams0TE, self).__init__()
         
+        self.nv = nv
+        self.nh = nh
+
         self.nMomentsTEtoMomentsTE = ConvertNMomentsTEtoMomentsTE()
         self.momentsTEtoParamMomentsTE = ConvertMomentsTEtoParamMomentsTE(nv,nh)
         self.paramMomentsTEtoParamsTE = ConvertParamMomentsTEtoParamsTE(nv,nh)
@@ -606,7 +614,7 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
 
         outputs2["varh_diag"] = inputs["varh_diag"]
         outputs2["muh"] = inputs["muh"]
-        outputs2["varvh"] = inputs["varvh"]
+        outputs2["varvh"] = inputs["var"][self.nv:,:self.nv]
         outputs3 = self.paramMomentsTEtoParamsTE(outputs2)
 
         inputs4 = {
@@ -634,41 +642,68 @@ class RxnSpec(Enum):
 
 class RxnInputsLayer(tf.keras.layers.Layer):
 
-    def __init__(self, nv: int, nh: int, rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]]):
+    def __init__(self, 
+        nv: int, 
+        nh: int, 
+        freqs : np.array,
+        muh_sin_coeffs_init : np.array,
+        muh_cos_coeffs_init : np.array,
+        varh_sin_coeffs_init : np.array,
+        varh_cos_coeffs_init : np.array,
+        rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]]
+        ):
         # Super
         super(RxnInputsLayer, self).__init__()
         
-        ConvertParams0ToNMomentsLayer()
+        self.params0toNMoments = ConvertParams0ToNMomentsLayer(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            varh_sin_coeffs_init=varh_sin_coeffs_init,
+            varh_cos_coeffs_init=varh_cos_coeffs_init
+            )
 
-        self.nMomentsTEtoMomentsTE = ConvertNMomentsTEtoMomentsTE()
-        self.momentsTEtoParamMomentsTE = ConvertMomentsTEtoParamMomentsTE(nv,nh)
-        self.paramMomentsTEtoParamsTE = ConvertParamMomentsTEtoParamsTE(nv,nh)
-        self.paramsTEtoParams0TE = ConvertParamsTEtoParams0TE()
+        self.rxns = []
+        for spec in rxn_specs:
+            if spec[0] == RxnSpec.EAT:
+                rtype, i_hunter, i_prey = spec
+            else:
+                rtype, i_sp = spec
+
+            if rtype == RxnSpec.BIRTH:
+                self.rxns.append(BirthRxnLayer(nv, nh, i_sp))
+            elif rtype == RxnSpec.DEATH:
+                self.rxns.append(DeathRxnLayer(nv, nh, i_sp))
+            elif rtype == RxnSpec.EAT:
+                self.rxns.append(EatRxnLayer(nv,nh,i_hunter,i_prey))
+            else:
+                raise ValueError("Rxn type: %s not recognized" % rtype)
+
+        self.nMomentsTEtoParams0TE = ConvertNMomentsTEtoParams0TE(nv,nh)
 
     def call(self, inputs):
-        outputs1 = self.nMomentsTEtoMomentsTE(inputs)
+        nMoments = self.params0toNMoments(inputs)
+        print(nMoments)
 
-        outputs2 = self.momentsTEtoParamMomentsTE(outputs1)
+        # Compute reactions
+        params0TEforRxns = []
+        for i in range(0,len(self.rxns)):
+            nMomentsTE = self.rxns[i](nMoments)
 
-        outputs2["varh_diag"] = inputs["varh_diag"]
-        outputs2["muh"] = inputs["muh"]
-        outputs2["varvh"] = inputs["varvh"]
-        outputs3 = self.paramMomentsTEtoParamsTE(outputs2)
+            # Convert nMomentsTE to params0TE
+            nMomentsTE.update(nMoments)
+            params0TE = self.nMomentsTEtoParams0TE(nMomentsTE)
 
-        inputs4 = {
-            "bTE1": outputs3["bTE"],
-            "wtTE1": outputs3["wtTE"],
-            "muh1": inputs["muh"],
-            "wt1": inputs["wt"],
-            "muhTE1": outputs3["muhTE"],
-            "varh_diag1": inputs["varh_diag"],
-            "varh_diagTE1": outputs3["varh_diagTE"],
-            "sig2TE": outputs3["sig2TE"]
-        }
-        outputs4 = self.paramsTEtoParams0TE(inputs4)
+            # Flatten
+            params0TEarr = [tf.reshape(val, [-1]) for val in params0TE.values()]
+            params0TEflat = tf.concat(params0TEarr, 0)
 
-        return {
-            "sig2TE": outputs4["sig2TE"],
-            "bTE": outputs4["bTE2"],
-            "wtTE": outputs4["wtTE2"]
-        }
+            # Store
+            params0TEforRxns.append(params0TEflat)
+
+        # Flatten all reactions
+        params0TE = tf.concat(params0TEforRxns, 0)
+
+        return params0TE

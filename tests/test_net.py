@@ -1,8 +1,9 @@
+from physPCA.net import RxnSpec
 from physPCA import FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
         ConvertParamsToMomentsLayer, ConvertMomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer, \
             ConvertNMomentsTEtoMomentsTE, ConvertMomentsTEtoParamMomentsTE, ConvertParamMomentsTEtoParamsTE, \
-                ConvertParamsTEtoParams0TE, ConvertNMomentsTEtoParams0TE, ConvertParams0ToNMomentsLayer
+                ConvertParamsTEtoParams0TE, ConvertNMomentsTEtoParams0TE, ConvertParams0ToNMomentsLayer, RxnInputsLayer
 
 import numpy as np
 import tensorflow as tf
@@ -158,9 +159,6 @@ class TestNet:
         muh_cos_coeffs_init = np.random.rand(3)
         varh_sin_coeffs_init = np.random.rand(3)
         varh_cos_coeffs_init = np.random.rand(3)
-
-        nv = 3
-        nh = 2
 
         lyr = ConvertParams0ToNMomentsLayer(
             nv=nv,
@@ -336,6 +334,9 @@ class TestNet:
         # Input
         nvarTE = np.random.rand(nv+nh,nv+nh)
         nvarTE += np.transpose(nvarTE)
+        
+        var = np.random.rand(nv+nh,nv+nh)
+        var += np.transpose(var)
 
         x_in = {
             "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
@@ -343,11 +344,52 @@ class TestNet:
             "nvarTE": tf.constant(nvarTE, dtype="float32"),
             "varh_diag": tf.constant(np.random.rand(nh), dtype="float32"),
             "muh": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varvh": tf.constant(np.random.rand(nh,nv), dtype="float32"),
+            "var": tf.constant(var, dtype="float32"),
             "wt": tf.constant(np.random.rand(nh,nv), dtype="float32")
             }
             
         # Output
         x_out = lyr(x_in)
 
+        print(x_out)
+
+    def test_rxn_inputs(self):
+
+        nv = 3
+        nh = 2
+
+        freqs = np.random.rand(3)
+        muh_sin_coeffs_init = np.random.rand(3)
+        muh_cos_coeffs_init = np.random.rand(3)
+        varh_sin_coeffs_init = np.random.rand(3)
+        varh_cos_coeffs_init = np.random.rand(3)
+
+        rxn_specs = [
+            (RxnSpec.BIRTH,0),
+            (RxnSpec.DEATH,1),
+            (RxnSpec.EAT,2,1)
+        ]
+
+        lyr = RxnInputsLayer(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            varh_sin_coeffs_init=varh_sin_coeffs_init,
+            varh_cos_coeffs_init=varh_cos_coeffs_init,
+            rxn_specs=rxn_specs
+            )
+
+        # Input
+        x_in = {
+            "t": tf.constant(3, dtype='float32'),
+            "b": tf.constant(np.random.rand(nv), dtype="float32"),
+            "wt": tf.constant(np.random.rand(nh,nv), dtype="float32"),
+            "sig2": tf.constant(np.random.rand(), dtype='float32')
+            }
+             
+        # Output
+        x_out = lyr(x_in)
+        
         print(x_out)
