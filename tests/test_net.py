@@ -1,6 +1,7 @@
+from physPCA.net import ConvertParamsToNMomentsLayer
 from physPCA import FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
-        MomentsFromParamsLayer, MomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer, \
+        ConvertParamsToMomentsLayer, ConvertMomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer, \
             ConvertNMomentsTEtoMomentsTE, ConvertMomentsTEtoParamMomentsTE, ConvertParamMomentsTEtoParamsTE, \
                 ConvertParamsTEtoParams0TE, ConvertNMomentsTEtoParams0TE
 
@@ -104,12 +105,12 @@ class TestNet:
 
         print(x_out)
     
-    def test_moments_from_params(self):
+    def test_params_to_moments(self):
 
         nv = 3
         nh = 2
 
-        lyr = MomentsFromParamsLayer(
+        lyr = ConvertParamsToMomentsLayer(
             nv=nv,
             nh=nh
         )
@@ -130,7 +131,7 @@ class TestNet:
 
     def test_moments_to_nmoments(self):
 
-        lyr = MomentsToNMomentsLayer()
+        lyr = ConvertMomentsToNMomentsLayer()
 
         nv = 3
         nh = 2
@@ -149,6 +150,27 @@ class TestNet:
 
         print(x_out)
 
+    def test_params_to_nmoments(self):
+
+        nv = 3
+        nh = 2
+
+        lyr = ConvertParamsToNMomentsLayer(nv,nh)
+
+        # Input
+        x_in = {
+            "b": tf.constant(np.random.rand(nv), dtype="float32"),
+            "wt": tf.constant(np.random.rand(nh,nv), dtype="float32"),
+            "sig2": tf.constant(np.random.rand(), dtype='float32'),
+            "varh_diag": tf.constant(np.random.rand(nh), dtype='float32'),
+            "muh": tf.constant(np.random.rand(nh), dtype='float32')
+            }   
+             
+        # Output
+        x_out = lyr(x_in)
+        
+        print(x_out)
+    
     def test_death_rxn(self):
 
         nv = 3
