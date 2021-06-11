@@ -285,7 +285,7 @@ class DeathRxnLayer(tf.keras.layers.Layer):
             )
 
         mu = inputs["mu"]
-        nvar = inputs["var"]
+        nvar = inputs["nvar"]
 
         muTE = - mu[self.i_sp] * unit
         
@@ -320,7 +320,7 @@ class BirthRxnLayer(tf.keras.layers.Layer):
             )
 
         mu = inputs["mu"]
-        nvar = inputs["var"]
+        nvar = inputs["nvar"]
 
         muTE = mu[self.i_sp] * unit
         
@@ -378,7 +378,7 @@ class EatRxnLayer(tf.keras.layers.Layer):
     def call(self, inputs):
         
         mu = inputs["mu"]
-        nvar = inputs["var"]
+        nvar = inputs["nvar"]
 
         unit_hunter = tf.one_hot(
             indices=self.i_hunter,
@@ -410,4 +410,54 @@ class EatRxnLayer(tf.keras.layers.Layer):
         return {
             "muTE": muTE,
             "nvarTE": nvarTE
+        }
+
+class ConvertNMomentsTEtoMomentsTE(tf.keras.layers.Layer):
+
+    def __init__(self):
+        # Super
+        super(ConvertNMomentsTEtoMomentsTE, self).__init__()
+
+    def call(self, inputs):
+        
+        mu = inputs["mu"]
+        muTE = inputs["muTE"]
+        nvarTE = inputs["nvarTE"]
+
+        # kronecker product of two vectors = tf.tensordot(a,b,axes=0)
+        neg_kpv = - tf.tensordot(muTE,mu,axes=0) - tf.tensordot(mu,muTE,axes=0)
+
+        varTE = nvarTE + neg_kpv
+
+        return {
+            "muTE": muTE,
+            "varTE": varTE
+        }
+
+class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int):
+        # Super
+        super(ConvertMomentsTEtoParamMomentsTE, self).__init__()
+    
+        self.nv = nv
+        self.nh = nh
+
+    def call(self, inputs):
+        
+        muTE = inputs["muTE"]
+        varTE = inputs["varTE"]
+
+        muvTE = muTE[:self.nv]
+        muhTE = muTE[self.nv:]
+        varvhTE = varTE[self.nv:,:self.nv]
+        varvbarTE = tf.linalg.trace(varTE[:self.nv,:self.nv])
+        varh_diagTE = tf.linalg.diag_part(varTE[self.nv:,self.nv:])
+
+        return {
+            "muvTE": muvTE,
+            "muhTE": muhTE,
+            "varvhTE": varvhTE,
+            "varvbarTE": varvbarTE,
+            "varh_diagTE": varh_diagTE
         }

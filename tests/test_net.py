@@ -1,6 +1,7 @@
 from physPCA import FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
-        MomentsFromParamsLayer, MomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer
+        MomentsFromParamsLayer, MomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer, \
+            ConvertNMomentsTEtoMomentsTE, ConvertMomentsTEtoParamMomentsTE
 
 import numpy as np
 import tensorflow as tf
@@ -154,12 +155,12 @@ class TestNet:
         lyr = DeathRxnLayer(nv=nv,nh=nh,i_sp=1)
 
         # Input
-        var = np.random.rand(nv+nh,nv+nh)
-        var += np.transpose(var)
+        nvar = np.random.rand(nv+nh,nv+nh)
+        nvar += np.transpose(nvar)
 
         x_in = {
             "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "var": tf.constant(var, dtype="float32")
+            "nvar": tf.constant(nvar, dtype="float32")
             }
             
         # Output
@@ -174,12 +175,12 @@ class TestNet:
         lyr = BirthRxnLayer(nv=nv,nh=nh,i_sp=1)
 
         # Input
-        var = np.random.rand(nv+nh,nv+nh)
-        var += np.transpose(var)
+        nvar = np.random.rand(nv+nh,nv+nh)
+        nvar += np.transpose(nvar)
 
         x_in = {
             "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "var": tf.constant(var, dtype="float32")
+            "nvar": tf.constant(nvar, dtype="float32")
             }
             
         # Output
@@ -194,12 +195,51 @@ class TestNet:
         lyr = EatRxnLayer(nv=nv,nh=nh,i_prey=1,i_hunter=2)
 
         # Input
-        var = np.random.rand(nv+nh,nv+nh)
-        var += np.transpose(var)
+        nvar = np.random.rand(nv+nh,nv+nh)
+        nvar += np.transpose(nvar)
 
         x_in = {
             "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "var": tf.constant(var, dtype="float32")
+            "nvar": tf.constant(nvar, dtype="float32")
+            }
+            
+        # Output
+        x_out = lyr(x_in)
+
+        print(x_out)
+
+    def test_convert_nmomentsTE_to_momentsTE(self):
+        nv = 3
+        nh = 2
+        lyr = ConvertNMomentsTEtoMomentsTE()
+
+        # Input
+        nvarTE = np.random.rand(nv+nh,nv+nh)
+        nvarTE += np.transpose(nvarTE)
+
+        x_in = {
+            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "muTE": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "nvarTE": tf.constant(nvarTE, dtype="float32")
+            }
+            
+        # Output
+        x_out = lyr(x_in)
+
+        print(x_out)
+
+    def test_convert_momentsTE_to_paramMomentsTE(self):
+        nv = 3
+        nh = 2
+        lyr = ConvertMomentsTEtoParamMomentsTE(nv=nv,nh=nh)
+
+        # Input
+        nvarTE = np.random.rand(nv+nh,nv+nh)
+        nvarTE += np.transpose(nvarTE)
+
+        x_in = {
+            "muTE": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "varTE": tf.constant(nvarTE, dtype="float32")
             }
             
         # Output
