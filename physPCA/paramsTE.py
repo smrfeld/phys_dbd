@@ -1,12 +1,11 @@
-from .params import Params, dc_eq
-from .helpers import convert_np_to_pd
+from .helpers import convert_np_to_pd, dc_eq
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
 from typing import List
 
-@dataclass
+@dataclass(eq=False)
 class ParamsTE:
 
     wt_TE: np.array
@@ -142,7 +141,7 @@ class ParamsTETraj:
             times.append(t)
 
             arr1d0 = arr1d[2:]
-            params = Params.from1dArr(arr1d0, nv, nh)
+            params = ParamsTE.from1dArr(arr1d0, nv, nh)
             params_traj.append(params)
 
         return cls(np.array(times),params_traj)

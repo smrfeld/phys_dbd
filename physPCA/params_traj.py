@@ -13,6 +13,14 @@ class ParamsTraj:
         self.params_traj = params_traj
         self.times = times
 
+    @classmethod
+    def fromPCA(cls, data: np.array, times: np.array, muh: np.array, varh_diag: np.array):
+        params_traj = []
+        for data0 in data:
+            params = Params.fromPCA(data0, muh, varh_diag)
+            params_traj.append(params)
+        return cls(times, params_traj)
+
     @property
     def nv(self):
         return self.params_traj[0].nv

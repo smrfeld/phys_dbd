@@ -69,15 +69,26 @@ class TestParams:
                 ]
             )
         
-        paramsTE_traj = pt.differentiate_with_TVR(
+        ptTE = pt.differentiate_with_TVR(
             alpha=1.0,
             no_opt_steps=10
         )
 
         # Export
         fname = "cache_deriv.txt"
-        paramsTE_traj.export(fname)
+        ptTE.export(fname)
 
-        paramsTE_traj_back = ParamsTETraj.fromFile(fname,nv=2,nh=1)
+        ptTE_back = ParamsTETraj.fromFile(fname,nv=2,nh=1)
+
+        # Check
+        assert len(ptTE.paramsTE_traj) == len(ptTE_back.paramsTE_traj)
+        for i in range(0,len(ptTE.paramsTE_traj)):
+            print("--- ", i)
+            print(ptTE.paramsTE_traj[i])
+            print(ptTE_back.paramsTE_traj[i])
+            assert ptTE.paramsTE_traj[i] == ptTE_back.paramsTE_traj[i]
+
+        if os.path.exists(fname):
+            os.remove(fname)
 
 TestParams().test_params()

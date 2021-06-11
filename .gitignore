@@ -1,3 +1,4 @@
+playground/*.txt
 build/
 .DS_store
 __pycache__/
