@@ -1,6 +1,9 @@
 import tensorflow as tf
 
 import numpy as np
+from typing import List, Tuple, Union
+
+from enum import Enum
 
 # Make new layers and models via subclassing
 # https://www.tensorflow.org/guide/keras/custom_layers_and_models
@@ -255,19 +258,37 @@ class ConvertMomentsToNMomentsLayer(tf.keras.layers.Layer):
             "nvar": nvar
         }
 
-class ConvertParamsToNMomentsLayer(tf.keras.layers.Layer):
+class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
 
-    def __init__(self, nv: int, nh: int):
+    def __init__(self, 
+        nv: int, 
+        nh: int,
+        freqs : np.array,
+        muh_sin_coeffs_init : np.array,
+        muh_cos_coeffs_init : np.array,
+        varh_sin_coeffs_init : np.array,
+        varh_cos_coeffs_init : np.array
+        ):
         # Super
-        super(ConvertParamsToNMomentsLayer, self).__init__()
+        super(ConvertParams0ToNMomentsLayer, self).__init__()
 
+        self.params0ToParamsLayer = ConvertParams0ToParamsLayer(
+            nv=nv, 
+            nh=nh, 
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            varh_sin_coeffs_init=varh_sin_coeffs_init,
+            varh_cos_coeffs_init=varh_cos_coeffs_init
+            )
         self.paramsToMomentsLayer = ConvertParamsToMomentsLayer(nv,nh)
         self.momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
 
     def call(self, inputs):
-        outputs1 = self.paramsToMomentsLayer(inputs)
-        outputs2 = self.momentsToNMomentsLayer(outputs1)
-        return outputs2
+        outputs1 = self.params0ToParamsLayer(inputs)
+        outputs2 = self.paramsToMomentsLayer(outputs1)
+        outputs3 = self.momentsToNMomentsLayer(outputs2)
+        return outputs3
 
 @tf.function
 def unit_mat_sym(n: int, i: int, j: int):
@@ -606,12 +627,19 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
             "wtTE": outputs4["wtTE2"]
         }
 
-class RxnParams0TELayer(tf.keras.layers.Layer):
+class RxnSpec(Enum):
+    BIRTH = 0
+    DEATH = 1
+    EAT = 2
 
-    def __init__(self, nv: int, nh: int):
+class RxnInputsLayer(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int, rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]]):
         # Super
-        super(RxnParams0TELayer, self).__init__()
+        super(RxnInputsLayer, self).__init__()
         
+        ConvertParams0ToNMomentsLayer()
+
         self.nMomentsTEtoMomentsTE = ConvertNMomentsTEtoMomentsTE()
         self.momentsTEtoParamMomentsTE = ConvertMomentsTEtoParamMomentsTE(nv,nh)
         self.paramMomentsTEtoParamsTE = ConvertParamMomentsTEtoParamsTE(nv,nh)

@@ -1,9 +1,8 @@
-from physPCA.net import ConvertParamsToNMomentsLayer
 from physPCA import FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
         ConvertParamsToMomentsLayer, ConvertMomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer, \
             ConvertNMomentsTEtoMomentsTE, ConvertMomentsTEtoParamMomentsTE, ConvertParamMomentsTEtoParamsTE, \
-                ConvertParamsTEtoParams0TE, ConvertNMomentsTEtoParams0TE
+                ConvertParamsTEtoParams0TE, ConvertNMomentsTEtoParams0TE, ConvertParams0ToNMomentsLayer
 
 import numpy as np
 import tensorflow as tf
@@ -91,7 +90,6 @@ class TestNet:
             varh_cos_coeffs_init=varh_cos_coeffs_init
         )
 
-
         # Input
         x_in = {
             "t": tf.constant(3, dtype='float32'),
@@ -150,21 +148,37 @@ class TestNet:
 
         print(x_out)
 
-    def test_params_to_nmoments(self):
+    def test_params0_to_nmoments(self):
 
         nv = 3
         nh = 2
 
-        lyr = ConvertParamsToNMomentsLayer(nv,nh)
+        freqs = np.random.rand(3)
+        muh_sin_coeffs_init = np.random.rand(3)
+        muh_cos_coeffs_init = np.random.rand(3)
+        varh_sin_coeffs_init = np.random.rand(3)
+        varh_cos_coeffs_init = np.random.rand(3)
+
+        nv = 3
+        nh = 2
+
+        lyr = ConvertParams0ToNMomentsLayer(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            varh_sin_coeffs_init=varh_sin_coeffs_init,
+            varh_cos_coeffs_init=varh_cos_coeffs_init
+        )
 
         # Input
         x_in = {
+            "t": tf.constant(3, dtype='float32'),
             "b": tf.constant(np.random.rand(nv), dtype="float32"),
             "wt": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "sig2": tf.constant(np.random.rand(), dtype='float32'),
-            "varh_diag": tf.constant(np.random.rand(nh), dtype='float32'),
-            "muh": tf.constant(np.random.rand(nh), dtype='float32')
-            }   
+            "sig2": tf.constant(np.random.rand(), dtype='float32')
+            }
              
         # Output
         x_out = lyr(x_in)
