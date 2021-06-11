@@ -1,7 +1,7 @@
 from physPCA import FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
         MomentsFromParamsLayer, MomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer, \
-            ConvertNMomentsTEtoMomentsTE, ConvertMomentsTEtoParamMomentsTE
+            ConvertNMomentsTEtoMomentsTE, ConvertMomentsTEtoParamMomentsTE, ConvertParamMomentsTEtoParamsTE
 
 import numpy as np
 import tensorflow as tf
@@ -242,6 +242,28 @@ class TestNet:
             "varTE": tf.constant(nvarTE, dtype="float32")
             }
             
+        # Output
+        x_out = lyr(x_in)
+
+        print(x_out)
+
+    def test_convert_paramMomentsTE_to_paramsTE(self):
+        nv = 3
+        nh = 2
+        lyr = ConvertParamMomentsTEtoParamsTE(nv=nv,nh=nh)
+
+        # Input
+        x_in = {
+            "muvTE": tf.constant(np.random.rand(nv), dtype="float32"),
+            "varvhTE": tf.constant(np.random.rand(nh,nv), dtype="float32"),
+            "varh_diagTE": tf.constant(np.random.rand(nh), dtype="float32"),
+            "varh_diag": tf.constant(np.random.rand(nh), dtype="float32"),
+            "muh": tf.constant(np.random.rand(nh), dtype="float32"),
+            "varvh": tf.constant(np.random.rand(nh,nv), dtype="float32"),
+            "muhTE": tf.constant(np.random.rand(nh), dtype="float32"),
+            "varvbarTE": tf.constant(np.random.rand(), dtype="float32")
+            }
+        
         # Output
         x_out = lyr(x_in)
 

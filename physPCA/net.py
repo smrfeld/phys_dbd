@@ -461,3 +461,60 @@ class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
             "varvbarTE": varvbarTE,
             "varh_diagTE": varh_diagTE
         }
+
+class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int):
+        # Super
+        super(ConvertParamMomentsTEtoParamsTE, self).__init__()
+    
+        self.nv = nv
+        self.nh = nh
+
+    def call(self, inputs):
+
+        muvTE = inputs["muvTE"]
+        varvhTE = inputs["varvhTE"]
+        varh_diagTE = inputs["varh_diagTE"]
+        varh_diag = inputs["varh_diag"]
+        muh = inputs["muh"]
+        varvh = inputs["varvh"]
+        muhTE = inputs["muhTE"]
+        varvbarTE = inputs["varvbarTE"]
+
+        varh_inv = tf.linalg.tensor_diag(1.0 / varh_diag)
+        varhTE = tf.linalg.tensor_diag(varh_diagTE)
+
+        bTE = muvTE 
+        bTE -= tf.linalg.matvec(tf.transpose(varvhTE), 
+            tf.linalg.matvec(varh_inv, muh))
+        bTE += tf.linalg.matvec(tf.transpose(varvh), 
+            tf.linalg.matvec(varh_inv, 
+            tf.linalg.matvec(varhTE, 
+            tf.linalg.matvec(varh_inv, muh))))
+        bTE -= tf.linalg.matvec(tf.transpose(varvh),
+            tf.linalg.matvec(varh_inv, muhTE))
+        
+        wtTE = - tf.matmul(varh_inv,
+            tf.matmul(varhTE,
+            tf.matmul(varh_inv,varvh)))
+        wtTE += tf.matmul(varh_inv, varvhTE)
+
+        sig2TEmat = tf.matmul(tf.transpose(varvhTE),
+            tf.matmul(varh_inv, varvh))
+        sig2TEmat -= tf.matmul(tf.transpose(varvh),
+            tf.matmul(varh_inv,
+            tf.matmul(varhTE,
+            tf.matmul(varh_inv,varvh))))
+        sig2TEmat += tf.matmul(tf.transpose(varvh),
+            tf.matmul(varh_inv,varvhTE))
+        sig2TEtr = tf.linalg.trace(sig2TEmat)
+        sig2TE = (varvbarTE - sig2TEtr) / self.nv
+
+        return {
+            "bTE": bTE,
+            "wtTE": wtTE,
+            "sig2TE": sig2TE,
+            "muhTE": muhTE,
+            "varh_diagTE": varh_diagTE
+        }
