@@ -1,5 +1,6 @@
 from physPCA import FourierLatentLayer, \
-    ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, MomentsFromParamsLayer
+    ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
+        MomentsFromParamsLayer, MomentsToNMomentsLayer
 
 import numpy as np
 import tensorflow as tf
@@ -118,6 +119,27 @@ class TestNet:
             "sig2": tf.constant(np.random.rand(), dtype='float32'),
             "varh_diag": tf.constant(np.random.rand(nh), dtype='float32'),
             "muh": tf.constant(np.random.rand(nh), dtype='float32')
+            }   
+             
+        # Output
+        x_out = lyr(x_in)
+
+        print(x_out)
+
+    def test_moments_to_nmoments(self):
+
+        lyr = MomentsToNMomentsLayer()
+
+        nv = 3
+        nh = 2
+
+        # Input
+        var = np.random.rand(nv+nh,nv+nh)
+        var += np.transpose(var)
+
+        x_in = {
+            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "var": tf.constant(var, dtype="float32")
             }   
              
         # Output

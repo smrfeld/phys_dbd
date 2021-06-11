@@ -233,3 +233,24 @@ class MomentsFromParamsLayer(tf.keras.layers.Layer):
             "mu": mu,
             "var": var
         }
+
+class MomentsToNMomentsLayer(tf.keras.layers.Layer):
+
+    def __init__(self):
+        # Super
+        super(MomentsToNMomentsLayer, self).__init__()
+    
+    def call(self, inputs):
+        
+        mu = inputs["mu"]
+        var = inputs["var"]
+
+        # kronecker product of two vectors = tf.tensordot(a,b,axes=0)
+        kpv = tf.tensordot(mu,mu,axes=0)
+
+        nvar = var + kpv
+
+        return {
+            "mu": mu,
+            "nvar": nvar
+        }
