@@ -335,3 +335,79 @@ class BirthRxnLayer(tf.keras.layers.Layer):
             "muTE": muTE,
             "nvarTE": nvarTE
         }
+
+@tf.function
+def nmoment3(mu, nvar, i, j, k):
+    return -2.0*mu[i]*mu[j]*mu[k] + mu[i]*nvar[j,k] + mu[j]*nvar[i,k] + mu[k]*nvar[i,j]
+
+class EatRxnLayer(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int, i_hunter: int, i_prey: int):
+        # Super
+        super(EatRxnLayer, self).__init__()
+    
+        self.nv = nv
+        self.nh = nh
+        self.n = nv + nh
+        self.i_hunter = i_hunter
+        self.i_prey = i_prey
+
+    @tf.function
+    def nvar_prey_prey(self, mu, nvar):
+        n3 = nmoment3(mu,nvar,self.i_prey,self.i_prey,self.i_hunter)
+        return unit_mat_sym(self.n, self.i_prey, self.i_prey) * ( -2.0*n3 + nvar[self.i_hunter, self.i_prey] )
+
+    @tf.function
+    def nvar_hunter_hunter(self, mu, nvar):
+        n3 = nmoment3(mu,nvar,self.i_hunter,self.i_hunter,self.i_prey)
+        return unit_mat_sym(self.n, self.i_hunter, self.i_hunter) * ( 2.0*n3 + nvar[self.i_hunter, self.i_prey] )
+
+    @tf.function
+    def nvar_hunter_prey(self, mu, nvar):
+        n3hhp = nmoment3(mu,nvar,self.i_hunter,self.i_hunter,self.i_prey)
+        n3hpp = nmoment3(mu,nvar,self.i_hunter,self.i_prey,self.i_prey)
+        return unit_mat_sym(self.n, self.i_hunter, self.i_prey) * ( - n3hhp + n3hpp - nvar[self.i_hunter, self.i_prey] )
+
+    @tf.function
+    def nvar_loop(self, mu, nvar, j : int):
+        um_prey = unit_mat_sym(self.n, self.i_prey, j)
+        um_hunter = unit_mat_sym(self.n, self.i_hunter, j)
+        n3 = nmoment3(mu,nvar,j,self.i_prey,self.i_hunter)
+        return (um_hunter - um_prey) * n3
+
+    def call(self, inputs):
+        
+        mu = inputs["mu"]
+        nvar = inputs["var"]
+
+        unit_hunter = tf.one_hot(
+            indices=self.i_hunter,
+            depth=self.n
+            )
+        unit_prey = tf.one_hot(
+            indices=self.i_prey,
+            depth=self.n
+            )
+        
+        muTE = - nvar[self.i_hunter, self.i_prey] * unit_prey + nvar[self.i_hunter,self.i_prey] * unit_hunter
+        
+        nvarTE = tf.zeros(shape=(self.n,self.n), dtype='float32')
+
+        # Prey-prey
+        nvarTE += self.nvar_prey_prey(mu,nvar)
+        
+        # Hunter-hunter
+        nvarTE += self.nvar_hunter_hunter(mu,nvar)
+
+        # Hunter-prey
+        nvarTE += self.nvar_hunter_prey(mu,nvar)
+
+        # Loop
+        for j in range(0,self.n):
+            if j != self.i_prey and j != self.i_hunter:
+                nvarTE += self.nvar_loop(mu,nvar,j)
+
+        return {
+            "muTE": muTE,
+            "nvarTE": nvarTE
+        }

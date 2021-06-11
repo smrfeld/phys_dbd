@@ -1,6 +1,6 @@
 from physPCA import FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
-        MomentsFromParamsLayer, MomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer
+        MomentsFromParamsLayer, MomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer
 
 import numpy as np
 import tensorflow as tf
@@ -172,6 +172,26 @@ class TestNet:
         nv = 3
         nh = 2
         lyr = BirthRxnLayer(nv=nv,nh=nh,i_sp=1)
+
+        # Input
+        var = np.random.rand(nv+nh,nv+nh)
+        var += np.transpose(var)
+
+        x_in = {
+            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "var": tf.constant(var, dtype="float32")
+            }
+            
+        # Output
+        x_out = lyr(x_in)
+
+        print(x_out)
+
+    def test_eat_rxn(self):
+
+        nv = 3
+        nh = 2
+        lyr = EatRxnLayer(nv=nv,nh=nh,i_prey=1,i_hunter=2)
 
         # Input
         var = np.random.rand(nv+nh,nv+nh)
