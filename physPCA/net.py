@@ -552,3 +552,42 @@ class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
             "bTE2" : bTE2,
             "wtTE2" : wtTE2
         }
+
+class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int):
+        # Super
+        super(ConvertNMomentsTEtoParams0TE, self).__init__()
+        
+        self.nMomentsTEtoMomentsTE = ConvertNMomentsTEtoMomentsTE()
+        self.momentsTEtoParamMomentsTE = ConvertMomentsTEtoParamMomentsTE(nv,nh)
+        self.paramMomentsTEtoParamsTE = ConvertParamMomentsTEtoParamsTE(nv,nh)
+        self.paramsTEtoParams0TE = ConvertParamsTEtoParams0TE()
+
+    def call(self, inputs):
+        outputs1 = self.nMomentsTEtoMomentsTE(inputs)
+
+        outputs2 = self.momentsTEtoParamMomentsTE(outputs1)
+
+        outputs2["varh_diag"] = inputs["varh_diag"]
+        outputs2["muh"] = inputs["muh"]
+        outputs2["varvh"] = inputs["varvh"]
+        outputs3 = self.paramMomentsTEtoParamsTE(outputs2)
+
+        inputs4 = {
+            "bTE1": outputs3["bTE"],
+            "wtTE1": outputs3["wtTE"],
+            "muh1": inputs["muh"],
+            "wt1": inputs["wt"],
+            "muhTE1": outputs3["muhTE"],
+            "varh_diag1": inputs["varh_diag"],
+            "varh_diagTE1": outputs3["varh_diagTE"],
+            "sig2TE": outputs3["sig2TE"]
+        }
+        outputs4 = self.paramsTEtoParams0TE(inputs4)
+
+        return {
+            "sig2TE": outputs4["sig2TE"],
+            "bTE": outputs4["bTE2"],
+            "wtTE": outputs4["wtTE2"]
+        }
