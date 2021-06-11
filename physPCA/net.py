@@ -198,3 +198,38 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         }
 
         return output
+
+class MomentsFromParamsLayer(tf.keras.layers.Layer):
+
+    def __init__(self,
+        nv : int,
+        nh : int
+        ):
+        # Super
+        super(MomentsFromParamsLayer, self).__init__()
+        self.nv = nv 
+    
+    def call(self, inputs):
+
+        wt = inputs["wt"]
+        varh_diag = inputs["varh_diag"]
+        sig2 = inputs["sig2"]
+        b = inputs["b"]
+        muh = inputs["muh"]
+
+        w = tf.transpose(wt)
+        varh = tf.linalg.tensor_diag(varh_diag)
+
+        varvh = tf.matmul(varh, wt)
+        varv = tf.matmul(w,tf.matmul(varh,wt)) + sig2 * tf.eye(self.nv)
+
+        muv = b + tf.linalg.matvec(w, muh)
+        mu = tf.concat([muv,muh],0)
+
+        varvht = tf.transpose(varvh)
+        var = tf.concat([tf.concat([varv,varvht],1),tf.concat([varvh,varh],1)],0)
+
+        return {
+            "mu": mu,
+            "var": var
+        }
