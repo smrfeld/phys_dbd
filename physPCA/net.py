@@ -5,7 +5,7 @@ import numpy as np
 # Make new layers and models via subclassing
 # https://www.tensorflow.org/guide/keras/custom_layers_and_models
 
-class FourierLatent(tf.keras.layers.Layer):
+class FourierLatentLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
         freqs : np.array,
@@ -14,7 +14,7 @@ class FourierLatent(tf.keras.layers.Layer):
         cos_coeffs_init : np.array
         ):
         # Super
-        super(FourierLatent, self).__init__()
+        super(FourierLatentLayer, self).__init__()
 
         self.freqs = self.add_weight(
             name="freqs",
@@ -65,13 +65,44 @@ class FourierLatent(tf.keras.layers.Layer):
     def call(self, inputs):
         # tf.math.reduce_sum is same as np.sum
         # tf.matmul is same np.dot
-        tsin = tf.math.sin(inputs * self.freqs)
+        tsin = tf.math.sin(inputs["t"] * self.freqs)
 
         # Dot product = tf.tensordot(a, b, 1)
         ts = tf.tensordot(self.sin_coeff, tsin, 1)
 
         # Same for cos
-        tcos = tf.math.cos(inputs * self.freqs)
+        tcos = tf.math.cos(inputs["t"] * self.freqs)
         tc = tf.tensordot(self.cos_coeff, tcos, 1)
 
         return (self.offset_fixed + ts + tc) / self.fourier_range()
+
+class ConvertParamsLayer(tf.keras.layers.Layer):
+
+    def __init__(self):
+        # Super
+        super(ConvertParamsLayer, self).__init__()
+
+    def call(self, inputs):
+
+        b1 = inputs["b1"]
+        wt1 = inputs["wt1"]
+        w1 = tf.transpose(wt1)
+        muh1 = inputs["muh1"]
+        muh2 = inputs["muh2"]
+        varh_diag1 = inputs["varh_diag1"]
+        varh_diag2 = inputs["varh_diag2"]
+
+        varh1_sqrt = tf.math.sqrt(tf.linalg.tensor_diag(varh_diag1))
+        varh2_inv_sqrt = tf.linalg.tensor_diag(tf.math.sqrt(tf.math.pow(varh_diag2,-1)))
+
+        # Matrix * vector = tf.linalg.matvec
+        # Diagonal matrix = tf.linalg.tensor_diag
+        m2 = tf.matmul(w1, tf.matmul(varh1_sqrt, varh2_inv_sqrt))
+        b2 = b1 + tf.linalg.matvec(w1, muh1) - tf.linalg.matvec(m2, muh2)
+
+        wt2 = tf.matmul(varh2_inv_sqrt, tf.matmul(varh1_sqrt, wt1))
+
+        return {
+            "b2": b2,
+            "wt2": wt2
+        }
