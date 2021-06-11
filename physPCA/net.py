@@ -255,6 +255,17 @@ class MomentsToNMomentsLayer(tf.keras.layers.Layer):
             "nvar": nvar
         }
 
+@tf.function
+def unit_mat_sym(n: int, i: int, j: int):
+    idx = i * n + j
+    one_hot = tf.one_hot(indices=idx,depth=n*n, dtype='float32')
+    
+    if i != j:
+        idx = j * n + i
+        one_hot += tf.one_hot(indices=idx,depth=n*n, dtype='float32')
+
+    return tf.reshape(one_hot,shape=(n,n))
+
 class DeathRxnLayer(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, i_sp: int):
@@ -265,17 +276,6 @@ class DeathRxnLayer(tf.keras.layers.Layer):
         self.nh = nh
         self.n = nv + nh
         self.i_sp = i_sp
-
-    @tf.function
-    def unit_mat_sym(self, i: int, j: int):
-        idx = i * self.n + j
-        one_hot = tf.one_hot(indices=idx,depth=self.n*self.n, dtype='float32')
-        
-        if i != j:
-            idx = j * self.n + i
-            one_hot += tf.one_hot(indices=idx,depth=self.n*self.n, dtype='float32')
-
-        return tf.reshape(one_hot,shape=(self.n,self.n))
 
     def call(self, inputs):
         
@@ -292,9 +292,44 @@ class DeathRxnLayer(tf.keras.layers.Layer):
         nvarTE = tf.zeros(shape=(self.n,self.n), dtype='float32')
         for j in range(0,self.n):
             if j == self.i_sp:
-                nvarTE += self.unit_mat_sym(self.i_sp,self.i_sp) * (-2.0 * nvar[self.i_sp,self.i_sp] + mu[self.i_sp])
+                nvarTE += unit_mat_sym(self.n,self.i_sp,self.i_sp) * (-2.0 * nvar[self.i_sp,self.i_sp] + mu[self.i_sp])
             else:
-                nvarTE += self.unit_mat_sym(self.i_sp,j) * (-1.0 * nvar[self.i_sp,j])
+                nvarTE += unit_mat_sym(self.n,self.i_sp,j) * (-1.0 * nvar[self.i_sp,j])
+        
+        return {
+            "muTE": muTE,
+            "nvarTE": nvarTE
+        }
+
+class BirthRxnLayer(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int, i_sp: int):
+        # Super
+        super(BirthRxnLayer, self).__init__()
+    
+        self.nv = nv
+        self.nh = nh
+        self.n = nv + nh
+        self.i_sp = i_sp
+
+    def call(self, inputs):
+        
+        unit = tf.one_hot(
+            indices=self.i_sp,
+            depth=self.n
+            )
+
+        mu = inputs["mu"]
+        nvar = inputs["var"]
+
+        muTE = mu[self.i_sp] * unit
+        
+        nvarTE = tf.zeros(shape=(self.n,self.n), dtype='float32')
+        for j in range(0,self.n):
+            if j == self.i_sp:
+                nvarTE += unit_mat_sym(self.n,self.i_sp,self.i_sp) * (2.0 * nvar[self.i_sp,self.i_sp] + mu[self.i_sp])
+            else:
+                nvarTE += unit_mat_sym(self.n,self.i_sp,j) * (nvar[self.i_sp,j])
         
         return {
             "muTE": muTE,
