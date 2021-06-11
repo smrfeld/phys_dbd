@@ -518,3 +518,37 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
             "muhTE": muhTE,
             "varh_diagTE": varh_diagTE
         }
+
+class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
+
+    def __init__(self):
+        # Super
+        super(ConvertParamsTEtoParams0TE, self).__init__()
+
+    def call(self, inputs):
+
+        bTE1 = inputs["bTE1"]
+        wtTE1 = inputs["wtTE1"]
+        muh1 = inputs["muh1"]
+        wt1 = inputs["wt1"]
+        muhTE1 = inputs["muhTE1"]
+        varh_diag1 = inputs["varh_diag1"]
+        varh_diagTE1 = inputs["varh_diagTE1"]
+        sig2TE = inputs["sig2TE"]
+
+        varh1 = tf.linalg.tensor_diag(varh_diag1)
+        varh_inv1 = tf.linalg.tensor_diag(1.0 / varh_diag1)
+        varhTE1 = tf.linalg.tensor_diag(varh_diagTE1)
+
+        wTE1 = tf.transpose(wtTE1)
+        w1 = tf.transpose(wt1)
+
+        bTE2 = bTE1 + tf.linalg.matvec(wTE1,muh1) + tf.linalg.matvec(w1,muhTE1)
+        wtTE2 = 0.5 * tf.matmul(tf.math.sqrt(varh_inv1),
+            tf.matmul(varhTE1, wt1)) + tf.matmul(tf.math.sqrt(varh1),wtTE1)
+        
+        return {
+            "sig2TE": sig2TE,
+            "bTE2" : bTE2,
+            "wtTE2" : wtTE2
+        }
