@@ -5,13 +5,22 @@ from .helpers import convert_np_to_pd
 
 import pandas as pd
 import numpy as np
-from typing import List, Tuple
+from typing import List, Dict, Any
+import tensorflow as tf
 
 class ParamsTraj:
 
     def __init__(self, times: np.array, params_traj: List[Params]):
         self.params_traj = params_traj
         self.times = times
+
+    def get_tf_inputs_assuming_params0(self) -> List[Dict[str, tf.Tensor]]:
+        inputs = []
+        for i in range(0,len(self.params_traj)):
+            input0 = self.params_traj[i].get_tf_input_assuming_params0()
+            input0["t"] = self.times[i]
+            inputs.append(input0)
+        return inputs
 
     @classmethod
     def fromPCA(cls, data: np.array, times: np.array, muh: np.array, varh_diag: np.array):

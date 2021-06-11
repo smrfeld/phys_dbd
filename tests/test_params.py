@@ -1,6 +1,7 @@
 from physPCA import Params, ImportHelper, ParamsTraj, ParamsTETraj
 import numpy as np
 import os
+import tensorflow as tf
 
 class TestParams:
 
@@ -25,6 +26,19 @@ class TestParams:
         params = Params.fromPCA(data,muh,varh_diag)
         return params
 
+    def create_params_traj(self) -> ParamsTraj:
+        return ParamsTraj(
+            times=np.array([0.2,0.3,0.4,0.5,0.6,0.7]),
+            params_traj=[
+                self.import_params(0.2),
+                self.import_params(0.3),
+                self.import_params(0.4),
+                self.import_params(0.5),
+                self.import_params(0.6),
+                self.import_params(0.7)
+                ]
+            )
+
     def test_params(self):
         params = self.import_params(0.4)
 
@@ -35,12 +49,7 @@ class TestParams:
         assert params == params_back
 
     def test_export(self):
-        params1 = self.import_params(0.4)
-        params2 = self.import_params(0.5)
-        pt = ParamsTraj(
-            times=np.array([0.4,0.5]),
-            params_traj=[params1,params2]
-            )
+        pt = self.create_params_traj()
         fname = "cache_params.txt"
         pt.export(fname)
 
@@ -56,19 +65,8 @@ class TestParams:
             os.remove(fname)
 
     def test_deriv(self):
-        
-        pt = ParamsTraj(
-            times=np.array([0.2,0.3,0.4,0.5,0.6,0.7]),
-            params_traj=[
-                self.import_params(0.2),
-                self.import_params(0.3),
-                self.import_params(0.4),
-                self.import_params(0.5),
-                self.import_params(0.6),
-                self.import_params(0.7)
-                ]
-            )
-        
+        pt = self.create_params_traj()
+
         ptTE = pt.differentiate_with_TVR(
             alpha=1.0,
             no_opt_steps=10
@@ -91,4 +89,19 @@ class TestParams:
         if os.path.exists(fname):
             os.remove(fname)
 
-TestParams().test_params()
+    def test_tf_input(self):
+        params = self.import_params(0.4)
+        input0 = params.get_tf_input_assuming_params0()
+        
+        tf.debugging.assert_equal(tf.constant(params.wt, dtype="float32"), input0["wt"])
+        tf.debugging.assert_equal(tf.constant(params.b, dtype="float32"), input0["b"])
+        tf.debugging.assert_equal(tf.constant(params.sig2, dtype="float32"), input0["sig2"])
+
+        pt = self.create_params_traj()
+        inputs = pt.get_tf_inputs_assuming_params0()
+        
+        assert len(inputs) == len(pt.times)
+        for i in range(0,len(inputs)):
+            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].wt, dtype="float32"), inputs[i]["wt"])
+            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].b, dtype="float32"), inputs[i]["b"])
+            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].sig2, dtype="float32"), inputs[i]["sig2"])

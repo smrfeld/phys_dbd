@@ -1,6 +1,8 @@
 from .helpers import dc_eq, normalize
 
 import numpy as np
+from typing import Dict, Any
+import tensorflow as tf
 
 from dataclasses import dataclass
 
@@ -23,6 +25,13 @@ class Params:
 
     def __eq__(self, other):
         return dc_eq(self, other)
+
+    def get_tf_input_assuming_params0(self) -> Dict[str, tf.Tensor]:
+        return {
+            "wt": tf.constant(self.wt, dtype="float32"),
+            "b": tf.constant(self.b, dtype="float32"),
+            "sig2": tf.constant(self.sig2, dtype="float32")
+            }
 
     @classmethod
     def fromPCA(cls, data: np.array, muh: np.array, varh_diag: np.array):

@@ -87,3 +87,11 @@ model = tf.keras.models.Sequential([
     tf.keras.layers.Dropout(0.2),
     tf.keras.layers.Dense(no_outputs, activation='relu')
   ])
+
+loss_fn = tf.keras.losses.MeanSquaredError()
+
+model.compile(optimizer='adam',
+              loss=loss_fn,
+              metrics=['accuracy'])
+
+model.fit(x_train, y_train, epochs=5)

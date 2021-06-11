@@ -685,7 +685,6 @@ class RxnInputsLayer(tf.keras.layers.Layer):
 
     def call(self, inputs):
         nMoments = self.params0toNMoments(inputs)
-        print(nMoments)
 
         # Compute reactions
         params0TEforRxns = []
