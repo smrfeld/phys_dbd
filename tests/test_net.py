@@ -62,11 +62,12 @@ class TestNet:
 
         nv = 3
         nh = 2
+        batch_size = 2
         x_in = {
-            "b1": tf.constant(np.random.rand(nv), dtype="float32"),
-            "wt1": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "muh2": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varh_diag2": tf.constant(np.random.rand(nh), dtype="float32")
+            "b1": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
+            "wt1": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "muh2": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "varh_diag2": tf.constant(np.random.rand(batch_size,nh), dtype="float32")
             }
 
         x_out = lyr(x_in)
@@ -95,11 +96,12 @@ class TestNet:
         )
 
         # Input
+        batch_size = 2
         x_in = {
-            "t": tf.constant(3, dtype='float32'),
-            "b": tf.constant(np.random.rand(nv), dtype="float32"),
-            "wt": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "sig2": tf.constant(np.random.rand(), dtype='float32')
+            "t": tf.constant(np.full(shape=(batch_size,1), fill_value=3), dtype='float32'),
+            "b": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
+            "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "sig2": tf.constant(np.random.rand(batch_size), dtype='float32')
             }   
              
         # Output

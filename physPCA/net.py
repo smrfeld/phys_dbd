@@ -134,30 +134,23 @@ class ConvertParamsLayerFrom0(tf.keras.layers.Layer):
         super(ConvertParamsLayerFrom0, self).__init__()
 
     def call(self, inputs):
-        print("-----------------")
         b1 = inputs["b1"]
         wt1 = inputs["wt1"]
-        w1 = tf.transpose(wt1)
         muh2 = inputs["muh2"]
         varh_diag2 = inputs["varh_diag2"]
 
-        print(wt1)
-        print(w1)
-        print(varh_diag2)
+        w1 = tf.transpose(wt1,perm=[0,2,1])
 
-        varh2_inv_sqrt = tf.linalg.tensor_diag(tf.math.sqrt(tf.math.pow(varh_diag2,-1)))
-        print(varh2_inv_sqrt)
+        varh2_inv_sqrt = tf.map_fn(
+            lambda varh_diagL: tf.linalg.tensor_diag(tf.math.sqrt(tf.math.pow(varh_diagL,-1))),
+            varh_diag2)
 
         # Matrix * vector = tf.linalg.matvec
         # Diagonal matrix = tf.linalg.tensor_diag
         m2 = tf.matmul(w1, varh2_inv_sqrt)
         b2 = b1 - tf.linalg.matvec(m2, muh2)
 
-        # wt2 = tf.matmul(varh2_inv_sqrt, wt1)
-        print(wt1.shape)
-        print(varh2_inv_sqrt.shape)
-
-        wt2 = tf.scan(lambda acc, wt1L: tf.matmul(varh2_inv_sqrt, wt1L), wt1)
+        wt2 = tf.matmul(varh2_inv_sqrt, wt1)
 
         return {
             "b2": b2,
