@@ -66,16 +66,17 @@ class FourierLatentLayer(tf.keras.layers.Layer):
         return tf.math.maximum(1.0, st+ct+1.e-8)
 
     def call(self, inputs):
+        
         # tf.math.reduce_sum is same as np.sum
         # tf.matmul is same np.dot
-        tsin = tf.math.sin(inputs["t"] * self.freqs)
+        tsin = tf.map_fn(lambda t: tf.math.sin(t * self.freqs), inputs["t"])
 
         # Dot product = tf.tensordot(a, b, 1)
-        ts = tf.tensordot(self.sin_coeff, tsin, 1)
+        ts = tf.map_fn(lambda tsinL: tf.tensordot(self.sin_coeff, tsinL, 1), tsin)
 
         # Same for cos
-        tcos = tf.math.cos(inputs["t"] * self.freqs)
-        tc = tf.tensordot(self.cos_coeff, tcos, 1)
+        tcos = tf.map_fn(lambda t: tf.math.cos(t * self.freqs), inputs["t"])
+        tc = tf.map_fn(lambda tcosL: tf.tensordot(self.cos_coeff, tcosL, 1), tcos)
 
         return (self.offset_fixed + ts + tc) / self.fourier_range()
 
@@ -117,21 +118,30 @@ class ConvertParamsLayerFrom0(tf.keras.layers.Layer):
         super(ConvertParamsLayerFrom0, self).__init__()
 
     def call(self, inputs):
-
+        print("-----------------")
         b1 = inputs["b1"]
         wt1 = inputs["wt1"]
         w1 = tf.transpose(wt1)
         muh2 = inputs["muh2"]
         varh_diag2 = inputs["varh_diag2"]
 
+        print(wt1)
+        print(w1)
+        print(varh_diag2)
+
         varh2_inv_sqrt = tf.linalg.tensor_diag(tf.math.sqrt(tf.math.pow(varh_diag2,-1)))
+        print(varh2_inv_sqrt)
 
         # Matrix * vector = tf.linalg.matvec
         # Diagonal matrix = tf.linalg.tensor_diag
         m2 = tf.matmul(w1, varh2_inv_sqrt)
         b2 = b1 - tf.linalg.matvec(m2, muh2)
 
-        wt2 = tf.matmul(varh2_inv_sqrt, wt1)
+        # wt2 = tf.matmul(varh2_inv_sqrt, wt1)
+        print(wt1.shape)
+        print(varh2_inv_sqrt.shape)
+
+        wt2 = tf.scan(lambda acc, wt1L: tf.matmul(varh2_inv_sqrt, wt1L), wt1)
 
         return {
             "b2": b2,
@@ -180,12 +190,17 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         # Get fourier
         muhs = []
         varh_diags = []
+        print("No hidden: ", self.nh)
         for ih in range(0,self.nh):
             muhs.append(self.layer_muh[str(ih)](inputs))
             varh_diags.append(self.layer_varh_diag[str(ih)](inputs))
 
         muh = tf.concat(muhs,0)
         varh_diag = tf.concat(varh_diags,0)
+
+        print("Muh and varh")
+        print(muh)
+        print(varh_diag)
 
         inputs_convert = {
             "muh2": muh,

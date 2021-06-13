@@ -52,10 +52,7 @@ else:
     paramsTE_traj = ParamsTETraj.fromFile("cache_derivs.txt", nv=2, nh=1)
 
 train_inputs = params_traj.get_tf_inputs_assuming_params0()
-print(train_inputs)
-
 train_outputs = paramsTE_traj.get_tf_outputs_assuming_params0()
-print(train_outputs)
 
 # Freqs, coffs for fourier
 nv = 2
@@ -100,9 +97,6 @@ class MyModel(tf.keras.Model):
         self.d2 = tf.keras.layers.Dense(no_outputs, activation='relu')
 
     def call(self, input_tensor, training=False):
-        print(input_tensor)
-        print(input_tensor["wt"])
-        print(input_tensor["wt"].shape)
         x = self.rxn_lyr(input_tensor)
         x = tf.reshape(x,shape=(1,15))
         x = self.d1(x)
@@ -113,17 +107,22 @@ class MyModel(tf.keras.Model):
 model = MyModel(nv,nh,rxn_layer)
 
 # Build the model by calling it on real data
+'''
 input_build = params_traj.params_traj[0].get_tf_input_assuming_params0()
 input_build["t"] = tf.constant(1, dtype="float32")
 output_build = model(input_build)
 print(output_build)
+'''
 
 loss_fn = tf.keras.losses.MeanSquaredError()
 
+# From what @AniketBote wrote, if you compile your model with the run_eagerly=True flag then you should see the values of x, y in your train_step, ie  model.compile(optimizer, loss, run_eagerly=True).
 model.compile(optimizer='adam',
               loss=loss_fn,
-              metrics=['accuracy'])
+              metrics=['accuracy'],
+              run_eagerly=False)
 
+print("fitting")
 model.fit(train_inputs, train_outputs, epochs=5)
 
 

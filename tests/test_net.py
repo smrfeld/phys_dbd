@@ -1,3 +1,4 @@
+from tensorflow.python.ops.gen_batch_ops import batch
 from physPCA.net import RxnSpec
 from physPCA import FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
@@ -25,8 +26,9 @@ class TestNet:
             )
 
         # Input
+        batch_size = 1
         x_in = {
-            "t": tf.constant(3, dtype='float32')
+            "t": tf.reshape(tf.constant(3, dtype='float32'), shape=(batch_size, 1))
         }
         
         # Output
