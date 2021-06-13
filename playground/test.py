@@ -1,3 +1,4 @@
+from tensorflow.python.ops.gen_batch_ops import batch
 from physDBD import ImportHelper, DataDesc, ParamsTraj, RxnSpec, RxnInputsLayer, ParamsTETraj
 
 import numpy as np
@@ -98,7 +99,6 @@ class MyModel(tf.keras.Model):
 
     def call(self, input_tensor, training=False):
         x = self.rxn_lyr(input_tensor)
-        x = tf.reshape(x,shape=(1,15))
         x = self.d1(x)
         x = self.d1dr(x)
         x = self.d2(x)

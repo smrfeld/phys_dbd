@@ -362,7 +362,10 @@ class DeathRxnLayer(tf.keras.layers.Layer):
 
         muTE = tf.map_fn(lambda muL: - muL[self.i_sp] * unit, mu)
         
-        nvarTE = tf.zeros(shape=nvar.shape, dtype='float32')
+        # tf.zeros_like vs tf.zeros
+        # https://stackoverflow.com/a/49599952/1427316
+        # avoid 'Cannot convert a partially known TensorShape to a Tensor'
+        nvarTE = tf.zeros_like(nvar)
         for j in range(0,self.n):
             if j == self.i_sp:
                 vals = -2.0 * nvar[:,self.i_sp,self.i_sp] + mu[:,self.i_sp]
@@ -400,7 +403,7 @@ class BirthRxnLayer(tf.keras.layers.Layer):
 
         muTE = tf.map_fn(lambda muL: muL[self.i_sp] * unit, mu)
 
-        nvarTE = tf.zeros(shape=nvar.shape, dtype='float32')
+        nvarTE = tf.zeros_like(nvar)
         for j in range(0,self.n):
             if j == self.i_sp:
                 vals = 2.0 * nvar[:,self.i_sp,self.i_sp] + mu[:,self.i_sp]
@@ -481,7 +484,7 @@ class EatRxnLayer(tf.keras.layers.Layer):
                 + nvarL[self.i_hunter,self.i_prey] * unit_hunter,
                 nvar)
         
-        nvarTE = tf.zeros(shape=nvar.shape, dtype='float32')
+        nvarTE = tf.zeros_like(nvar)
 
         # Prey-prey
         nvarTE += self.nvar_prey_prey(mu,nvar)
@@ -521,8 +524,16 @@ class ConvertNMomentsTEtoMomentsTE(tf.keras.layers.Layer):
         # Just use tf.multiply or equivalently * operator
         # (batch, n, 1) * (batch, 1, n) gives (batch, n, n) 
         # https://stackoverflow.com/a/51641382/1427316
-        batch_size = mu.shape[0]
-        n = mu.shape[1]
+
+        # Do not use .shape; rather use tf.shape
+        # However, h = tf.shape(x)[1]; w = tf.shape(x)[2] will let h, w be 
+        # symbolic or graph-mode tensors (integer) that will contain a dimension 
+        # of x. The value will be determined runtime. In such a case, tf.reshape(x, [-1, w, h]) will 
+        # produce a (symbolic) tensor of shape [?, ?, ?] (still unknown) whose tensor shape 
+        # will be known on runtime.
+        # https://github.com/tensorflow/models/issues/6245#issuecomment-623877638
+        batch_size = tf.shape(mu)[0]
+        n = tf.shape(mu)[1]
 
         muTE1 = tf.reshape(muTE,shape=(batch_size,n,1))
         mu1 = tf.reshape(mu,shape=(batch_size,1,n))
