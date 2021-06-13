@@ -778,6 +778,7 @@ class RxnInputsLayer(tf.keras.layers.Layer):
 
     def call(self, inputs):
         nMoments = self.params0toNMoments(inputs)
+        batch_size = tf.shape(nMoments["nvar"])[0]
 
         # Compute reactions
         params0TEforRxns = []
@@ -789,13 +790,19 @@ class RxnInputsLayer(tf.keras.layers.Layer):
             params0TE = self.nMomentsTEtoParams0TE(nMomentsTE)
 
             # Flatten
-            params0TEarr = [tf.reshape(val, [-1]) for val in params0TE.values()]
-            params0TEflat = tf.concat(params0TEarr, 0)
+            # Reshape (batch_size, a, b) into (batch_size, a*b) for each thing in the dict
+            params0TEarr = [tf.reshape(val, [batch_size,-1]) for val in params0TE.values()]
+
+            # Combine different tensors of size (batch_size, a), (batch_size, b), ... 
+            # into one of (batch_size, a+b+...)
+            params0TEflat = tf.concat(params0TEarr, 1)
 
             # Store
             params0TEforRxns.append(params0TEflat)
 
         # Flatten all reactions
-        params0TE = tf.concat(params0TEforRxns, 0)
+        # Combine different tensors of size (batch_size, a), (batch_size, b), ... 
+        # into one of (batch_size, a+b+...)
+        params0TE = tf.concat(params0TEforRxns, 1)
 
         return params0TE
