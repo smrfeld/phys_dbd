@@ -87,25 +87,42 @@ class MyModel(tf.keras.Model):
     def __init__(self, nv:int, nh: int, rxn_lyr: RxnInputsLayer):
         super(MyModel, self).__init__(name='')
 
-        size_wt = nv*nh
-        size_b = nv
-        size_sig2 = 1
-        no_outputs = size_wt + size_b + size_sig2
+        self.nv = nv
+        self.nh = nh
+        self.size_wt = nv*nh
+        self.size_b = nv
+        self.size_sig2 = 1
+        self.no_outputs = self.size_wt + self.size_b + self.size_sig2
 
         self.rxn_lyr = rxn_lyr
         self.d1 = tf.keras.layers.Dense(128, activation='relu')
         self.d1dr = tf.keras.layers.Dropout(0.2)
-        self.d2 = tf.keras.layers.Dense(no_outputs, activation='relu')
+        self.d2 = tf.keras.layers.Dense(self.no_outputs, activation='relu')
 
     def call(self, input_tensor, training=False):
-        print(input_tensor)
         x = self.rxn_lyr(input_tensor)
-        print(x)
         x = self.d1(x)
         x = self.d1dr(x)
         x = self.d2(x)
-        return x
 
+        batch_size = tf.shape(x)[0]
+
+        s = 0
+        e = s + self.size_wt
+        wt_TE = tf.reshape(x[:,s:e],shape=(batch_size,self.nh,self.nv))
+        s = e
+        e = s + self.size_b
+        b_TE = x[:,s:e]
+        s = e
+        e = s + self.size_sig2
+        sig2_TE = x[:,s:e]
+
+        return {
+            "wt_TE": wt_TE,
+            "b_TE": b_TE,
+            "sig2_TE": sig2_TE
+        }
+        
 model = MyModel(nv,nh,rxn_layer)
 
 # Build the model by calling it on real data
@@ -124,7 +141,6 @@ model.compile(optimizer='adam',
               metrics=['accuracy'],
               run_eagerly=False)
 
-print("fitting")
 model.fit(train_inputs, train_outputs, epochs=5)
 
 
