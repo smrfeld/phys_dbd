@@ -203,13 +203,13 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         for ih in range(0,self.nh):
             muhs.append(self.layer_muh[str(ih)](inputs))
             varh_diags.append(self.layer_varh_diag[str(ih)](inputs))
-
-        muh = tf.concat(muhs,0)
-        varh_diag = tf.concat(varh_diags,0)
-
-        print("Muh and varh")
-        print(muh)
-        print(varh_diag)
+        
+        # Current size is (nh, batch_size)
+        # Transpose to get (batch_size, nh)
+        muh = tf.transpose(muhs)
+        varh_diag = tf.transpose(varh_diags)
+        # muh = tf.concat(muhs,0)
+        # varh_diag = tf.concat(varh_diags,0)
 
         inputs_convert = {
             "muh2": muh,

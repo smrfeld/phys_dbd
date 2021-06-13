@@ -98,7 +98,7 @@ class TestNet:
         # Input
         batch_size = 2
         x_in = {
-            "t": tf.constant(np.full(shape=(batch_size,1), fill_value=3), dtype='float32'),
+            "t": tf.constant(np.arange(3,3+batch_size), dtype='float32'),
             "b": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
             "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
             "sig2": tf.constant(np.random.rand(batch_size), dtype='float32')
