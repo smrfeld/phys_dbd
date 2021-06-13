@@ -120,12 +120,13 @@ class TestNet:
         )
 
         # Input
+        batch_size = 2
         x_in = {
-            "b": tf.constant(np.random.rand(nv), dtype="float32"),
-            "wt": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "sig2": tf.constant(np.random.rand(), dtype='float32'),
-            "varh_diag": tf.constant(np.random.rand(nh), dtype='float32'),
-            "muh": tf.constant(np.random.rand(nh), dtype='float32')
+            "b": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
+            "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "sig2": tf.constant(np.random.rand(batch_size), dtype='float32'),
+            "varh_diag": tf.constant(np.random.rand(batch_size,nh), dtype='float32'),
+            "muh": tf.constant(np.random.rand(batch_size,nh), dtype='float32')
             }   
              
         # Output

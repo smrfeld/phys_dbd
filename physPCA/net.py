@@ -247,17 +247,24 @@ class ConvertParamsToMomentsLayer(tf.keras.layers.Layer):
         b = inputs["b"]
         muh = inputs["muh"]
 
-        w = tf.transpose(wt)
-        varh = tf.linalg.tensor_diag(varh_diag)
+        w = tf.transpose(wt, perm=[0,2,1])
+        varh = tf.map_fn(lambda varh_diagL: tf.linalg.tensor_diag(varh_diagL), varh_diag)
 
         varvh = tf.matmul(varh, wt)
-        varv = tf.matmul(w,tf.matmul(varh,wt)) + sig2 * tf.eye(self.nv)
+        varvTMP = tf.matmul(w,tf.matmul(varh,wt))
+        sig2TMP = tf.map_fn(lambda sig2L: sig2L * tf.eye(self.nv), sig2)
+        varv = varvTMP + sig2TMP
 
         muv = b + tf.linalg.matvec(w, muh)
-        mu = tf.concat([muv,muh],0)
 
-        varvht = tf.transpose(varvh)
-        var = tf.concat([tf.concat([varv,varvht],1),tf.concat([varvh,varh],1)],0)
+        # Assemble mu
+        mu = tf.concat([muv,muh],1)
+
+        # Array flatten vars
+        varvht = tf.transpose(varvh, perm=[0,2,1])
+        var1 = tf.concat([varv,varvht],2)
+        var2 = tf.concat([varvh,varh],2)
+        var = tf.concat([var1,var2],1)
 
         return {
             "mu": mu,
