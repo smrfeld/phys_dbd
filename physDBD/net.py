@@ -654,12 +654,12 @@ class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
         varh_diagTE1 = inputs["varh_diagTE1"]
         sig2TE = inputs["sig2TE"]
 
-        varh1 = tf.linalg.tensor_diag(varh_diag1)
-        varh_inv1 = tf.linalg.tensor_diag(1.0 / varh_diag1)
-        varhTE1 = tf.linalg.tensor_diag(varh_diagTE1)
+        varh1 = tf.map_fn(lambda varh_diag1L: tf.linalg.tensor_diag(varh_diag1L), varh_diag1)
+        varh_inv1 = tf.map_fn(lambda varh_diag1L: tf.linalg.tensor_diag(1.0 / varh_diag1L), varh_diag1)
+        varhTE1 = tf.map_fn(lambda varh_diagTE1L: tf.linalg.tensor_diag(varh_diagTE1L), varh_diagTE1)
 
-        wTE1 = tf.transpose(wtTE1)
-        w1 = tf.transpose(wt1)
+        wTE1 = tf.transpose(wtTE1,perm=[0,2,1])
+        w1 = tf.transpose(wt1,perm=[0,2,1])
 
         bTE2 = bTE1 + tf.linalg.matvec(wTE1,muh1) + tf.linalg.matvec(w1,muhTE1)
         wtTE2 = 0.5 * tf.matmul(tf.math.sqrt(varh_inv1),

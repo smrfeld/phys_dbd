@@ -308,15 +308,16 @@ class TestNet:
 
         nv = 3
         nh = 2
+        batch_size = 2
         x_in = {
-            "bTE1": tf.constant(np.random.rand(nv), dtype="float32"),
-            "wtTE1": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "muh1": tf.constant(np.random.rand(nh), dtype="float32"),
-            "wt1": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "muhTE1": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varh_diag1": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varh_diagTE1": tf.constant(np.random.rand(nh), dtype="float32"),
-            "sig2TE": tf.constant(np.random.rand(), dtype="float32")
+            "bTE1": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
+            "wtTE1": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "muh1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "wt1": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "muhTE1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "varh_diag1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "varh_diagTE1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "sig2TE": tf.constant(np.random.rand(batch_size), dtype="float32")
         }
                 
         # Output
