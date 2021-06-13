@@ -1,4 +1,4 @@
-from physPCA import Params, ImportHelper, ParamsTraj, ParamsTETraj
+from physDBD import Params, ImportHelper, ParamsTraj, ParamsTETraj
 import numpy as np
 import os
 import tensorflow as tf

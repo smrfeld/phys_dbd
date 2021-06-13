@@ -1,7 +1,4 @@
-from tensorflow.python.ops.gen_batch_ops import batch
-from tensorflow.python.ops.gen_linalg_ops import batch_cholesky
-from physPCA.net import RxnSpec
-from physPCA import FourierLatentLayer, \
+from physDBD import RxnSpec, FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
         ConvertParamsToMomentsLayer, ConvertMomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer, \
             ConvertNMomentsTEtoMomentsTE, ConvertMomentsTEtoParamMomentsTE, ConvertParamMomentsTEtoParamsTE, \
