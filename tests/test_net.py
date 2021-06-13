@@ -1,4 +1,5 @@
 from tensorflow.python.ops.gen_batch_ops import batch
+from tensorflow.python.ops.gen_linalg_ops import batch_cholesky
 from physPCA.net import RxnSpec
 from physPCA import FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
@@ -10,6 +11,11 @@ import numpy as np
 import tensorflow as tf
 
 class TestNet:
+
+    def get_random_var(self, batch_size: int, nv: int, nh: int):
+        nvar = np.random.rand(batch_size,nv+nh,nv+nh)
+        nvar += np.transpose(nvar,axes=[0,2,1])
+        return nvar
 
     def test_fourier(self):
 
@@ -143,12 +149,9 @@ class TestNet:
 
         # Input
         batch_size = 2
-        var = np.random.rand(batch_size,nv+nh,nv+nh)
-        var += np.transpose(var,axes=[0,2,1])
-
         x_in = {
             "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "var": tf.constant(var, dtype="float32")
+            "var": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
             }   
             
         # Output
@@ -178,11 +181,12 @@ class TestNet:
         )
 
         # Input
+        batch_size = 2
         x_in = {
-            "t": tf.constant(3, dtype='float32'),
-            "b": tf.constant(np.random.rand(nv), dtype="float32"),
-            "wt": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "sig2": tf.constant(np.random.rand(), dtype='float32')
+            "t": tf.constant(np.arange(4,4+batch_size), dtype='float32'),
+            "b": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
+            "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "sig2": tf.constant(np.random.rand(batch_size), dtype='float32')
             }
              
         # Output
@@ -197,12 +201,10 @@ class TestNet:
         lyr = DeathRxnLayer(nv=nv,nh=nh,i_sp=1)
 
         # Input
-        nvar = np.random.rand(nv+nh,nv+nh)
-        nvar += np.transpose(nvar)
-
+        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "nvar": tf.constant(nvar, dtype="float32")
+            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
+            "nvar": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
             }
             
         # Output
@@ -217,12 +219,10 @@ class TestNet:
         lyr = BirthRxnLayer(nv=nv,nh=nh,i_sp=1)
 
         # Input
-        nvar = np.random.rand(nv+nh,nv+nh)
-        nvar += np.transpose(nvar)
-
+        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "nvar": tf.constant(nvar, dtype="float32")
+            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
+            "nvar": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
             }
             
         # Output
@@ -237,12 +237,10 @@ class TestNet:
         lyr = EatRxnLayer(nv=nv,nh=nh,i_prey=1,i_hunter=2)
 
         # Input
-        nvar = np.random.rand(nv+nh,nv+nh)
-        nvar += np.transpose(nvar)
-
+        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "nvar": tf.constant(nvar, dtype="float32")
+            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
+            "nvar": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
             }
             
         # Output
@@ -256,13 +254,10 @@ class TestNet:
         lyr = ConvertNMomentsTEtoMomentsTE()
 
         # Input
-        nvarTE = np.random.rand(nv+nh,nv+nh)
-        nvarTE += np.transpose(nvarTE)
-
         x_in = {
             "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
             "muTE": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "nvarTE": tf.constant(nvarTE, dtype="float32")
+            "nvarTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
             }
             
         # Output
@@ -276,12 +271,9 @@ class TestNet:
         lyr = ConvertMomentsTEtoParamMomentsTE(nv=nv,nh=nh)
 
         # Input
-        nvarTE = np.random.rand(nv+nh,nv+nh)
-        nvarTE += np.transpose(nvarTE)
-
         x_in = {
             "muTE": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "varTE": tf.constant(nvarTE, dtype="float32")
+            "varTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
             }
             
         # Output
@@ -339,19 +331,13 @@ class TestNet:
         lyr = ConvertNMomentsTEtoParams0TE(nv,nh)
 
         # Input
-        nvarTE = np.random.rand(nv+nh,nv+nh)
-        nvarTE += np.transpose(nvarTE)
-        
-        var = np.random.rand(nv+nh,nv+nh)
-        var += np.transpose(var)
-
         x_in = {
             "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
             "muTE": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "nvarTE": tf.constant(nvarTE, dtype="float32"),
+            "nvarTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32"),
             "varh_diag": tf.constant(np.random.rand(nh), dtype="float32"),
             "muh": tf.constant(np.random.rand(nh), dtype="float32"),
-            "var": tf.constant(var, dtype="float32"),
+            "var": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32"),
             "wt": tf.constant(np.random.rand(nh,nv), dtype="float32")
             }
             

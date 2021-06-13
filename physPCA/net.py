@@ -199,7 +199,6 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         # Get fourier
         muhs = []
         varh_diags = []
-        print("No hidden: ", self.nh)
         for ih in range(0,self.nh):
             muhs.append(self.layer_muh[str(ih)](inputs))
             varh_diags.append(self.layer_varh_diag[str(ih)](inputs))
@@ -352,23 +351,26 @@ class DeathRxnLayer(tf.keras.layers.Layer):
         self.i_sp = i_sp
 
     def call(self, inputs):
-        
+
+        mu = inputs["mu"]
+        nvar = inputs["nvar"]
+
         unit = tf.one_hot(
             indices=self.i_sp,
             depth=self.n
             )
 
-        mu = inputs["mu"]
-        nvar = inputs["nvar"]
-
-        muTE = - mu[self.i_sp] * unit
+        muTE = tf.map_fn(lambda muL: - muL[self.i_sp] * unit, mu)
         
-        nvarTE = tf.zeros(shape=(self.n,self.n), dtype='float32')
+        nvarTE = tf.zeros(shape=nvar.shape, dtype='float32')
         for j in range(0,self.n):
             if j == self.i_sp:
-                nvarTE += unit_mat_sym(self.n,self.i_sp,self.i_sp) * (-2.0 * nvar[self.i_sp,self.i_sp] + mu[self.i_sp])
+                vals = -2.0 * nvar[:,self.i_sp,self.i_sp] + mu[:,self.i_sp]
             else:
-                nvarTE += unit_mat_sym(self.n,self.i_sp,j) * (-1.0 * nvar[self.i_sp,j])
+                vals = -1.0 * nvar[:,self.i_sp,j]
+
+            unit_mat = unit_mat_sym(self.n,self.i_sp,j)
+            nvarTE += tf.map_fn(lambda val: unit_mat * val, vals)
         
         return {
             "muTE": muTE,
@@ -388,22 +390,25 @@ class BirthRxnLayer(tf.keras.layers.Layer):
 
     def call(self, inputs):
         
+        mu = inputs["mu"]
+        nvar = inputs["nvar"]
+
         unit = tf.one_hot(
             indices=self.i_sp,
             depth=self.n
             )
 
-        mu = inputs["mu"]
-        nvar = inputs["nvar"]
+        muTE = tf.map_fn(lambda muL: muL[self.i_sp] * unit, mu)
 
-        muTE = mu[self.i_sp] * unit
-        
-        nvarTE = tf.zeros(shape=(self.n,self.n), dtype='float32')
+        nvarTE = tf.zeros(shape=nvar.shape, dtype='float32')
         for j in range(0,self.n):
             if j == self.i_sp:
-                nvarTE += unit_mat_sym(self.n,self.i_sp,self.i_sp) * (2.0 * nvar[self.i_sp,self.i_sp] + mu[self.i_sp])
+                vals = 2.0 * nvar[:,self.i_sp,self.i_sp] + mu[:,self.i_sp]
             else:
-                nvarTE += unit_mat_sym(self.n,self.i_sp,j) * (nvar[self.i_sp,j])
+                vals = nvar[:,self.i_sp,j]
+
+            unit_mat = unit_mat_sym(self.n,self.i_sp,j)
+            nvarTE += tf.map_fn(lambda val: unit_mat * val, vals)
         
         return {
             "muTE": muTE,
