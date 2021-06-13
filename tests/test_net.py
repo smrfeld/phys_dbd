@@ -332,14 +332,15 @@ class TestNet:
         lyr = ConvertNMomentsTEtoParams0TE(nv,nh)
 
         # Input
+        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "muTE": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
+            "muTE": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
             "nvarTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32"),
-            "varh_diag": tf.constant(np.random.rand(nh), dtype="float32"),
-            "muh": tf.constant(np.random.rand(nh), dtype="float32"),
+            "varh_diag": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "muh": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
             "var": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32"),
-            "wt": tf.constant(np.random.rand(nh,nv), dtype="float32")
+            "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32")
             }
             
         # Output

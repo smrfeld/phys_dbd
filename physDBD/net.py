@@ -692,7 +692,7 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
 
         outputs2["varh_diag"] = inputs["varh_diag"]
         outputs2["muh"] = inputs["muh"]
-        outputs2["varvh"] = inputs["var"][self.nv:,:self.nv]
+        outputs2["varvh"] = inputs["var"][:,self.nv:,:self.nv]
         outputs3 = self.paramMomentsTEtoParamsTE(outputs2)
 
         inputs4 = {
