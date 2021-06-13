@@ -748,6 +748,9 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         # Super
         super(RxnInputsLayer, self).__init__(name="rxn_inputs")
         
+        self.nv = nv
+        self.nh = nh
+        
         self.params0toNMoments = ConvertParams0ToNMomentsLayer(
             nv=nv,
             nh=nh,
@@ -783,6 +786,8 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         # Compute reactions
         params0TEforRxns = []
         for i in range(0,len(self.rxns)):
+            # print("--- Rxn idx: %d ---" % i)
+
             nMomentsTE = self.rxns[i](nMoments)
 
             # Convert nMomentsTE to params0TE
@@ -791,7 +796,11 @@ class RxnInputsLayer(tf.keras.layers.Layer):
 
             # Flatten
             # Reshape (batch_size, a, b) into (batch_size, a*b) for each thing in the dict
-            params0TEarr = [tf.reshape(val, [batch_size,-1]) for val in params0TE.values()]
+            params0TEarr = [
+                tf.reshape(params0TE["wtTE"], (batch_size, self.nh * self.nv)),
+                tf.reshape(params0TE["bTE"], (batch_size, self.nv)),
+                tf.reshape(params0TE["sig2TE"], (batch_size,1))
+            ]
 
             # Combine different tensors of size (batch_size, a), (batch_size, b), ... 
             # into one of (batch_size, a+b+...)

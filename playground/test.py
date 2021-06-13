@@ -98,7 +98,9 @@ class MyModel(tf.keras.Model):
         self.d2 = tf.keras.layers.Dense(no_outputs, activation='relu')
 
     def call(self, input_tensor, training=False):
+        print(input_tensor)
         x = self.rxn_lyr(input_tensor)
+        print(x)
         x = self.d1(x)
         x = self.d1dr(x)
         x = self.d2(x)
