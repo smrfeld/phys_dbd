@@ -251,9 +251,10 @@ class TestNet:
         lyr = ConvertNMomentsTEtoMomentsTE()
 
         # Input
+        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
-            "muTE": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
+            "muTE": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
             "nvarTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
             }
             

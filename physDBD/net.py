@@ -515,7 +515,22 @@ class ConvertNMomentsTEtoMomentsTE(tf.keras.layers.Layer):
         nvarTE = inputs["nvarTE"]
 
         # kronecker product of two vectors = tf.tensordot(a,b,axes=0)
-        neg_kpv = - tf.tensordot(muTE,mu,axes=0) - tf.tensordot(mu,muTE,axes=0)
+        # neg_kpv = - tf.tensordot(muTE,mu,axes=0) - tf.tensordot(mu,muTE,axes=0)
+
+        # For batch mode:
+        # Just use tf.multiply or equivalently * operator
+        # (batch, n, 1) * (batch, 1, n) gives (batch, n, n) 
+        # https://stackoverflow.com/a/51641382/1427316
+        batch_size = mu.shape[0]
+        n = mu.shape[1]
+
+        muTE1 = tf.reshape(muTE,shape=(batch_size,n,1))
+        mu1 = tf.reshape(mu,shape=(batch_size,1,n))
+
+        mu2 = tf.reshape(mu,shape=(batch_size,n,1))
+        muTE2 = tf.reshape(muTE,shape=(batch_size,1,n))
+
+        neg_kpv = - tf.multiply(muTE1,mu1) - tf.matmul(mu2,muTE2)
 
         varTE = nvarTE + neg_kpv
 
