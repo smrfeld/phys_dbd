@@ -416,8 +416,8 @@ class BirthRxnLayer(tf.keras.layers.Layer):
         }
 
 # @tf.function
-def nmoment3(mu, nvar, i, j, k):
-    return -2.0*mu[i]*mu[j]*mu[k] + mu[i]*nvar[j,k] + mu[j]*nvar[i,k] + mu[k]*nvar[i,j]
+def nmoment3_batch(mu, nvar, i, j, k):
+    return -2.0*mu[:,i]*mu[:,j]*mu[:,k] + mu[:,i]*nvar[:,j,k] + mu[:,j]*nvar[:,i,k] + mu[:,k]*nvar[:,i,j]
 
 class EatRxnLayer(tf.keras.layers.Layer):
 
@@ -433,26 +433,34 @@ class EatRxnLayer(tf.keras.layers.Layer):
 
     # @tf.function
     def nvar_prey_prey(self, mu, nvar):
-        n3 = nmoment3(mu,nvar,self.i_prey,self.i_prey,self.i_hunter)
-        return unit_mat_sym(self.n, self.i_prey, self.i_prey) * ( -2.0*n3 + nvar[self.i_hunter, self.i_prey] )
+        n3 = nmoment3_batch(mu,nvar,self.i_prey,self.i_prey,self.i_hunter)
+        vals = -2.0*n3 + nvar[:, self.i_hunter, self.i_prey]
+        unit_mat = unit_mat_sym(self.n, self.i_prey, self.i_prey)
+        return tf.map_fn(lambda val: unit_mat * val, vals)
 
     # @tf.function
     def nvar_hunter_hunter(self, mu, nvar):
-        n3 = nmoment3(mu,nvar,self.i_hunter,self.i_hunter,self.i_prey)
-        return unit_mat_sym(self.n, self.i_hunter, self.i_hunter) * ( 2.0*n3 + nvar[self.i_hunter, self.i_prey] )
+        n3 = nmoment3_batch(mu,nvar,self.i_hunter,self.i_hunter,self.i_prey)
+        vals = 2.0*n3 + nvar[:,self.i_hunter, self.i_prey]
+        unit_mat = unit_mat_sym(self.n, self.i_hunter, self.i_hunter)
+        return tf.map_fn(lambda val: unit_mat * val, vals)
 
     # @tf.function
     def nvar_hunter_prey(self, mu, nvar):
-        n3hhp = nmoment3(mu,nvar,self.i_hunter,self.i_hunter,self.i_prey)
-        n3hpp = nmoment3(mu,nvar,self.i_hunter,self.i_prey,self.i_prey)
-        return unit_mat_sym(self.n, self.i_hunter, self.i_prey) * ( - n3hhp + n3hpp - nvar[self.i_hunter, self.i_prey] )
+        n3hhp = nmoment3_batch(mu,nvar,self.i_hunter,self.i_hunter,self.i_prey)
+        n3hpp = nmoment3_batch(mu,nvar,self.i_hunter,self.i_prey,self.i_prey)
+        unit_mat = unit_mat_sym(self.n, self.i_hunter, self.i_prey)
+        vals = - n3hhp + n3hpp - nvar[:,self.i_hunter, self.i_prey] 
+        return tf.map_fn(lambda val: unit_mat * val, vals)
 
     # @tf.function
     def nvar_loop(self, mu, nvar, j : int):
         um_prey = unit_mat_sym(self.n, self.i_prey, j)
         um_hunter = unit_mat_sym(self.n, self.i_hunter, j)
-        n3 = nmoment3(mu,nvar,j,self.i_prey,self.i_hunter)
-        return (um_hunter - um_prey) * n3
+        unit_mat = um_hunter - um_prey
+        n3 = nmoment3_batch(mu,nvar,j,self.i_prey,self.i_hunter)
+        vals = n3
+        return tf.map_fn(lambda val: unit_mat * val, vals)
 
     def call(self, inputs):
         
@@ -468,9 +476,12 @@ class EatRxnLayer(tf.keras.layers.Layer):
             depth=self.n
             )
         
-        muTE = - nvar[self.i_hunter, self.i_prey] * unit_prey + nvar[self.i_hunter,self.i_prey] * unit_hunter
+        muTE = tf.map_fn(
+            lambda nvarL: - nvarL[self.i_hunter, self.i_prey] * unit_prey \
+                + nvarL[self.i_hunter,self.i_prey] * unit_hunter,
+                nvar)
         
-        nvarTE = tf.zeros(shape=(self.n,self.n), dtype='float32')
+        nvarTE = tf.zeros(shape=nvar.shape, dtype='float32')
 
         # Prey-prey
         nvarTE += self.nvar_prey_prey(mu,nvar)
