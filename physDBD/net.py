@@ -553,11 +553,15 @@ class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
         muTE = inputs["muTE"]
         varTE = inputs["varTE"]
 
-        muvTE = muTE[:self.nv]
-        muhTE = muTE[self.nv:]
-        varvhTE = varTE[self.nv:,:self.nv]
-        varvbarTE = tf.linalg.trace(varTE[:self.nv,:self.nv])
-        varh_diagTE = tf.linalg.diag_part(varTE[self.nv:,self.nv:])
+        muvTE = muTE[:,:self.nv]
+        muhTE = muTE[:,self.nv:]
+        varvhTE = varTE[:,self.nv:,:self.nv]
+        varvbarTE = tf.map_fn(
+            lambda varTEL: tf.linalg.trace(varTEL[:self.nv,:self.nv]), 
+            varTE)
+        varh_diagTE = tf.map_fn(
+            lambda varTEL: tf.linalg.diag_part(varTEL[self.nv:,self.nv:]),
+            varTE)
 
         return {
             "muvTE": muvTE,
@@ -587,17 +591,24 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
         muhTE = inputs["muhTE"]
         varvbarTE = inputs["varvbarTE"]
 
-        varh_inv = tf.linalg.tensor_diag(1.0 / varh_diag)
-        varhTE = tf.linalg.tensor_diag(varh_diagTE)
+        varh_inv = tf.map_fn(
+            lambda varh_diagL: tf.linalg.tensor_diag(1.0 / varh_diagL), 
+            varh_diag)
+        varhTE = tf.map_fn(
+            lambda varh_diagTEL: tf.linalg.tensor_diag(varh_diagTEL),
+            varh_diagTE)
+
+        varvh_Trans = tf.transpose(varvh,perm=[0,2,1])
+        varvhTE_Trans = tf.transpose(varvhTE,perm=[0,2,1])
 
         bTE = muvTE 
-        bTE -= tf.linalg.matvec(tf.transpose(varvhTE), 
+        bTE -= tf.linalg.matvec(varvhTE_Trans, 
             tf.linalg.matvec(varh_inv, muh))
-        bTE += tf.linalg.matvec(tf.transpose(varvh), 
+        bTE += tf.linalg.matvec(varvh_Trans, 
             tf.linalg.matvec(varh_inv, 
             tf.linalg.matvec(varhTE, 
             tf.linalg.matvec(varh_inv, muh))))
-        bTE -= tf.linalg.matvec(tf.transpose(varvh),
+        bTE -= tf.linalg.matvec(varvh_Trans,
             tf.linalg.matvec(varh_inv, muhTE))
         
         wtTE = - tf.matmul(varh_inv,
@@ -605,15 +616,17 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
             tf.matmul(varh_inv,varvh)))
         wtTE += tf.matmul(varh_inv, varvhTE)
 
-        sig2TEmat = tf.matmul(tf.transpose(varvhTE),
+        sig2TEmat = tf.matmul(varvhTE_Trans,
             tf.matmul(varh_inv, varvh))
-        sig2TEmat -= tf.matmul(tf.transpose(varvh),
+        sig2TEmat -= tf.matmul(varvh_Trans,
             tf.matmul(varh_inv,
             tf.matmul(varhTE,
             tf.matmul(varh_inv,varvh))))
-        sig2TEmat += tf.matmul(tf.transpose(varvh),
+        sig2TEmat += tf.matmul(varvh_Trans,
             tf.matmul(varh_inv,varvhTE))
-        sig2TEtr = tf.linalg.trace(sig2TEmat)
+        sig2TEtr = tf.map_fn(
+            lambda sig2TEmatL: tf.linalg.trace(sig2TEmatL), 
+            sig2TEmat)
         sig2TE = (varvbarTE - sig2TEtr) / self.nv
 
         return {

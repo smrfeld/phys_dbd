@@ -269,8 +269,9 @@ class TestNet:
         lyr = ConvertMomentsTEtoParamMomentsTE(nv=nv,nh=nh)
 
         # Input
+        batch_size = 2
         x_in = {
-            "muTE": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "muTE": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
             "varTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
             }
             
@@ -285,15 +286,16 @@ class TestNet:
         lyr = ConvertParamMomentsTEtoParamsTE(nv=nv,nh=nh)
 
         # Input
+        batch_size = 2
         x_in = {
-            "muvTE": tf.constant(np.random.rand(nv), dtype="float32"),
-            "varvhTE": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "varh_diagTE": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varh_diag": tf.constant(np.random.rand(nh), dtype="float32"),
-            "muh": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varvh": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "muhTE": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varvbarTE": tf.constant(np.random.rand(), dtype="float32")
+            "muvTE": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
+            "varvhTE": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "varh_diagTE": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "varh_diag": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "muh": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "varvh": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "muhTE": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "varvbarTE": tf.constant(np.random.rand(batch_size), dtype="float32")
             }
         
         # Output
