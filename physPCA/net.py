@@ -90,17 +90,33 @@ class ConvertParamsLayer(tf.keras.layers.Layer):
 
         b1 = inputs["b1"]
         wt1 = inputs["wt1"]
-        w1 = tf.transpose(wt1)
         muh1 = inputs["muh1"]
         muh2 = inputs["muh2"]
         varh_diag1 = inputs["varh_diag1"]
         varh_diag2 = inputs["varh_diag2"]
 
-        varh1_sqrt = tf.math.sqrt(tf.linalg.tensor_diag(varh_diag1))
-        varh2_inv_sqrt = tf.linalg.tensor_diag(tf.math.sqrt(tf.math.pow(varh_diag2,-1)))
+        # Dim 0 = batch size
+        # To take the transpose of the matrices in dimension-0 (such as when you are transposing matrices 
+        # where 0 is the batch dimension), you would set perm=[0,2,1].
+        # https://www.tensorflow.org/api_docs/python/tf/transpose
+        w1 = tf.transpose(wt1, perm=[0,2,1])
+
+        varh1_sqrt = tf.map_fn(
+            lambda varh_diagL: tf.math.sqrt(tf.linalg.tensor_diag(varh_diagL)), 
+            varh_diag1)
+        varh2_inv_sqrt = tf.map_fn(
+            lambda varh_diagL: tf.linalg.tensor_diag(tf.math.sqrt(tf.math.pow(varh_diagL,-1))), 
+            varh_diag2)
 
         # Matrix * vector = tf.linalg.matvec
         # Diagonal matrix = tf.linalg.tensor_diag
+        
+        # Matmul batch:
+        # The inputs must, following any transpositions, be tensors of rank >= 2 where the inner 2 dimensions specify 
+        # valid matrix multiplication dimensions, and any further outer dimensions specify matching batch size.
+        # https://www.tensorflow.org/api_docs/python/tf/linalg/matmul
+        # i.e. matmul already does batch multiplication correctly
+        # same for matvec
         m2 = tf.matmul(w1, tf.matmul(varh1_sqrt, varh2_inv_sqrt))
         b2 = b1 + tf.linalg.matvec(w1, muh1) - tf.linalg.matvec(m2, muh2)
 

@@ -36,19 +36,20 @@ class TestNet:
 
         print(x_out)
 
-    def test_convert(self):
+    def test_convert_params_layer(self):
 
         lyr = ConvertParamsLayer()
 
         nv = 3
         nh = 2
+        batch_size = 2
         x_in = {
-            "b1": tf.constant(np.random.rand(nv), dtype="float32"),
-            "wt1": tf.constant(np.random.rand(nh,nv), dtype="float32"),
-            "muh1": tf.constant(np.random.rand(nh), dtype="float32"),
-            "muh2": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varh_diag1": tf.constant(np.random.rand(nh), dtype="float32"),
-            "varh_diag2": tf.constant(np.random.rand(nh), dtype="float32")
+            "b1": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
+            "wt1": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
+            "muh1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "muh2": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "varh_diag1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
+            "varh_diag2": tf.constant(np.random.rand(batch_size,nh), dtype="float32")
             }
 
         x_out = lyr(x_in)
