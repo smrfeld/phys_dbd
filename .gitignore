@@ -1,3 +1,4 @@
+.ipynb_checkpoints/
 playground/*.txt
 build/
 .DS_store

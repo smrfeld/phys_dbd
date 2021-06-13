@@ -156,14 +156,17 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         self.layer_muh = {}
         self.layer_varh_diag = {}
         for ih in range(0,nh):
-            self.layer_muh[ih] = FourierLatentLayer(
+
+            # Only use strings as keys
+            # https://stackoverflow.com/a/57974800/1427316
+            self.layer_muh[str(ih)] = FourierLatentLayer(
                 freqs=freqs,
                 offset_fixed=0.0,
                 sin_coeffs_init=muh_sin_coeffs_init,
                 cos_coeffs_init=muh_cos_coeffs_init
                 )
 
-            self.layer_varh_diag[ih] = FourierLatentLayer(
+            self.layer_varh_diag[str(ih)] = FourierLatentLayer(
                 freqs=freqs,
                 offset_fixed=1.01,
                 sin_coeffs_init=varh_sin_coeffs_init,
@@ -178,8 +181,8 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         muhs = []
         varh_diags = []
         for ih in range(0,self.nh):
-            muhs.append(self.layer_muh[ih](inputs))
-            varh_diags.append(self.layer_varh_diag[ih](inputs))
+            muhs.append(self.layer_muh[str(ih)](inputs))
+            varh_diags.append(self.layer_varh_diag[str(ih)](inputs))
 
         muh = tf.concat(muhs,0)
         varh_diag = tf.concat(varh_diags,0)
@@ -640,6 +643,10 @@ class RxnSpec(Enum):
     DEATH = 1
     EAT = 2
 
+# Model vs Layer
+# https://www.tensorflow.org/tutorials/customization/custom_layers#models_composing_layers
+# Typically you inherit from keras.Model when you need the model methods like: Model.fit,Model.evaluate, and Model.save (see Custom Keras layers and models for details).
+# One other feature provided by keras.Model (instead of keras.layers.Layer) is that in addition to tracking variables, a keras.Model also tracks its internal layers, making them easier to inspect.
 class RxnInputsLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
@@ -653,7 +660,7 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]]
         ):
         # Super
-        super(RxnInputsLayer, self).__init__()
+        super(RxnInputsLayer, self).__init__(name="rxn_inputs")
         
         self.params0toNMoments = ConvertParams0ToNMomentsLayer(
             nv=nv,

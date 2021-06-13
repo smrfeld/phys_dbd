@@ -3,6 +3,9 @@ from physPCA import ImportHelper, DataDesc, ParamsTraj, RxnSpec, RxnInputsLayer,
 import numpy as np
 
 import tensorflow as tf
+import tensorflow.keras as keras
+
+import sys
 
 data_desc = DataDesc(
     no_seeds=50,
@@ -48,6 +51,12 @@ else:
     # Import paramsTE_traj
     paramsTE_traj = ParamsTETraj.fromFile("cache_derivs.txt", nv=2, nh=1)
 
+train_inputs = params_traj.get_tf_inputs_assuming_params0()
+print(train_inputs)
+
+train_outputs = paramsTE_traj.get_tf_outputs_assuming_params0()
+print(train_outputs)
+
 # Freqs, coffs for fourier
 nv = 2
 nh = 1
@@ -65,7 +74,7 @@ rxn_specs = [
     ]
 
 # Reaction input layer
-rxn_lyr = RxnInputsLayer(
+rxn_layer = RxnInputsLayer(
     nv=nv,
     nh=nh,
     freqs=freqs,
@@ -76,17 +85,38 @@ rxn_lyr = RxnInputsLayer(
     rxn_specs=rxn_specs
     )
 
-size_wt = nv*nh
-size_b = nv
-size_sig2 = 1
-no_outputs = size_wt + size_b + size_sig2
+class MyModel(tf.keras.Model):
+    def __init__(self, nv:int, nh: int, rxn_lyr: RxnInputsLayer):
+        super(MyModel, self).__init__(name='')
 
-model = tf.keras.models.Sequential([
-    rxn_lyr,
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(no_outputs, activation='relu')
-  ])
+        size_wt = nv*nh
+        size_b = nv
+        size_sig2 = 1
+        no_outputs = size_wt + size_b + size_sig2
+
+        self.rxn_lyr = rxn_lyr
+        self.d1 = tf.keras.layers.Dense(128, activation='relu')
+        self.d1dr = tf.keras.layers.Dropout(0.2)
+        self.d2 = tf.keras.layers.Dense(no_outputs, activation='relu')
+
+    def call(self, input_tensor, training=False):
+        print(input_tensor)
+        print(input_tensor["wt"])
+        print(input_tensor["wt"].shape)
+        x = self.rxn_lyr(input_tensor)
+        x = tf.reshape(x,shape=(1,15))
+        x = self.d1(x)
+        x = self.d1dr(x)
+        x = self.d2(x)
+        return x
+
+model = MyModel(nv,nh,rxn_layer)
+
+# Build the model by calling it on real data
+input_build = params_traj.params_traj[0].get_tf_input_assuming_params0()
+input_build["t"] = tf.constant(1, dtype="float32")
+output_build = model(input_build)
+print(output_build)
 
 loss_fn = tf.keras.losses.MeanSquaredError()
 
@@ -94,4 +124,32 @@ model.compile(optimizer='adam',
               loss=loss_fn,
               metrics=['accuracy'])
 
-model.fit(x_train, y_train, epochs=5)
+model.fit(train_inputs, train_outputs, epochs=5)
+
+
+
+'''
+class MyModel(tf.keras.Model):
+    def __init__(self, rxn_lyr: RxnInputsLayer):
+        super(MyModel, self).__init__(name='')
+
+        self.rxn_lyr = rxn_lyr
+
+    def call(self, input_tensor, training=False):
+        return rxn_lyr(input_tensor)
+'''
+'''
+x = self.conv2a(input_tensor)
+x = self.bn2a(x, training=training)
+x = tf.nn.relu(x)
+
+x = self.conv2b(x)
+x = self.bn2b(x, training=training)
+x = tf.nn.relu(x)
+
+x = self.conv2c(x)
+x = self.bn2c(x, training=training)
+
+x += input_tensor
+return tf.nn.relu(x)
+'''

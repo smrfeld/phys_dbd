@@ -26,11 +26,11 @@ class Params:
     def __eq__(self, other):
         return dc_eq(self, other)
 
-    def get_tf_input_assuming_params0(self) -> Dict[str, tf.Tensor]:
+    def get_tf_input_assuming_params0(self) -> Dict[str, np.array]:
         return {
-            "wt": tf.constant(self.wt, dtype="float32"),
-            "b": tf.constant(self.b, dtype="float32"),
-            "sig2": tf.constant(self.sig2, dtype="float32")
+            "wt": self.wt,
+            "b": self.b,
+            "sig2": self.sig2
             }
 
     @classmethod
