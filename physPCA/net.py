@@ -283,7 +283,7 @@ class ConvertMomentsToNMomentsLayer(tf.keras.layers.Layer):
         var = inputs["var"]
 
         # kronecker product of two vectors = tf.tensordot(a,b,axes=0)
-        kpv = tf.tensordot(mu,mu,axes=0)
+        kpv = tf.map_fn(lambda muL: tf.tensordot(muL,muL,axes=0),mu)
 
         nvar = var + kpv
 

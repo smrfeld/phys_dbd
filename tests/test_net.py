@@ -142,11 +142,12 @@ class TestNet:
         nh = 2
 
         # Input
-        var = np.random.rand(nv+nh,nv+nh)
-        var += np.transpose(var)
+        batch_size = 2
+        var = np.random.rand(batch_size,nv+nh,nv+nh)
+        var += np.transpose(var,axes=[0,2,1])
 
         x_in = {
-            "mu": tf.constant(np.random.rand(nv+nh), dtype="float32"),
+            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
             "var": tf.constant(var, dtype="float32")
             }   
             
