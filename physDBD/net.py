@@ -69,16 +69,16 @@ class FourierLatentLayer(tf.keras.layers.Layer):
         
         # tf.math.reduce_sum is same as np.sum
         # tf.matmul is same np.dot
-        tsin = tf.map_fn(lambda t: tf.math.sin(t * self.freqs), inputs["t"])
+        tsin = tf.map_fn(lambda tpt: tf.math.sin(tpt * self.freqs), inputs["tpt"])
 
         # Dot product = tf.tensordot(a, b, 1)
         ts = tf.map_fn(lambda tsinL: tf.tensordot(self.sin_coeff, tsinL, 1), tsin)
 
         # Same for cos
-        tcos = tf.map_fn(lambda t: tf.math.cos(t * self.freqs), inputs["t"])
+        tcos = tf.map_fn(lambda tpt: tf.math.cos(tpt * self.freqs), inputs["tpt"])
         tc = tf.map_fn(lambda tcosL: tf.tensordot(self.cos_coeff, tcosL, 1), tcos)
 
-        return (self.offset_fixed + ts + tc) / self.fourier_range()
+        return self.offset_fixed + (ts + tc) / self.fourier_range()
 
 class ConvertParamsLayer(tf.keras.layers.Layer):
 
@@ -210,13 +210,22 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         # muh = tf.concat(muhs,0)
         # varh_diag = tf.concat(varh_diags,0)
 
+        print("muh, varh_diag:")
+        print(muh)
+        print(varh_diag)
+
         inputs_convert = {
             "muh2": muh,
             "varh_diag2": varh_diag,
             "b1": inputs["b"],
             "wt1": inputs["wt"]
         }
+        print("inputs_convert")
+        print(inputs_convert)
         outputs_convert = self.convert_from_0(inputs_convert)
+
+        print("outputs_convert")
+        print(outputs_convert)
 
         output = {
             "sig2": inputs["sig2"],
