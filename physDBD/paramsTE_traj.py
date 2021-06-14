@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 class ParamsTETraj:
     
@@ -30,6 +30,32 @@ class ParamsTETraj:
 
         return outputs
     
+    def get_tf_outputs_normalized_assuming_params0(self, 
+        percent: float
+        ) -> Tuple[Dict[str, np.array],Dict[str, np.array],Dict[str, np.array]]:
+
+        assert (percent > 0)
+        assert (percent <= 1)
+
+        outputs = self.get_tf_outputs_assuming_params0()
+
+        mean = {}
+        std_dev = {}
+
+        for key, val in outputs.items():
+            idxs = np.arange(0,len(val))
+            size = int(percent * len(val))
+            idxs_subset = np.random.choice(idxs,size=size,replace=False)
+            val_subset = val[idxs_subset]
+
+            # Mean, std
+            mean[key] = np.mean(val_subset,axis=0)
+            std_dev[key] = np.std(val_subset,axis=0) + 1e-10
+
+            outputs[key] = (val - mean[key]) / std_dev[key]
+
+        return (outputs, mean, std_dev)
+
     @classmethod
     def fromArr(cls, times: np.array, arr: np.array, nv: int, nh: int):
 

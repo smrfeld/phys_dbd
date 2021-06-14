@@ -24,7 +24,7 @@ class RxnModel(tf.keras.Model):
         self.rxn_mean = np.array([])
         self.rxn_std_dev = np.array([])
 
-    def calculate_normalizations(self, inputs):
+    def calculate_rxn_normalization(self, inputs):
         x = self.rxn_lyr(inputs)
         self.rxn_mean = np.mean(x,axis=0)
         self.rxn_std_dev = np.std(x,axis=0) + 1e-10

@@ -89,12 +89,13 @@ class TestRxnModel:
 
         pt = self.create_params_traj()
 
+        # Inputs/outputs
         inputs = pt.get_tf_inputs_assuming_params0()
 
         outputs = rxn_model(inputs)
         print("Outputs without norm: ", outputs)
 
-        rxn_model.calculate_normalizations(inputs)
+        rxn_model.calculate_rxn_normalizations(inputs)
 
         print("Rxn mean: ", rxn_model.rxn_mean)
         print("Rxn std dev: ", rxn_model.rxn_std_dev)

@@ -64,13 +64,18 @@ class TestParams:
         if os.path.exists(fname):
             os.remove(fname)
 
-    def test_deriv(self):
+    def create_params_te_traj(self):
         pt = self.create_params_traj()
 
         ptTE = pt.differentiate_with_TVR(
             alpha=1.0,
             no_opt_steps=10
         )
+
+        return ptTE
+
+    def test_deriv(self):
+        ptTE = self.create_params_te_traj()
 
         # Export
         fname = "cache_deriv.txt"
@@ -105,3 +110,15 @@ class TestParams:
             tf.debugging.assert_equal(tf.constant(pt.params_traj[i].wt, dtype="float32"), inputs[i]["wt"])
             tf.debugging.assert_equal(tf.constant(pt.params_traj[i].b, dtype="float32"), inputs[i]["b"])
             tf.debugging.assert_equal(tf.constant(pt.params_traj[i].sig2, dtype="float32"), inputs[i]["sig2"])
+
+    def test_tf_output(self):
+        ptTE = self.create_params_te_traj()
+
+        outputs_normalized, mean, std = ptTE.get_tf_outputs_normalized_assuming_params0(1.0)
+        
+        for val in outputs_normalized.values():
+            mean = np.mean(val,axis=0)
+            std = np.std(val,axis=0)
+
+            assert np.max(abs(mean - np.full(mean.shape,0.0))) < 1e-6
+            assert np.max(abs(std - np.full(mean.shape,1.0))) < 1e-6
