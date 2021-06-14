@@ -1,10 +1,8 @@
-from tensorflow.python.ops.gen_batch_ops import batch
-from physDBD import ImportHelper, DataDesc, ParamsTraj, RxnSpec, RxnInputsLayer, ParamsTETraj
+from physDBD import ImportHelper, DataDesc, ParamsTraj, RxnSpec, RxnInputsLayer, ParamsTETraj, RxnModel
 
 import numpy as np
 
 import tensorflow as tf
-import tensorflow.keras as keras
 
 import sys
 
@@ -83,47 +81,19 @@ rxn_layer = RxnInputsLayer(
     rxn_specs=rxn_specs
     )
 
-class MyModel(tf.keras.Model):
-    def __init__(self, nv:int, nh: int, rxn_lyr: RxnInputsLayer):
-        super(MyModel, self).__init__(name='')
+subnet = tf.keras.Sequential([
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.2)
+])
 
-        self.nv = nv
-        self.nh = nh
-        self.size_wt = nv*nh
-        self.size_b = nv
-        self.size_sig2 = 1
-        self.no_outputs = self.size_wt + self.size_b + self.size_sig2
-
-        self.rxn_lyr = rxn_lyr
-        self.d1 = tf.keras.layers.Dense(128, activation='relu')
-        self.d1dr = tf.keras.layers.Dropout(0.2)
-        self.d2 = tf.keras.layers.Dense(self.no_outputs, activation='relu')
-
+class MyModel(RxnModel):
     def call(self, input_tensor, training=False):
-        x = self.rxn_lyr(input_tensor)
-        x = self.d1(x)
-        x = self.d1dr(x)
-        x = self.d2(x)
+        out = super().call(input_tensor, training=training)
 
-        batch_size = tf.shape(x)[0]
+        # print(out)
+        return out
 
-        s = 0
-        e = s + self.size_wt
-        wt_TE = tf.reshape(x[:,s:e],shape=(batch_size,self.nh,self.nv))
-        s = e
-        e = s + self.size_b
-        b_TE = x[:,s:e]
-        s = e
-        e = s + self.size_sig2
-        sig2_TE = x[:,s:e]
-
-        return {
-            "wt_TE": wt_TE,
-            "b_TE": b_TE,
-            "sig2_TE": sig2_TE
-        }
-        
-model = MyModel(nv,nh,rxn_layer)
+model = MyModel(nv,nh,rxn_layer,subnet)
 
 # Build the model by calling it on real data
 '''
@@ -135,38 +105,13 @@ print(output_build)
 
 loss_fn = tf.keras.losses.MeanSquaredError()
 
-# From what @AniketBote wrote, if you compile your model with the run_eagerly=True flag then you should see the values of x, y in your train_step, ie  model.compile(optimizer, loss, run_eagerly=True).
-model.compile(optimizer='adam',
+# From what @AniketBote wrote, if you compile your model with the run_eagerly=True flag 
+# then you should see the values of x, y in your train_step, 
+# ie  model.compile(optimizer, loss, run_eagerly=True).
+opt = tf.keras.optimizers.SGD(learning_rate=0.0)
+model.compile(optimizer=opt,
               loss=loss_fn,
               metrics=['accuracy'],
               run_eagerly=False)
 
 model.fit(train_inputs, train_outputs, epochs=5)
-
-
-
-'''
-class MyModel(tf.keras.Model):
-    def __init__(self, rxn_lyr: RxnInputsLayer):
-        super(MyModel, self).__init__(name='')
-
-        self.rxn_lyr = rxn_lyr
-
-    def call(self, input_tensor, training=False):
-        return rxn_lyr(input_tensor)
-'''
-'''
-x = self.conv2a(input_tensor)
-x = self.bn2a(x, training=training)
-x = tf.nn.relu(x)
-
-x = self.conv2b(x)
-x = self.bn2b(x, training=training)
-x = tf.nn.relu(x)
-
-x = self.conv2c(x)
-x = self.bn2c(x, training=training)
-
-x += input_tensor
-return tf.nn.relu(x)
-'''
