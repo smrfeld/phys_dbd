@@ -1,6 +1,9 @@
 from .net import RxnInputsLayer
 
 import tensorflow as tf
+import numpy as np
+
+from typing import Union
 
 class RxnModel(tf.keras.Model):
     def __init__(self, nv:int, nh: int, rxn_lyr: RxnInputsLayer, subnet: tf.keras.Model):
@@ -17,8 +20,23 @@ class RxnModel(tf.keras.Model):
         self.subnet = subnet
         self.output_lyr = tf.keras.layers.Dense(self.no_outputs, activation='relu')
 
+        self.rxn_norms_exist = False
+        self.rxn_mean = np.array([])
+        self.rxn_std_dev = np.array([])
+
+    def calculate_normalizations(self, inputs):
+        x = self.rxn_lyr(inputs)
+        self.rxn_mean = np.mean(x,axis=0)
+        self.rxn_std_dev = np.std(x,axis=0) + 1e-10
+        self.rxn_norms_exist = True
+
     def call(self, input_tensor, training=False):
         x = self.rxn_lyr(input_tensor)
+
+        if self.rxn_norms_exist:
+            x -= self.rxn_mean
+            x /= self.rxn_std_dev
+
         x = self.subnet(x)
         x = self.output_lyr(x)
 
