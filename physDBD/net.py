@@ -210,22 +210,13 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         # muh = tf.concat(muhs,0)
         # varh_diag = tf.concat(varh_diags,0)
 
-        print("muh, varh_diag:")
-        print(muh)
-        print(varh_diag)
-
         inputs_convert = {
             "muh2": muh,
             "varh_diag2": varh_diag,
             "b1": inputs["b"],
             "wt1": inputs["wt"]
         }
-        print("inputs_convert")
-        print(inputs_convert)
         outputs_convert = self.convert_from_0(inputs_convert)
-
-        print("outputs_convert")
-        print(outputs_convert)
 
         output = {
             "sig2": inputs["sig2"],

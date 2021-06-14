@@ -16,10 +16,10 @@ class ParamsTraj:
 
     def get_tf_inputs_assuming_params0(self) -> Dict[str, np.array]:
         inputs = {}
-        for i in range(0,len(self.params_traj)):
+        for tpt in range(0,len(self.params_traj)):
 
             # Get input
-            input0 = self.params_traj[i].get_tf_input_assuming_params0(self.times[i])
+            input0 = self.params_traj[tpt].get_tf_input_assuming_params0(tpt)
             
             # Put into dict
             for key, val in input0.items():

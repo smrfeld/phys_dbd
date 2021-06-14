@@ -91,8 +91,6 @@ subnet = tf.keras.Sequential([
 class MyModel(RxnModel):
     def call(self, input_tensor, training=False):
         out = super().call(input_tensor, training=training)
-
-        print(out)
         return out
 
 model = MyModel(nv,nh,rxn_layer,subnet)
@@ -101,7 +99,7 @@ model = MyModel(nv,nh,rxn_layer,subnet)
 model.calculate_rxn_normalization(train_inputs)
 
 # Build the model by calling it on real data
-input_build = params_traj.params_traj[0].get_tf_input_assuming_params0(time=1)
+input_build = params_traj.params_traj[0].get_tf_input_assuming_params0(tpt=1)
 print("Test input: ", input_build)
 output_build = model(input_build)
 print("Test output: ", output_build)
