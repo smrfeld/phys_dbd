@@ -19,14 +19,13 @@ class ParamsTraj:
         for i in range(0,len(self.params_traj)):
 
             # Get input
-            input0 = self.params_traj[i].get_tf_input_assuming_params0()
-            input0["t"] = self.times[i]
+            input0 = self.params_traj[i].get_tf_input_assuming_params0(self.times[i])
             
             # Put into dict
             for key, val in input0.items():
                 if not key in inputs:
                     inputs[key] = []
-                inputs[key].append(val)
+                inputs[key].append(val[0])
 
         # Convert lists to np arrays
         for key, val in inputs.items():

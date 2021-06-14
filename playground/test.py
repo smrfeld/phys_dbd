@@ -51,7 +51,9 @@ else:
     paramsTE_traj = ParamsTETraj.fromFile("cache_derivs.txt", nv=2, nh=1)
 
 train_inputs = params_traj.get_tf_inputs_assuming_params0()
-train_outputs = paramsTE_traj.get_tf_outputs_assuming_params0()
+train_outputs, \
+    train_outputs_mean, \
+        train_outputs_std = paramsTE_traj.get_tf_outputs_normalized_assuming_params0(0.2)
 
 # Freqs, coffs for fourier
 nv = 2
@@ -82,33 +84,33 @@ rxn_layer = RxnInputsLayer(
     )
 
 subnet = tf.keras.Sequential([
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.2)
+    tf.keras.layers.Dense(128, activation='relu')
+    # tf.keras.layers.Dropout(0.2)
 ])
 
 class MyModel(RxnModel):
     def call(self, input_tensor, training=False):
         out = super().call(input_tensor, training=training)
 
-        # print(out)
+        print(out)
         return out
 
 model = MyModel(nv,nh,rxn_layer,subnet)
 
-# Build the model by calling it on real data
-'''
-input_build = params_traj.params_traj[0].get_tf_input_assuming_params0()
-input_build["t"] = tf.constant(1, dtype="float32")
-output_build = model(input_build)
-print(output_build)
-'''
+# Normalize
+model.calculate_rxn_normalization(train_inputs)
 
-loss_fn = tf.keras.losses.MeanSquaredError()
+# Build the model by calling it on real data
+input_build = params_traj.params_traj[0].get_tf_input_assuming_params0(time=1)
+print("Test input: ", input_build)
+output_build = model(input_build)
+print("Test output: ", output_build)
 
 # From what @AniketBote wrote, if you compile your model with the run_eagerly=True flag 
 # then you should see the values of x, y in your train_step, 
 # ie  model.compile(optimizer, loss, run_eagerly=True).
-opt = tf.keras.optimizers.SGD(learning_rate=0.0)
+loss_fn = tf.keras.losses.MeanSquaredError()
+opt = tf.keras.optimizers.SGD(learning_rate=1.0)
 model.compile(optimizer=opt,
               loss=loss_fn,
               metrics=['accuracy'],

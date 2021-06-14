@@ -101,4 +101,4 @@ class TestRxnModel:
         print("Rxn std dev: ", rxn_model.rxn_std_dev)
 
         outputs = rxn_model(inputs)
-        print("Outputs without norm: ", outputs)
+        print("Outputs with norm: ", outputs)

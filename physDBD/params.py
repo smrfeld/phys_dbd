@@ -26,11 +26,12 @@ class Params:
     def __eq__(self, other):
         return dc_eq(self, other)
 
-    def get_tf_input_assuming_params0(self) -> Dict[str, np.array]:
+    def get_tf_input_assuming_params0(self, time: float) -> Dict[str, np.array]:
         return {
-            "wt": self.wt,
-            "b": self.b,
-            "sig2": self.sig2
+            "t": np.array([time]).astype(float),
+            "wt": np.array([self.wt]),
+            "b": np.array([self.b]),
+            "sig2": np.array([self.sig2])
             }
 
     @classmethod

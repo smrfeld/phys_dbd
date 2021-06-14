@@ -42,10 +42,13 @@ class ParamsTETraj:
         mean = {}
         std_dev = {}
 
+        # Normalization size
+        norm_size = int(percent * len(outputs["wt_TE"]))
+        print("Calculating output normalization from: %d samples" % norm_size)
+
         for key, val in outputs.items():
             idxs = np.arange(0,len(val))
-            size = int(percent * len(val))
-            idxs_subset = np.random.choice(idxs,size=size,replace=False)
+            idxs_subset = np.random.choice(idxs,size=norm_size,replace=False)
             val_subset = val[idxs_subset]
 
             # Mean, std
