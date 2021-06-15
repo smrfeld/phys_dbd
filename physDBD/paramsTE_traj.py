@@ -13,10 +13,12 @@ class ParamsTETraj:
         self.paramsTE_traj = paramsTE_traj
         self.times = times
 
-    def get_tf_outputs_assuming_params0(self) -> Dict[str, np.array]:
+    def get_tf_outputs_assuming_params0(self,
+        non_zero_outputs : List[str] = []
+        ) -> Dict[str, np.array]:
         outputs = {}
         for i in range(0,len(self.paramsTE_traj)):
-            output0 = self.paramsTE_traj[i].get_tf_output_assuming_params0()
+            output0 = self.paramsTE_traj[i].get_tf_output_assuming_params0(non_zero_outputs)
 
             # Put into dict
             for key, val in output0.items():
@@ -30,25 +32,28 @@ class ParamsTETraj:
 
         return outputs
     
-    def get_tf_outputs_normalized_assuming_params0(self, 
-        percent: float
+    def get_tf_outputs_normalized_assuming_params0(self,
+        percent: float,
+        non_zero_outputs : List[str] = []
         ) -> Tuple[Dict[str, np.array],Dict[str, np.array],Dict[str, np.array]]:
 
         assert (percent > 0)
         assert (percent <= 1)
 
-        outputs = self.get_tf_outputs_assuming_params0()
+        outputs = self.get_tf_outputs_assuming_params0(non_zero_outputs)
 
         mean = {}
         std_dev = {}
 
         # Normalization size
-        norm_size = int(percent * len(outputs["wt_TE"]))
+        tkey = list(outputs.keys())[0]
+        l = len(outputs[tkey])
+        norm_size = int(percent * l)
         print("Calculating output normalization from: %d samples" % norm_size)
+        idxs = np.arange(0,l)
+        idxs_subset = np.random.choice(idxs,size=norm_size,replace=False)
 
         for key, val in outputs.items():
-            idxs = np.arange(0,len(val))
-            idxs_subset = np.random.choice(idxs,size=norm_size,replace=False)
             val_subset = val[idxs_subset]
 
             # Mean, std

@@ -28,7 +28,7 @@ data = ImportHelper.import_gillespie_ssa_from_data_desc(
     data_dir=data_dir
     )
 
-if True:
+if False:
 
     # Create params traj and export
     muh = np.zeros(1)
@@ -71,7 +71,10 @@ else:
 train_inputs = params_traj.get_tf_inputs_assuming_params0()
 train_outputs, \
     train_outputs_mean, \
-        train_outputs_std = paramsTE_traj.get_tf_outputs_normalized_assuming_params0(0.2)
+        train_outputs_std = paramsTE_traj.get_tf_outputs_normalized_assuming_params0(
+            percent=0.2,
+            non_zero_outputs=["wt00_TE","b0_TE"]
+            )
 
 # Freqs, coffs for fourier
 nv = 2
@@ -111,16 +114,18 @@ class MyModel(RxnModel):
         out = super().call(input_tensor, training=training)
         return out
 
-model = MyModel(nv,nh,rxn_layer,subnet)
+model = MyModel(nv,nh,rxn_layer,subnet,non_zero_outputs=["wt00_TE","b0_TE"])
 
 # Normalize
-model.calculate_rxn_normalization(train_inputs)
+model.calculate_rxn_normalization(train_inputs, percent=0.2)
 
 # Build the model by calling it on real data
+'''
 input_build = params_traj.params_traj[0].get_tf_input_assuming_params0(tpt=1)
 print("Test input: ", input_build)
 output_build = model(input_build)
 print("Test output: ", output_build)
+'''
 
 # From what @AniketBote wrote, if you compile your model with the run_eagerly=True flag 
 # then you should see the values of x, y in your train_step, 
@@ -130,6 +135,6 @@ opt = tf.keras.optimizers.Adam(learning_rate=0.001)
 model.compile(optimizer=opt,
               loss=loss_fn,
               metrics=['accuracy'],
-              run_eagerly=False)
+              run_eagerly=True)
 
 model.fit(train_inputs, train_outputs, epochs=5)

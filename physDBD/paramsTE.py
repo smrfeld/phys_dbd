@@ -2,9 +2,7 @@ from .helpers import dc_eq
 from dataclasses import dataclass
 import numpy as np
 
-# import tensorflow as tf
-
-from typing import Dict
+from typing import Dict, List
 
 @dataclass(eq=False)
 class ParamsTE:
@@ -23,12 +21,31 @@ class ParamsTE:
     def nh(self):
         return len(self.muh_TE)
 
-    def get_tf_output_assuming_params0(self) -> Dict[str, np.array]:
-        return {
-            "wt_TE": self.wt_TE,
-            "b_TE": self.b_TE,
-            "sig2_TE": self.sig2_TE
-            }
+    def get_tf_output_assuming_params0(self, 
+        non_zero_outputs : List[str] = []
+        ) -> Dict[str, np.array]:
+        out = {}
+        if len(non_zero_outputs) == 0:
+            for ih in range(0,self.nh):
+                for iv in range(0,self.nv):
+                    out["wt%d%d_TE" % (ih,iv)] = self.wt_TE[ih,iv]
+            for iv in range(0,self.nv):
+                out["b%d_TE" % iv] = self.b_TE[iv]
+            out["sig2_TE"] = self.sig2_TE
+        
+        else:
+            for s in non_zero_outputs:
+                if s[:2] == "wt":
+                    ih = int(s[2])
+                    iv = int(s[3])
+                    out[s] = self.wt_TE[ih,iv]
+                elif s[:1] == "b":
+                    iv = int(s[1])
+                    out[s] = self.b_TE[iv]
+                elif s[:4] == "sig2":
+                    out[s] = self.sig2_TE
+
+        return out
 
     def __eq__(self, other):
         return dc_eq(self, other)

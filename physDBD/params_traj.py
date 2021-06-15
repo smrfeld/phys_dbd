@@ -134,7 +134,7 @@ class ParamsTraj:
         lf_derivs = {}
         
         for lf, arr in lf_dict.items():
-            if non_zero_vals.count == 0 or lf in non_zero_vals:
+            if len(non_zero_vals) == 0 or lf in non_zero_vals:
                 
                 lf_derivs[lf] = diff_tvr.get_deriv_tvr(
                     data=arr,
