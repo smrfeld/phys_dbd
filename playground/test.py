@@ -108,7 +108,7 @@ print("Test output: ", output_build)
 # then you should see the values of x, y in your train_step, 
 # ie  model.compile(optimizer, loss, run_eagerly=True).
 loss_fn = tf.keras.losses.MeanSquaredError()
-opt = tf.keras.optimizers.SGD(learning_rate=1.0)
+opt = tf.keras.optimizers.Adam(learning_rate=0.001)
 model.compile(optimizer=opt,
               loss=loss_fn,
               metrics=['accuracy'],

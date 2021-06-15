@@ -1,5 +1,7 @@
 from .data_desc import DataDesc
 
+from tqdm import tqdm
+
 import pandas as pd
 import numpy as np
 from typing import List
@@ -34,13 +36,20 @@ class ImportHelper:
         data_dir: str, 
         vol_exp: int, 
         no_ip3r: int, 
-        ip3_dir: str
+        ip3_dir: str,
+        verbose: bool = True
         ) -> np.array:
 
         fnames = ImportHelper.create_fnames(data_dir,vol_exp,no_ip3r,ip3_dir,data_desc.no_seeds)
 
-        ret = np.zeros(shape=(len(data_desc.times),len(fnames),len(data_desc.species)))
+        no_tpts = len(data_desc.times)
+        report_interval = int(no_tpts / 10.0)
+
+        ret = np.zeros(shape=(no_tpts,len(fnames),len(data_desc.species)))
         for i,time in enumerate(data_desc.times):
+            if verbose and report_interval > 1 and i % report_interval == 0:
+                print("Importing: %d / %d" % (i,no_tpts))
+
             ret[i] = ImportHelper.import_gillespie_ssa(fnames, time, data_desc.species)
         
         return ret
