@@ -40,7 +40,14 @@ else:
 if False:
 
     # Differentiate
-    paramsTE_traj = params_traj.differentiate_with_TVR(alpha=1.0, no_opt_steps=10)
+    alphas = {
+        "wt00": 1.0,
+        "wt01": 1.0,
+        "b0": 1.0,
+        "b1": 1.0,
+        "sig2": 1.0
+    }
+    paramsTE_traj = params_traj.differentiate_with_TVR(alphas=alphas, no_opt_steps=10, latents_are_std=True)
 
     # Export
     paramsTE_traj.export("cache_derivs.txt")

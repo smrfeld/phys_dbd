@@ -74,6 +74,21 @@ class ParamsTETraj:
 
         return cls(times, paramsTE_traj)
 
+    @classmethod
+    def fromLFdict(cls, times: np.array, lf_dict: Dict[str,np.array], nv: int, nh: int):
+
+        # Iterate, create
+        paramsTE_traj = []
+        for i in range(0,len(times)):
+            lf = {}
+            for key,vals in lf_dict.items():
+                lf[key] = vals[i]
+            
+            paramsTE = ParamsTE.fromLFdict(lf, nv, nh)
+            paramsTE_traj.append(paramsTE)
+
+        return cls(times, paramsTE_traj)
+
     def convert_to_np(self) -> np.array:
 
         # Get length of 1D representation
