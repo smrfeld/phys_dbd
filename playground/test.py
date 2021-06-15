@@ -37,7 +37,7 @@ else:
     # Import params traj
     params_traj = ParamsTraj.fromFile("cache_params.txt", nv=2, nh=1)
 
-if False:
+if True:
 
     # Differentiate
     alphas = {
@@ -47,7 +47,12 @@ if False:
         "b1": 1.0,
         "sig2": 1.0
     }
-    paramsTE_traj = params_traj.differentiate_with_TVR(alphas=alphas, no_opt_steps=10, latents_are_std=True)
+    non_zero_vals = list(alphas.keys())
+    paramsTE_traj = params_traj.differentiate_with_TVR(
+        alphas=alphas, 
+        no_opt_steps=100, 
+        non_zero_vals=non_zero_vals
+        )
 
     # Export
     paramsTE_traj.export("cache_derivs.txt")

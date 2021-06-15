@@ -20,68 +20,53 @@ class DiffTVR:
         self.a_mat_t = self._make_a_mat_t()
 
     def _make_d_mat(self) -> np.array:
-        """Make differentiation matrix with central differences. NOTE: not efficient!
+        """Make differentiation matrix with Euler differences. NOTE: not efficient!
 
         Returns:
-            np.array: N x N+1
+            np.array: N-1 x N
         """
-        arr = np.zeros((self.n,self.n+1))
-        for i in range(0,self.n):
-            arr[i,i] = -1.0
-            arr[i,i+1] = 1.0
+        arr = np.zeros((self.n-1,self.n))
+        for i in range(0,self.n-1):
+            for j in range(0,self.n):
+                if i == j:
+                    arr[i,j] = -1.0
+                elif i == j-1:
+                    arr[i,j] == 1.0
         return arr / self.dx
 
-    # TODO: improve these matrix constructors
     def _make_a_mat(self) -> np.array:
-        """Make integration matrix with trapezoidal rule. NOTE: not efficient!
+        """Make integration matrix. NOTE: not efficient!
 
         Returns:
-            np.array: N x N+1
+            np.array: N-1 x N-1
         """
-        arr = np.zeros((self.n+1,self.n+1))
-        for i in range(0,self.n+1):
-            if i==0:
-                continue
-            for j in range(0,self.n+1):
-                if j==0:
-                    arr[i,j] = 0.5
-                elif j<i:
+        arr = np.zeros((self.n-1,self.n-1))
+        for i in range(0,self.n-1):
+            for j in range(0,self.n-1):
+                if i >= j:
                     arr[i,j] = 1.0
-                elif i==j:
-                    arr[i,j] = 0.5
-        
-        return arr[1:] * self.dx
+
+        return arr * self.dx
 
     def _make_a_mat_t(self) -> np.array:
-        """Transpose of the integration matirx with trapezoidal rule. NOTE: not efficient!
+        """Transpose of the integration matirx with rule. NOTE: not efficient!
 
         Returns:
-            np.array: N+1 x N
+            np.array: N-1 x N-1
         """
-        smat = np.ones((self.n+1,self.n))
-        
-        cmat = np.zeros((self.n,self.n))
-        li = np.tril_indices(self.n)
-        cmat[li] = 1.0
-
-        dmat = np.diag(np.full(self.n,0.5))
-
-        vec = np.array([np.full(self.n,0.5)])
-        combmat = np.concatenate((vec, cmat - dmat))
-
-        return (smat - combmat) * self.dx
+        return np.transpose(self._make_a_mat())
 
     def make_en_mat(self, deriv_curr : np.array) -> np.array:
         """Diffusion matrix
 
         Args:
-            deriv_curr (np.array): Current derivative of length N+1
+            deriv_curr (np.array): Current derivative of length N-1
 
         Returns:
-            np.array: N x N
+            np.array: N-2 x N-2
         """
         eps = pow(10,-6)
-        vec = 1.0/np.sqrt(pow(self.d_mat @ deriv_curr,2) + eps)
+        vec = 1.0/np.sqrt(pow(self.d_mat[:-1,:-1] @ deriv_curr,2) + eps)
         return np.diag(vec)
 
     def make_ln_mat(self, en_mat : np.array) -> np.array:
@@ -91,23 +76,23 @@ class DiffTVR:
             en_mat (np.array): Result from make_en_mat
 
         Returns:
-            np.array: N+1 x N+1
+            np.array: N-1 x N-1
         """
-        return self.dx * np.transpose(self.d_mat) @ en_mat @ self.d_mat
+        return self.dx * np.transpose(self.d_mat[:-1,:-1]) @ en_mat @ self.d_mat[:-1,:-1]
 
     def make_gn_vec(self, deriv_curr : np.array, data : np.array, alpha : float, ln_mat : np.array) -> np.array:
         """Negative right hand side of linear problem
 
         Args:
-            deriv_curr (np.array): Current derivative of size N+1
+            deriv_curr (np.array): Current derivative of size N-1
             data (np.array): Data of size N
             alpha (float): Regularization parameter
             ln_mat (np.array): Diffusivity term from make_ln_mat
 
         Returns:
-            np.array: Vector of length N+1
+            np.array: Vector of length N-1
         """
-        return self.a_mat_t @ self.a_mat @ deriv_curr - self.a_mat_t @ (data - data[0]) + alpha * ln_mat @ deriv_curr
+        return self.a_mat_t @ self.a_mat @ deriv_curr - self.a_mat_t @ (data - data[0])[1:] + alpha * ln_mat @ deriv_curr
     
     def make_hn_mat(self, alpha : float, ln_mat : np.array) -> np.array:
         """Matrix in linear problem
@@ -117,7 +102,7 @@ class DiffTVR:
             ln_mat (np.array): Diffusivity term from make_ln_mat
 
         Returns:
-            np.array: N+1 x N+1
+            np.array: N-1 x N-1
         """
         return self.a_mat_t @ self.a_mat + alpha * ln_mat
     
@@ -126,11 +111,11 @@ class DiffTVR:
 
         Args:
             data (np.array): Data of size N
-            deriv_curr (np.array): Current deriv of size N+1
+            deriv_curr (np.array): Current deriv of size N-1
             alpha (float): Regularization parameter
 
         Returns:
-            np.array: Update vector of size N+1
+            np.array: Update vector of size N-1
         """
 
         n = len(data)
@@ -169,14 +154,14 @@ class DiffTVR:
 
         Args:
             data (np.array): Data of size N
-            deriv_guess (np.array): Guess for derivative of size N+1
+            deriv_guess (np.array): Guess for derivative of size N-1
             alpha (float): Regularization parameter
             no_opt_steps (int): No. opt steps to run
             return_progress (bool, optional): True to return derivative progress during optimization. Defaults to False.
             return_interval (int, optional): Interval at which to store derivative if returning. Defaults to 1.
 
         Returns:
-            Tuple[np.array,np.array]: First is the final derivative of size N+1, second is the stored derivatives if return_progress=True of size no_opt_steps+1 x N+1, else [].
+            Tuple[np.array,np.array]: First is the final derivative of size N-1, second is the stored derivatives if return_progress=True of size no_opt_steps+1 x N-1, else [].
         """
 
         deriv_curr = deriv_guess
@@ -199,4 +184,4 @@ class DiffTVR:
                 if opt_step % return_interval == 0:
                     deriv_st[int(opt_step / return_interval)] = deriv_curr
 
-        return (deriv_curr, deriv_st)
+        return (np.array(deriv_curr), deriv_st)

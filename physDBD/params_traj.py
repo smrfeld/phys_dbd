@@ -16,7 +16,7 @@ class ParamsTraj:
 
     def get_tf_inputs_assuming_params0(self) -> Dict[str, np.array]:
         inputs = {}
-        for tpt in range(0,len(self.params_traj)):
+        for tpt in range(0,len(self.params_traj)-1): # Take off one to match derivatives
 
             # Get input
             input0 = self.params_traj[tpt].get_tf_input_assuming_params0(tpt)
@@ -122,31 +122,31 @@ class ParamsTraj:
 
         return cls(np.array(times),params_traj)
 
-    def differentiate_with_TVR(self, alphas: Dict[str,float], no_opt_steps: int, latents_are_std: bool = True) -> ParamsTETraj:
+    def differentiate_with_TVR(self, alphas: Dict[str,float], no_opt_steps: int, non_zero_vals: List[str] = []) -> ParamsTETraj:
         n = len(self.params_traj)
 
         diff_tvr = DiffTVR(n=n,dx=1.0)
 
         lf_dict = self.convert_to_lf_dict()
 
-        deriv_guess = np.zeros(n+1)
+        deriv_guess = np.zeros(n-1)
 
         lf_derivs = {}
+        
         for lf, arr in lf_dict.items():
-            if latents_are_std:
-                if len(lf) >= 3 and (lf[:3] == "muh" or lf[:4] == "varh"):
-                    lf_derivs[lf] = np.zeros(n+1)
-                    continue
+            if non_zero_vals.count == 0 or lf in non_zero_vals:
+                
+                lf_derivs[lf] = diff_tvr.get_deriv_tvr(
+                    data=arr,
+                    deriv_guess=deriv_guess,
+                    alpha=alphas[lf],
+                    no_opt_steps=no_opt_steps,
+                    return_progress=False
+                    )[0]
 
-            lf_derivs[lf] = diff_tvr.get_deriv_tvr(
-                data=arr,
-                deriv_guess=deriv_guess,
-                alpha=alphas[lf],
-                no_opt_steps=no_opt_steps,
-                return_progress=False
-                )[0]
+            else:
 
-            # Drop last (trapezoidal rule => bad length)
-            lf_derivs[lf] = lf_derivs[lf][:-1]
+                # Zero
+                lf_derivs[lf] = np.zeros(n-1)
 
-        return ParamsTETraj.fromLFdict(self.times, lf_derivs, self.nv, self.nh)
+        return ParamsTETraj.fromLFdict(self.times[:-1], lf_derivs, self.nv, self.nh)
