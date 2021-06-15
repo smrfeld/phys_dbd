@@ -31,7 +31,7 @@ class DiffTVR:
                 if i == j:
                     arr[i,j] = -1.0
                 elif i == j-1:
-                    arr[i,j] == 1.0
+                    arr[i,j] = 1.0
         return arr / self.dx
 
     def _make_a_mat(self) -> np.array:

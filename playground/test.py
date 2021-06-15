@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 import sys
+import os
 
 data_desc = DataDesc(
     no_seeds=50,
@@ -14,13 +15,18 @@ data_desc = DataDesc(
     species=["ca2i","ip3"]
 )
 
+data_dir = "playground_data"
+vol_exp = 12
+no_ip3r = 100
+ip3_dir = "ip3_0p100"
+vol_dir = "vol_exp_%02d" % vol_exp
+no_ip3r_dir = "ip3r_%05d" % no_ip3r
+data_dir = os.path.join(data_dir, vol_dir, no_ip3r_dir, ip3_dir)
+
 data = ImportHelper.import_gillespie_ssa_from_data_desc(
     data_desc=data_desc,
-    data_dir="/Users/oernst/Documents/papers/2021_03_draft/stochastic_simulations/ml_training_data/data_gillespie/",
-    vol_exp=12,
-    no_ip3r=100,
-    ip3_dir="ip3_0p100"
-)
+    data_dir=data_dir
+    )
 
 if True:
 
