@@ -22,7 +22,7 @@ data = ImportHelper.import_gillespie_ssa_from_data_desc(
     ip3_dir="ip3_0p100"
 )
 
-if False:
+if True:
 
     # Create params traj and export
     muh = np.zeros(1)
@@ -37,7 +37,7 @@ else:
     # Import params traj
     params_traj = ParamsTraj.fromFile("cache_params.txt", nv=2, nh=1)
 
-if True:
+if False:
 
     # Differentiate
     alphas = {
@@ -50,7 +50,7 @@ if True:
     non_zero_vals = list(alphas.keys())
     paramsTE_traj = params_traj.differentiate_with_TVR(
         alphas=alphas, 
-        no_opt_steps=100, 
+        no_opt_steps=10, 
         non_zero_vals=non_zero_vals
         )
 

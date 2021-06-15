@@ -36,22 +36,16 @@ class ImportHelper:
         data_dir: str, 
         vol_exp: int, 
         no_ip3r: int, 
-        ip3_dir: str,
-        verbose: bool = True
+        ip3_dir: str
         ) -> np.array:
 
         fnames = ImportHelper.create_fnames(data_dir,vol_exp,no_ip3r,ip3_dir,data_desc.no_seeds)
 
         no_tpts = len(data_desc.times)
-        report_interval = int(no_tpts / 10.0)
 
-        ret = np.zeros(shape=(no_tpts,len(fnames),len(data_desc.species)))
-        for i,time in enumerate(data_desc.times):
-            if verbose and report_interval > 1 and i % report_interval == 0:
-                print("Importing: %d / %d" % (i,no_tpts))
+        ret = ImportHelper.import_gillespie_ssa_whole_file(fnames, data_desc.times, data_desc.species)
+        ret = np.reshape(ret, newshape=(no_tpts,len(fnames),len(data_desc.species)))
 
-            ret[i] = ImportHelper.import_gillespie_ssa(fnames, time, data_desc.species)
-        
         return ret
 
     @staticmethod
@@ -65,10 +59,14 @@ class ImportHelper:
         ) -> np.array:
 
         fnames = ImportHelper.create_fnames(data_dir,vol_exp,no_ip3r,ip3_dir,data_desc.no_seeds)
-        return ImportHelper.import_gillespie_ssa(fnames, time, data_desc.species)
+        return ImportHelper.import_gillespie_ssa_at_time(fnames, time, data_desc.species)
 
     @staticmethod
-    def import_gillespie_ssa(fnames: List[str], time: float, species: List[str]) -> np.array:
+    def import_gillespie_ssa_at_time(
+        fnames: List[str], 
+        time: float, 
+        species: List[str]
+        ) -> np.array:
         # Read first fname
         ff = pd.read_csv(fnames[0], sep=" ")
 
@@ -88,5 +86,38 @@ class ImportHelper:
         for i,fname in enumerate(fnames):
             ff = pd.read_csv(fname, skiprows=skiprows, nrows=1, header=0, sep=" ")
             ret[i] = ff[species].to_numpy()[0]
+        
+        return ret
+
+    @staticmethod
+    def import_gillespie_ssa_whole_file(
+        fnames: List[str], 
+        times: List[float], 
+        species: List[str]
+        ) -> np.array:
+
+        # Read first fname
+        ff = pd.read_csv(fnames[0], sep=" ")
+
+        # Find rows for times
+        f_times = ff['t'].to_numpy()
+        time_idxs = []
+        for time in times:
+            idxs = np.where(abs(f_times - time) < 1e-8)[0]
+            if len(idxs) != 1:
+                raise ValueError("Could not find time: %f in the data" % time)
+            
+            # Add 1 for the header
+            idx = idxs[0]
+            time_idxs.append(idx)
+
+        # Data to return
+        ret = np.zeros(shape=(len(fnames),len(times),len(species)))
+
+        # Import
+        for i,fname in enumerate(fnames):
+            ff = pd.read_csv(fname, header=0, sep=" ")
+            ff = ff.iloc[time_idxs]
+            ret[i] = ff[species].to_numpy()
         
         return ret
