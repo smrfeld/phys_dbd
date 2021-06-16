@@ -157,6 +157,27 @@ class Vals:
     def varh_TE2(cls):
         return np.tile(np.diag(cls._varh_diag_TE2), (cls.batch_size,1,1))
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class SingleLayerModel(tf.keras.Model):
+
+    def __init__(self, lyr, **kwargs):
+        super(SingleLayerModel, self).__init__(name='')
+        self.lyr = lyr
+
+    def get_config(self):
+        config = super(SingleLayerModel, self).get_config()
+        config.update({
+            "lyr": self.lyr.get_config()
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def call(self, input_tensor, training=False):
+        return self.lyr(input_tensor)
+
 class TestNet:
 
     def assert_equal_dicts(self, x_out, x_out_true):
@@ -190,8 +211,8 @@ class TestNet:
         fl = FourierLatentLayer(
             freqs=v.freqs(),
             offset_fixed=0.0,
-            sin_coeffs_init=v.muh_sin_coeffs_init(),
-            cos_coeffs_init=v.muh_cos_coeffs_init()
+            sin_coeff=v.muh_sin_coeffs_init(),
+            cos_coeff=v.muh_cos_coeffs_init()
             )
 
         # Input
@@ -212,8 +233,8 @@ class TestNet:
         fl = FourierLatentLayer(
             freqs=v.freqs(),
             offset_fixed=1.01,
-            sin_coeffs_init=v.varh_sin_coeffs_init(),
-            cos_coeffs_init=v.varh_cos_coeffs_init()
+            sin_coeff=v.varh_sin_coeffs_init(),
+            cos_coeff=v.varh_cos_coeffs_init()
             )
 
         # Input
@@ -229,6 +250,18 @@ class TestNet:
         x_out_true = np.full(v.batch_size,0.760949)
 
         self.assert_equal_arrs(x_out, x_out_true)
+
+        # Test save
+        model = SingleLayerModel(fl)
+
+        # Call the model once to build it
+        x_out = model(x_in)
+
+        # Save
+        model.save("model")
+
+        # Test load
+        model = tf.keras.models.load_model("model")
 
     def test_convert_params_layer(self):
 

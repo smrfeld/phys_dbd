@@ -104,7 +104,7 @@ rxn_specs = [
     ]
 
 # Reaction input layer
-rxn_layer = RxnInputsLayer(
+rxn_layer = RxnInputsLayer.construct(
     nv=nv,
     nh=nh,
     freqs=freqs,
@@ -120,12 +120,14 @@ subnet = tf.keras.Sequential([
     # tf.keras.layers.Dropout(0.2)
 ])
 
+'''
 class MyModel(RxnModel):
     def call(self, input_tensor, training=False):
         out = super().call(input_tensor, training=training)
         return out
+'''
 
-model = MyModel(nv,nh,rxn_layer,subnet,non_zero_outputs=["wt00_TE","b0_TE"])
+model = RxnModel(nv,nh,rxn_layer,subnet,non_zero_outputs=["wt00_TE","b0_TE"])
 
 # Normalize
 model.calculate_rxn_normalization(train_inputs, percent=0.2)
@@ -150,10 +152,15 @@ model.compile(optimizer=opt,
 
 model.fit(train_inputs, train_outputs, epochs=2)
 
-model.subnet.save("trained_subnet")
+model.save("model")
+
+model_back = tf.keras.models.load_model('model')
+
+print("Reaction norm. mean: ", model.rxn_mean)
+print("Check loaded: ", model_back.rxn_mean)
 
 # integrate
-params_integrated = model.integrate(
+params_integrated = model_back.integrate(
     params_start=params_traj.params_traj[0],
     tpt_start=0,
     no_steps=3,

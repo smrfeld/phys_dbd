@@ -7,6 +7,10 @@ import numpy as np
 
 from typing import Union, List
 
+import os
+import pickle
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class RxnModel(tf.keras.Model):
 
     def __init__(self, 
@@ -40,6 +44,56 @@ class RxnModel(tf.keras.Model):
         self.rxn_norms_exist = False
         self.rxn_mean = np.array([])
         self.rxn_std_dev = np.array([])
+
+    def get_config(self):
+        config = super(RxnModel, self).get_config()
+
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "non_zero_outputs": self.non_zero_outputs,
+            "no_outputs": self.no_outputs,
+            "rxn_lyr": self.rxn_lyr.get_config(),
+            "subnet": self.subnet.get_config(),
+            "output_ly": self.output_lyr.get_config(),
+            "rxn_norms_exist": self.rxn_norms_exist,
+            "rxn_mean": self.rxn_mean,
+            "rxn_std_dev": self.rxn_std_dev
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def __getstate__(self):
+        return {
+            'nv': self.nv, 
+            'nh': self.nh, 
+            'non_zero_outputs': self.non_zero_outputs,
+            'no_outputs': self.no_outputs,
+            'rxn_norms_exist': self.rxn_norms_exist,
+            'rxn_mean': self.rxn_mean,
+            'rxn_std_dev': self.rxn_std_dev
+        }
+
+    '''
+    def save(self, dir_name: str):
+        # Make directory
+        if not os.path.isdir(dir_name):
+            os.mkdir(dir_name)
+        
+        # Dump
+        fname = os.path.join(dir_name,"model.txt")
+        with open(fname,'wb') as f:
+            pickle.dump(self, f)
+
+        # Write subnet
+        self.subnet.save(os.path.join(dir_name,"subnet"))
+
+        # Save weights
+        self.save_weights(os.path.join(dir_name,"weights.txt"))
+    '''
 
     def integrate(self, 
         params_start: Params, 

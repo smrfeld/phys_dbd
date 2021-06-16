@@ -1,27 +1,37 @@
 import tensorflow as tf
 
 import numpy as np
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Any
 
 from enum import Enum
 
 # Make new layers and models via subclassing
 # https://www.tensorflow.org/guide/keras/custom_layers_and_models
 
+# tf.keras.utils.register_keras_serializable(package="Custom", name=None)
+# This decorator injects the decorated class or function into the Keras 
+# custom object dictionary, so that it can be serialized and deserialized 
+# without needing an entry in the user-provided custom object dict. It also 
+# injects a function that Keras will call to get the object's 
+# serializable string key.
+# https://keras.io/api/utils/serialization_utils/
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class FourierLatentLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
         freqs : np.array,
         offset_fixed : float,
-        sin_coeffs_init : np.array,
-        cos_coeffs_init : np.array
+        sin_coeff : np.array,
+        cos_coeff : np.array,
+        **kwargs
         ):
         # Super
-        super(FourierLatentLayer, self).__init__()
+        super(FourierLatentLayer, self).__init__(**kwargs)
 
         self.freqs = self.add_weight(
             name="freqs",
-            shape=freqs.shape,
+            shape=len(freqs),
             trainable=False,
             initializer=tf.constant_initializer(freqs),
             dtype='float32'
@@ -42,16 +52,31 @@ class FourierLatentLayer(tf.keras.layers.Layer):
         self.cos_coeff = self.add_weight(
             name="cos_coeff",
             shape=(len(freqs)),
-            initializer=tf.constant_initializer(cos_coeffs_init),
+            initializer=tf.constant_initializer(cos_coeff),
             dtype='float32'
             )
 
         self.sin_coeff = self.add_weight(
             name="sin_coeff",
             shape=(len(freqs)),
-            initializer=tf.constant_initializer(sin_coeffs_init),
+            initializer=tf.constant_initializer(sin_coeff),
             dtype='float32'
             )
+
+    # https://keras.io/guides/serialization_and_saving/#custom-objects
+    def get_config(self):
+        config = super(FourierLatentLayer, self).get_config()
+        config.update({
+            "freqs": self.freqs.numpy(),
+            "offset_fixed": self.offset_fixed.numpy(),
+            "cos_coeff": self.cos_coeff.numpy(),
+            "sin_coeff": self.sin_coeff.numpy()
+            })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     # Build function is only needed if the input is not known until runtime
     # The __call__() method of your layer will automatically run build the first 
@@ -80,12 +105,21 @@ class FourierLatentLayer(tf.keras.layers.Layer):
 
         return self.offset_fixed + (ts + tc) / self.fourier_range()
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParamsLayer(tf.keras.layers.Layer):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Super
-        super(ConvertParamsLayer, self).__init__()
+        super(ConvertParamsLayer, self).__init__(**kwargs)
 
+    def get_config(self):
+        config = super(ConvertParamsLayer, self).get_config()
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
     def call(self, inputs):
 
         b1 = inputs["b1"]
@@ -127,12 +161,21 @@ class ConvertParamsLayer(tf.keras.layers.Layer):
             "wt2": wt2
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParamsLayerFrom0(tf.keras.layers.Layer):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Super
-        super(ConvertParamsLayerFrom0, self).__init__()
+        super(ConvertParamsLayerFrom0, self).__init__(**kwargs)
 
+    def get_config(self):
+        config = super(ConvertParamsLayerFrom0, self).get_config()
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
     def call(self, inputs):
         b1 = inputs["b1"]
         wt1 = inputs["wt1"]
@@ -157,6 +200,7 @@ class ConvertParamsLayerFrom0(tf.keras.layers.Layer):
             "wt2": wt2
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
 
     def __init__(self,
@@ -166,10 +210,11 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         muh_sin_coeffs_init : np.array,
         muh_cos_coeffs_init : np.array,
         varh_sin_coeffs_init : np.array,
-        varh_cos_coeffs_init : np.array
+        varh_cos_coeffs_init : np.array,
+        **kwargs
         ):
         # Super
-        super(ConvertParams0ToParamsLayer, self).__init__()
+        super(ConvertParams0ToParamsLayer, self).__init__(**kwargs)
 
         self.nh = nh
         self.layer_muh = {}
@@ -181,19 +226,41 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
             self.layer_muh[str(ih)] = FourierLatentLayer(
                 freqs=freqs,
                 offset_fixed=0.0,
-                sin_coeffs_init=muh_sin_coeffs_init,
-                cos_coeffs_init=muh_cos_coeffs_init
+                sin_coeff=muh_sin_coeffs_init,
+                cos_coeff=muh_cos_coeffs_init
                 )
 
             self.layer_varh_diag[str(ih)] = FourierLatentLayer(
                 freqs=freqs,
                 offset_fixed=1.01,
-                sin_coeffs_init=varh_sin_coeffs_init,
-                cos_coeffs_init=varh_cos_coeffs_init
+                sin_coeff=varh_sin_coeffs_init,
+                cos_coeff=varh_cos_coeffs_init
                 )
 
         self.convert_from_0 = ConvertParamsLayerFrom0()
 
+    def get_config(self):
+        config = super(ConvertParams0ToParamsLayer, self).get_config()
+
+        layer_muh_config = {}
+        layer_varh_diag_config = {}
+        for key,val in self.layer_muh.items():
+            layer_muh_config[key] = val.get_config()
+            layer_varh_diag_config[key] = val.get_config()
+
+        config.update({
+            "nh": self.nh,
+            "layer_muh": layer_muh_config,
+            "layer_varh_diag": layer_varh_diag_config,
+            "convert_from_0": self.convert_from_0.get_config()
+            })
+        
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
     def call(self, inputs):
 
         # Get fourier
@@ -228,16 +295,29 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
 
         return output
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParamsToMomentsLayer(tf.keras.layers.Layer):
 
     def __init__(self,
         nv : int,
-        nh : int
+        nh : int,
+        **kwargs
         ):
         # Super
-        super(ConvertParamsToMomentsLayer, self).__init__()
+        super(ConvertParamsToMomentsLayer, self).__init__(**kwargs)
         self.nv = nv 
     
+    def get_config(self):
+        config = super(ConvertParamsToMomentsLayer, self).get_config()
+        config.update({
+            "nv": self.nv
+            })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
     def call(self, inputs):
 
         wt = inputs["wt"]
@@ -270,12 +350,21 @@ class ConvertParamsToMomentsLayer(tf.keras.layers.Layer):
             "var": var
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertMomentsToNMomentsLayer(tf.keras.layers.Layer):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Super
-        super(ConvertMomentsToNMomentsLayer, self).__init__()
+        super(ConvertMomentsToNMomentsLayer, self).__init__(**kwargs)
     
+    def get_config(self):
+        config = super(ConvertMomentsToNMomentsLayer, self).get_config()
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
     def call(self, inputs):
         
         mu = inputs["mu"]
@@ -291,21 +380,34 @@ class ConvertMomentsToNMomentsLayer(tf.keras.layers.Layer):
             "nvar": nvar
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
+        params0ToParamsLayer: ConvertParams0ToParamsLayer,
+        paramsToMomentsLayer: ConvertParamsToMomentsLayer,
+        momentsToNMomentsLayer: ConvertMomentsToNMomentsLayer,
+        **kwargs
+        ):
+        # Super
+        super(ConvertParams0ToNMomentsLayer, self).__init__(**kwargs)
+
+        self.params0ToParamsLayer = params0ToParamsLayer
+        self.paramsToMomentsLayer = paramsToMomentsLayer
+        self.momentsToNMomentsLayer = momentsToNMomentsLayer
+
+    @classmethod
+    def construct(cls,
         nv: int, 
         nh: int,
         freqs : np.array,
         muh_sin_coeffs_init : np.array,
         muh_cos_coeffs_init : np.array,
         varh_sin_coeffs_init : np.array,
-        varh_cos_coeffs_init : np.array
+        varh_cos_coeffs_init : np.array,
+        **kwargs
         ):
-        # Super
-        super(ConvertParams0ToNMomentsLayer, self).__init__()
-
-        self.params0ToParamsLayer = ConvertParams0ToParamsLayer(
+        params0ToParamsLayer = ConvertParams0ToParamsLayer(
             nv=nv, 
             nh=nh, 
             freqs=freqs,
@@ -314,8 +416,28 @@ class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
             varh_sin_coeffs_init=varh_sin_coeffs_init,
             varh_cos_coeffs_init=varh_cos_coeffs_init
             )
-        self.paramsToMomentsLayer = ConvertParamsToMomentsLayer(nv,nh)
-        self.momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
+        paramsToMomentsLayer = ConvertParamsToMomentsLayer(nv,nh)
+        momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
+
+        return cls(
+            params0ToParamsLayer=params0ToParamsLayer,
+            paramsToMomentsLayer=paramsToMomentsLayer,
+            momentsToNMomentsLayer=momentsToNMomentsLayer,
+            **kwargs
+            )
+
+    def get_config(self):
+        config = super(ConvertParams0ToNMomentsLayer, self).get_config()
+        config.update({
+            "params0ToParamsLayer": self.params0ToParamsLayer.get_config(),
+            "paramsToMomentsLayer": self.paramsToMomentsLayer.get_config(),
+            "momentsToNMomentsLayer": self.momentsToNMomentsLayer.get_config()
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     def call(self, inputs):
         params = self.params0ToParamsLayer(inputs)
@@ -329,6 +451,7 @@ class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
         return dall
 
 # @tf.function
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 def unit_mat_sym(n: int, i: int, j: int):
     idx = i * n + j
     one_hot = tf.one_hot(indices=idx,depth=n*n, dtype='float32')
@@ -339,17 +462,32 @@ def unit_mat_sym(n: int, i: int, j: int):
 
     return tf.reshape(one_hot,shape=(n,n))
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class DeathRxnLayer(tf.keras.layers.Layer):
 
-    def __init__(self, nv: int, nh: int, i_sp: int):
+    def __init__(self, nv: int, nh: int, i_sp: int, **kwargs):
         # Super
-        super(DeathRxnLayer, self).__init__()
+        super(DeathRxnLayer, self).__init__(**kwargs)
     
         self.nv = nv
         self.nh = nh
         self.n = nv + nh
         self.i_sp = i_sp
 
+    def get_config(self):
+        config = super(DeathRxnLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "n": self.n,
+            "i_sp": self.i_sp
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
     def call(self, inputs):
 
         mu = inputs["mu"]
@@ -380,17 +518,32 @@ class DeathRxnLayer(tf.keras.layers.Layer):
             "nvarTE": nvarTE
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class BirthRxnLayer(tf.keras.layers.Layer):
 
-    def __init__(self, nv: int, nh: int, i_sp: int):
+    def __init__(self, nv: int, nh: int, i_sp: int, **kwargs):
         # Super
-        super(BirthRxnLayer, self).__init__()
+        super(BirthRxnLayer, self).__init__(**kwargs)
     
         self.nv = nv
         self.nh = nh
         self.n = nv + nh
         self.i_sp = i_sp
 
+    def get_config(self):
+        config = super(BirthRxnLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "n": self.n,
+            "i_sp": self.i_sp
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
     def call(self, inputs):
         
         mu = inputs["mu"]
@@ -419,14 +572,16 @@ class BirthRxnLayer(tf.keras.layers.Layer):
         }
 
 # @tf.function
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 def nmoment3_batch(mu, nvar, i, j, k):
     return -2.0*mu[:,i]*mu[:,j]*mu[:,k] + mu[:,i]*nvar[:,j,k] + mu[:,j]*nvar[:,i,k] + mu[:,k]*nvar[:,i,j]
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class EatRxnLayer(tf.keras.layers.Layer):
 
-    def __init__(self, nv: int, nh: int, i_hunter: int, i_prey: int):
+    def __init__(self, nv: int, nh: int, i_hunter: int, i_prey: int, **kwargs):
         # Super
-        super(EatRxnLayer, self).__init__()
+        super(EatRxnLayer, self).__init__(**kwargs)
     
         self.nv = nv
         self.nh = nh
@@ -434,6 +589,21 @@ class EatRxnLayer(tf.keras.layers.Layer):
         self.i_hunter = i_hunter
         self.i_prey = i_prey
 
+    def get_config(self):
+        config = super(EatRxnLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "n": self.n,
+            "i_hunter": self.i_hunter,
+            "i_prey": self.i_prey
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
     # @tf.function
     def nvar_prey_prey(self, mu, nvar):
         n3 = nmoment3_batch(mu,nvar,self.i_prey,self.i_prey,self.i_hunter)
@@ -505,11 +675,20 @@ class EatRxnLayer(tf.keras.layers.Layer):
             "nvarTE": nvarTE
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertNMomentsTEtoMomentsTE(tf.keras.layers.Layer):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Super
-        super(ConvertNMomentsTEtoMomentsTE, self).__init__()
+        super(ConvertNMomentsTEtoMomentsTE, self).__init__(**kwargs)
+
+    def get_config(self):
+        config = super(ConvertNMomentsTEtoMomentsTE, self).get_config()
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     def call(self, inputs):
         
@@ -550,14 +729,27 @@ class ConvertNMomentsTEtoMomentsTE(tf.keras.layers.Layer):
             "varTE": varTE
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
 
-    def __init__(self, nv: int, nh: int):
+    def __init__(self, nv: int, nh: int, **kwargs):
         # Super
-        super(ConvertMomentsTEtoParamMomentsTE, self).__init__()
+        super(ConvertMomentsTEtoParamMomentsTE, self).__init__(**kwargs)
     
         self.nv = nv
         self.nh = nh
+
+    def get_config(self):
+        config = super(ConvertMomentsTEtoParamMomentsTE, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     def call(self, inputs):
         
@@ -582,14 +774,27 @@ class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
             "varh_diagTE": varh_diagTE
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
 
-    def __init__(self, nv: int, nh: int):
+    def __init__(self, nv: int, nh: int, **kwargs):
         # Super
-        super(ConvertParamMomentsTEtoParamsTE, self).__init__()
+        super(ConvertParamMomentsTEtoParamsTE, self).__init__(**kwargs)
     
         self.nv = nv
         self.nh = nh
+
+    def get_config(self):
+        config = super(ConvertParamMomentsTEtoParamsTE, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     def call(self, inputs):
 
@@ -648,12 +853,21 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
             "varh_diagTE": varh_diagTE
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         # Super
-        super(ConvertParamsTEtoParams0TE, self).__init__()
+        super(ConvertParamsTEtoParams0TE, self).__init__(**kwargs)
 
+    def get_config(self):
+        config = super(ConvertParamsTEtoParams0TE, self).get_config()
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
     def call(self, inputs):
 
         bTE1 = inputs["bTE1"]
@@ -682,11 +896,12 @@ class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
             "wtTE2" : wtTE2
         }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
 
-    def __init__(self, nv: int, nh: int):
+    def __init__(self, nv: int, nh: int, **kwargs):
         # Super
-        super(ConvertNMomentsTEtoParams0TE, self).__init__()
+        super(ConvertNMomentsTEtoParams0TE, self).__init__(**kwargs)
         
         self.nv = nv
         self.nh = nh
@@ -695,6 +910,22 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
         self.momentsTEtoParamMomentsTE = ConvertMomentsTEtoParamMomentsTE(nv,nh)
         self.paramMomentsTEtoParamsTE = ConvertParamMomentsTEtoParamsTE(nv,nh)
         self.paramsTEtoParams0TE = ConvertParamsTEtoParams0TE()
+
+    def get_config(self):
+        config = super(ConvertNMomentsTEtoParams0TE, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "nMomentsTEtoMomentsTE": self.nMomentsTEtoMomentsTE.get_config(),
+            "momentsTEtoParamMomentsTE": self.momentsTEtoParamMomentsTE.get_config(),
+            "paramMomentsTEtoParamsTE": self.paramMomentsTEtoParamsTE.get_config(),
+            "paramsTEtoParams0TE": self.paramsTEtoParams0TE.get_config()
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     def call(self, inputs):
         outputs1 = self.nMomentsTEtoMomentsTE(inputs)
@@ -733,9 +964,29 @@ class RxnSpec(Enum):
 # https://www.tensorflow.org/tutorials/customization/custom_layers#models_composing_layers
 # Typically you inherit from keras.Model when you need the model methods like: Model.fit,Model.evaluate, and Model.save (see Custom Keras layers and models for details).
 # One other feature provided by keras.Model (instead of keras.layers.Layer) is that in addition to tracking variables, a keras.Model also tracks its internal layers, making them easier to inspect.
+@tf.keras.utils.register_keras_serializable(package="physDBD")
 class RxnInputsLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
+        nv: int, 
+        nh: int, 
+        params0toNMoments: ConvertParams0ToNMomentsLayer,
+        rxns: List[Any],
+        nMomentsTEtoParams0TE: ConvertNMomentsTEtoParams0TE,
+        **kwargs
+        ):
+        # Super
+        super(RxnInputsLayer, self).__init__(**kwargs)
+        
+        self.nv = nv
+        self.nh = nh
+
+        self.params0toNMoments = params0toNMoments
+        self.rxns = rxns
+        self.nMomentsTEtoParams0TE = nMomentsTEtoParams0TE
+
+    @classmethod
+    def construct(cls, 
         nv: int, 
         nh: int, 
         freqs : np.array,
@@ -743,15 +994,11 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         muh_cos_coeffs_init : np.array,
         varh_sin_coeffs_init : np.array,
         varh_cos_coeffs_init : np.array,
-        rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]]
+        rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]],
+        **kwargs
         ):
-        # Super
-        super(RxnInputsLayer, self).__init__(name="rxn_inputs")
         
-        self.nv = nv
-        self.nh = nh
-        
-        self.params0toNMoments = ConvertParams0ToNMomentsLayer(
+        params0toNMoments = ConvertParams0ToNMomentsLayer.construct(
             nv=nv,
             nh=nh,
             freqs=freqs,
@@ -761,7 +1008,7 @@ class RxnInputsLayer(tf.keras.layers.Layer):
             varh_cos_coeffs_init=varh_cos_coeffs_init
             )
 
-        self.rxns = []
+        rxns = []
         for spec in rxn_specs:
             if spec[0] == RxnSpec.EAT:
                 rtype, i_hunter, i_prey = spec
@@ -769,15 +1016,44 @@ class RxnInputsLayer(tf.keras.layers.Layer):
                 rtype, i_sp = spec
 
             if rtype == RxnSpec.BIRTH:
-                self.rxns.append(BirthRxnLayer(nv, nh, i_sp))
+                rxns.append(BirthRxnLayer(nv, nh, i_sp))
             elif rtype == RxnSpec.DEATH:
-                self.rxns.append(DeathRxnLayer(nv, nh, i_sp))
+                rxns.append(DeathRxnLayer(nv, nh, i_sp))
             elif rtype == RxnSpec.EAT:
-                self.rxns.append(EatRxnLayer(nv,nh,i_hunter,i_prey))
+                rxns.append(EatRxnLayer(nv,nh,i_hunter,i_prey))
             else:
                 raise ValueError("Rxn type: %s not recognized" % rtype)
 
-        self.nMomentsTEtoParams0TE = ConvertNMomentsTEtoParams0TE(nv,nh)
+        nMomentsTEtoParams0TE = ConvertNMomentsTEtoParams0TE(nv,nh)
+
+        return cls(
+            nv=nv,
+            nh=nh,
+            params0toNMoments=params0toNMoments,
+            rxns=rxns,
+            nMomentsTEtoParams0TE=nMomentsTEtoParams0TE,
+            **kwargs
+            )
+
+    def get_config(self):
+        config = super(RxnInputsLayer, self).get_config()
+
+        rxns = []
+        for rxn in self.rxns:
+            rxns.append(rxn.get_config())
+
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "params0toNMoments": self.params0toNMoments.get_config(),
+            "rxns": rxns,
+            "nMomentsTEtoParams0TE": self.nMomentsTEtoParams0TE.get_config()
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
     def call(self, inputs):
         nMoments = self.params0toNMoments(inputs)
