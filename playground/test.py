@@ -68,6 +68,17 @@ else:
     # Import paramsTE_traj
     paramsTE_traj = ParamsTETraj.fromFile("cache_derivs.txt", nv=2, nh=1)
 
+# Integrate derivatives
+params_traj_filtered = ParamsTraj.fromIntegrating(
+    paramsTE_traj=paramsTE_traj,
+    params_init=params_traj.params_traj[0],
+    tpt_start=0,
+    no_steps=len(params_traj.params_traj)-1
+    )
+
+# Write
+params_traj_filtered.export("cache_filtered.txt")
+
 train_inputs = params_traj.get_tf_inputs_assuming_params0()
 train_outputs, \
     train_outputs_mean, \
@@ -137,4 +148,6 @@ model.compile(optimizer=opt,
               metrics=['accuracy'],
               run_eagerly=True)
 
-model.fit(train_inputs, train_outputs, epochs=5)
+model.fit(train_inputs, train_outputs, epochs=2)
+
+model.subnet.save("trained_subnet")

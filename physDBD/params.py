@@ -1,4 +1,5 @@
 from .helpers import dc_eq, normalize
+from .paramsTE import ParamsTE
 
 import numpy as np
 from typing import Dict, Any
@@ -34,6 +35,21 @@ class Params:
             "sig2": np.array([self.sig2])
             }
 
+    @classmethod
+    def addTE(cls, params, paramsTE: ParamsTE):
+        wt = params.wt + paramsTE.wt_TE
+        b = params.b + paramsTE.b_TE
+        varh_diag = params.varh_diag + paramsTE.varh_diag_TE
+        muh = params.muh + paramsTE.muh_TE
+        sig2 = params.sig2 + paramsTE.sig2_TE
+        return cls(
+            wt=wt,
+            b=b,
+            varh_diag=varh_diag,
+            muh=muh,
+            sig2=sig2
+            )
+    
     @classmethod
     def fromPCA(cls, data: np.array, muh: np.array, varh_diag: np.array):
 

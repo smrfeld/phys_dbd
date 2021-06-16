@@ -1,4 +1,5 @@
 from .paramsTE import ParamsTE
+from .params import Params
 from .helpers import convert_np_to_pd
 
 import numpy as np

@@ -68,6 +68,7 @@ class RxnModel(tf.keras.Model):
         # Reshape outputs into dictionary
         out = {}
         for i,non_zero_output in enumerate(self.non_zero_outputs):
-            out[non_zero_output] = tf.reshape(x[:,i],shape=(len(x[:,i]),1))
+            no_tpts = tf.shape(x[:,i])[0]
+            out[non_zero_output] = tf.reshape(x[:,i],shape=(no_tpts,1))
         
         return out

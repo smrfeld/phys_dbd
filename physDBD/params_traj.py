@@ -14,6 +14,37 @@ class ParamsTraj:
         self.params_traj = params_traj
         self.times = times
 
+    @classmethod
+    def fromIntegrating(cls, 
+        paramsTE_traj: ParamsTETraj, 
+        params_init: Params, 
+        tpt_start: float, 
+        no_steps: int
+        ):
+
+        assert no_steps > 0
+
+        params_traj = [params_init]
+        times = [paramsTE_traj.times[tpt_start]]
+
+        for step in range(0,no_steps):
+            tpt_curr = tpt_start + step
+            tpt_next = tpt_curr + 1
+
+            if tpt_next < len(paramsTE_traj.times):
+                times.append(paramsTE_traj.times[tpt_next])
+            else:
+                times.append(times[-1] + (times[-1] - times[-2]))
+
+            # Add to previous and store
+            params = Params.addTE(params_traj[-1], paramsTE_traj.paramsTE_traj[tpt_curr])
+            params_traj.append(params)
+
+        return cls(
+            times=times,
+            params_traj=params_traj
+            )
+            
     def get_tf_inputs_assuming_params0(self) -> Dict[str, np.array]:
         inputs = {}
         for tpt in range(0,len(self.params_traj)-1): # Take off one to match derivatives
