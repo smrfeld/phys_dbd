@@ -8,6 +8,8 @@ from physDBD import RxnSpec, FourierLatentLayer, \
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
+import copy
+
 import numpy as np
 import tensorflow as tf
 
@@ -182,7 +184,7 @@ class TestNet:
 
     def assert_equal_dicts(self, x_out, x_out_true):
         # Convert x_out_true varh to varh_diag as needed
-        y_out_true = x_out_true
+        y_out_true = copy.copy(x_out_true)
         for key,val in x_out_true.items():
             print(key)
             if key == "varh":
@@ -202,6 +204,16 @@ class TestNet:
         nvar = np.random.rand(batch_size,nv+nh,nv+nh)
         nvar += np.transpose(nvar,axes=[0,2,1])
         return nvar
+
+    def save_load_model(self, lyr, x_in):
+
+        # Test save; call the model once to build it first
+        model = SingleLayerModel(lyr)
+        x_out = model(x_in)
+        model.save("model", save_traces=False)
+
+        # Test load
+        model = tf.keras.models.load_model("model")
 
     def test_fourier(self):
 
@@ -251,17 +263,7 @@ class TestNet:
 
         self.assert_equal_arrs(x_out, x_out_true)
 
-        # Test save
-        model = SingleLayerModel(fl)
-
-        # Call the model once to build it
-        x_out = model(x_in)
-
-        # Save
-        model.save("model")
-
-        # Test load
-        model = tf.keras.models.load_model("model")
+        self.save_load_model(fl, x_in)
 
     def test_convert_params_layer(self):
 
@@ -289,6 +291,8 @@ class TestNet:
 
         print(x_out)
 
+        self.save_load_model(lyr, x_in)
+
     def test_convert_from_0(self):
 
         v = Vals()
@@ -313,11 +317,13 @@ class TestNet:
 
         self.assert_equal_dicts(x_out, x_out_true)
 
+        self.save_load_model(lyr, x_in)
+
     def test_convert_params0_to_params(self):
         
         v = Vals()
 
-        lyr = ConvertParams0ToParamsLayer(
+        lyr = ConvertParams0ToParamsLayer.construct(
             nv=v.nv,
             nh=v.nh,
             freqs=v.freqs(),
@@ -341,15 +347,17 @@ class TestNet:
         print(x_out)
 
         x_out_true = {
-            "b": np.array([3., 5., 6.]), 
-            "wt": np.array([[1.99007, 3.98015, 7.9603], [0.995037, 2.98511, 2.98511]]), 
-            "muh": np.array([0., 0.]), 
-            "varh": np.array([[1.01, 0.], [0., 1.01]]),
+            "b": np.array([3.37934, 5.88512, 7.3909]), 
+            "wt": np.array([[2.29273, 4.58545, 9.1709], [1.14636, 3.43909, 3.43909]]), 
+            "muh": np.array([-0.110302, -0.110302]), 
+            "varh": np.array([[0.760949, 0.], [0., 0.760949]]),
             "sig2": np.array([1.])
         }
         
         self.assert_equal_dicts(x_out,x_out_true)
     
+        self.save_load_model(lyr, x_in)
+
     def test_params_to_moments(self):
 
         nv = 3
@@ -375,6 +383,8 @@ class TestNet:
 
         print(x_out)
 
+        self.save_load_model(lyr, x_in)
+
     def test_moments_to_nmoments(self):
 
         lyr = ConvertMomentsToNMomentsLayer()
@@ -394,6 +404,8 @@ class TestNet:
 
         print(x_out)
 
+        self.save_load_model(lyr, x_in)
+
     def test_params0_to_nmoments(self):
 
         nv = 3
@@ -405,7 +417,7 @@ class TestNet:
         varh_sin_coeffs_init = np.random.rand(3)
         varh_cos_coeffs_init = np.random.rand(3)
 
-        lyr = ConvertParams0ToNMomentsLayer(
+        lyr = ConvertParams0ToNMomentsLayer.construct(
             nv=nv,
             nh=nh,
             freqs=freqs,
@@ -429,6 +441,8 @@ class TestNet:
         
         print(x_out)
     
+        self.save_load_model(lyr, x_in)
+
     def test_death_rxn(self):
 
         nv = 3
@@ -446,6 +460,8 @@ class TestNet:
         x_out = lyr(x_in)
 
         print(x_out)
+
+        self.save_load_model(lyr, x_in)
 
     def test_birth_rxn(self):
 
@@ -465,6 +481,8 @@ class TestNet:
 
         print(x_out)
 
+        self.save_load_model(lyr, x_in)
+
     def test_eat_rxn(self):
 
         nv = 3
@@ -482,6 +500,8 @@ class TestNet:
         x_out = lyr(x_in)
 
         print(x_out)
+
+        self.save_load_model(lyr, x_in)
 
     def test_convert_nmomentsTE_to_momentsTE(self):
         nv = 3
@@ -501,6 +521,8 @@ class TestNet:
 
         print(x_out)
 
+        self.save_load_model(lyr, x_in)
+
     def test_convert_momentsTE_to_paramMomentsTE(self):
         nv = 3
         nh = 2
@@ -517,6 +539,8 @@ class TestNet:
         x_out = lyr(x_in)
 
         print(x_out)
+
+        self.save_load_model(lyr, x_in)
 
     def test_convert_paramMomentsTE_to_paramsTE(self):
         nv = 3
@@ -541,6 +565,8 @@ class TestNet:
 
         print(x_out)
 
+        self.save_load_model(lyr, x_in)
+
     def test_convert_paramsTE_to_params0TE(self):
         lyr = ConvertParamsTEtoParams0TE()
 
@@ -562,6 +588,8 @@ class TestNet:
         x_out = lyr(x_in)
 
         print(x_out)
+
+        self.save_load_model(lyr, x_in)
 
     def test_convert_nmomentsTE_to_params0TE(self):
 
@@ -586,6 +614,8 @@ class TestNet:
 
         print(x_out)
 
+        self.save_load_model(lyr, x_in)
+
     def test_rxn_inputs(self):
 
         nv = 3
@@ -603,7 +633,7 @@ class TestNet:
             (RxnSpec.EAT,2,1)
         ]
 
-        lyr = RxnInputsLayer(
+        lyr = RxnInputsLayer.construct(
             nv=nv,
             nh=nh,
             freqs=freqs,
@@ -627,3 +657,5 @@ class TestNet:
         x_out = lyr(x_in)
         
         print(x_out)
+
+        self.save_load_model(lyr, x_in)

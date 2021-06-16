@@ -1,9 +1,11 @@
 import tensorflow as tf
 
 import numpy as np
-from typing import List, Tuple, Union, Any
+from typing import List, Tuple, Union, Any, Dict
 
 from enum import Enum
+
+from tensorflow.python.ops.gen_resource_variable_ops import var_handle_op
 
 # Make new layers and models via subclassing
 # https://www.tensorflow.org/guide/keras/custom_layers_and_models
@@ -203,7 +205,26 @@ class ConvertParamsLayerFrom0(tf.keras.layers.Layer):
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
 
-    def __init__(self,
+    def __init__(self, 
+        nv: int, 
+        nh: int, 
+        layer_muh: Dict[str,Any],
+        layer_varh_diag: Dict[str,Any],
+        **kwargs):
+
+        # Super
+        super(ConvertParams0ToParamsLayer, self).__init__(**kwargs)
+
+        self.nv = nv
+        self.nh = nh
+
+        self.layer_muh = layer_muh
+        self.layer_varh_diag = layer_varh_diag
+
+        self.convert_from_0 = ConvertParamsLayerFrom0()
+
+    @classmethod
+    def construct(cls, 
         nv : int,
         nh : int,
         freqs : np.array,
@@ -211,54 +232,62 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         muh_cos_coeffs_init : np.array,
         varh_sin_coeffs_init : np.array,
         varh_cos_coeffs_init : np.array,
-        **kwargs
-        ):
-        # Super
-        super(ConvertParams0ToParamsLayer, self).__init__(**kwargs)
+        **kwargs):
 
-        self.nh = nh
-        self.layer_muh = {}
-        self.layer_varh_diag = {}
+        layer_muh = {}
+        layer_varh_diag = {}
         for ih in range(0,nh):
 
             # Only use strings as keys
             # https://stackoverflow.com/a/57974800/1427316
-            self.layer_muh[str(ih)] = FourierLatentLayer(
+            layer_muh[str(ih)] = FourierLatentLayer(
                 freqs=freqs,
                 offset_fixed=0.0,
                 sin_coeff=muh_sin_coeffs_init,
                 cos_coeff=muh_cos_coeffs_init
                 )
 
-            self.layer_varh_diag[str(ih)] = FourierLatentLayer(
+            layer_varh_diag[str(ih)] = FourierLatentLayer(
                 freqs=freqs,
                 offset_fixed=1.01,
                 sin_coeff=varh_sin_coeffs_init,
                 cos_coeff=varh_cos_coeffs_init
                 )
 
-        self.convert_from_0 = ConvertParamsLayerFrom0()
+        return cls(
+            nv=nv,
+            nh=nh,
+            layer_muh=layer_muh,
+            layer_varh_diag=layer_varh_diag,
+            **kwargs
+            )
 
     def get_config(self):
         config = super(ConvertParams0ToParamsLayer, self).get_config()
 
-        layer_muh_config = {}
-        layer_varh_diag_config = {}
-        for key,val in self.layer_muh.items():
-            layer_muh_config[key] = val.get_config()
-            layer_varh_diag_config[key] = val.get_config()
-
         config.update({
+            "nv": self.nv,
             "nh": self.nh,
-            "layer_muh": layer_muh_config,
-            "layer_varh_diag": layer_varh_diag_config,
-            "convert_from_0": self.convert_from_0.get_config()
-            })
+            "layer_muh": self.layer_muh,
+            "layer_varh_diag": self.layer_varh_diag
+        })
         
         return config
-
+    
     @classmethod
     def from_config(cls, config):
+
+        layer_muh = {}
+        for key, val in config["layer_muh"].items():
+            layer_muh[key] = FourierLatentLayer(**val['config'])
+        
+        layer_varh_diag = {}
+        for key, val in config["layer_varh_diag"].items():
+            layer_varh_diag[key] = FourierLatentLayer(**val['config'])
+
+        config["layer_muh"] = layer_muh
+        config["layer_varh_diag"] = layer_varh_diag
+
         return cls(**config)
     
     def call(self, inputs):
@@ -306,11 +335,13 @@ class ConvertParamsToMomentsLayer(tf.keras.layers.Layer):
         # Super
         super(ConvertParamsToMomentsLayer, self).__init__(**kwargs)
         self.nv = nv 
+        self.nh = nh
     
     def get_config(self):
         config = super(ConvertParamsToMomentsLayer, self).get_config()
         config.update({
-            "nv": self.nv
+            "nv": self.nv,
+            "nh": self.nh
             })
         return config
 
@@ -384,17 +415,20 @@ class ConvertMomentsToNMomentsLayer(tf.keras.layers.Layer):
 class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
+        nv: int,
+        nh: int,
         params0ToParamsLayer: ConvertParams0ToParamsLayer,
-        paramsToMomentsLayer: ConvertParamsToMomentsLayer,
-        momentsToNMomentsLayer: ConvertMomentsToNMomentsLayer,
         **kwargs
         ):
         # Super
         super(ConvertParams0ToNMomentsLayer, self).__init__(**kwargs)
 
+        self.nv = nv
+        self.nh = nh
+
         self.params0ToParamsLayer = params0ToParamsLayer
-        self.paramsToMomentsLayer = paramsToMomentsLayer
-        self.momentsToNMomentsLayer = momentsToNMomentsLayer
+        self.paramsToMomentsLayer = ConvertParamsToMomentsLayer(nv,nh)
+        self.momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
 
     @classmethod
     def construct(cls,
@@ -407,7 +441,7 @@ class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
         varh_cos_coeffs_init : np.array,
         **kwargs
         ):
-        params0ToParamsLayer = ConvertParams0ToParamsLayer(
+        params0ToParamsLayer = ConvertParams0ToParamsLayer.construct(
             nv=nv, 
             nh=nh, 
             freqs=freqs,
@@ -416,22 +450,20 @@ class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
             varh_sin_coeffs_init=varh_sin_coeffs_init,
             varh_cos_coeffs_init=varh_cos_coeffs_init
             )
-        paramsToMomentsLayer = ConvertParamsToMomentsLayer(nv,nh)
-        momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
 
         return cls(
+            nv=nv,
+            nh=nh,
             params0ToParamsLayer=params0ToParamsLayer,
-            paramsToMomentsLayer=paramsToMomentsLayer,
-            momentsToNMomentsLayer=momentsToNMomentsLayer,
             **kwargs
             )
 
     def get_config(self):
         config = super(ConvertParams0ToNMomentsLayer, self).get_config()
         config.update({
-            "params0ToParamsLayer": self.params0ToParamsLayer.get_config(),
-            "paramsToMomentsLayer": self.paramsToMomentsLayer.get_config(),
-            "momentsToNMomentsLayer": self.momentsToNMomentsLayer.get_config()
+            "nv": self.nv,
+            "nh": self.nh,
+            "params0ToParamsLayer": self.params0ToParamsLayer
         })
         return config
 
@@ -471,15 +503,15 @@ class DeathRxnLayer(tf.keras.layers.Layer):
     
         self.nv = nv
         self.nh = nh
-        self.n = nv + nh
         self.i_sp = i_sp
+
+        self.n = nv + nh
 
     def get_config(self):
         config = super(DeathRxnLayer, self).get_config()
         config.update({
             "nv": self.nv,
             "nh": self.nh,
-            "n": self.n,
             "i_sp": self.i_sp
         })
         return config
@@ -527,15 +559,15 @@ class BirthRxnLayer(tf.keras.layers.Layer):
     
         self.nv = nv
         self.nh = nh
-        self.n = nv + nh
         self.i_sp = i_sp
+
+        self.n = nv + nh
 
     def get_config(self):
         config = super(BirthRxnLayer, self).get_config()
         config.update({
             "nv": self.nv,
             "nh": self.nh,
-            "n": self.n,
             "i_sp": self.i_sp
         })
         return config
@@ -585,16 +617,16 @@ class EatRxnLayer(tf.keras.layers.Layer):
     
         self.nv = nv
         self.nh = nh
-        self.n = nv + nh
         self.i_hunter = i_hunter
         self.i_prey = i_prey
+
+        self.n = nv + nh
 
     def get_config(self):
         config = super(EatRxnLayer, self).get_config()
         config.update({
             "nv": self.nv,
             "nh": self.nh,
-            "n": self.n,
             "i_hunter": self.i_hunter,
             "i_prey": self.i_prey
         })
@@ -915,11 +947,7 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
         config = super(ConvertNMomentsTEtoParams0TE, self).get_config()
         config.update({
             "nv": self.nv,
-            "nh": self.nh,
-            "nMomentsTEtoMomentsTE": self.nMomentsTEtoMomentsTE.get_config(),
-            "momentsTEtoParamMomentsTE": self.momentsTEtoParamMomentsTE.get_config(),
-            "paramMomentsTEtoParamsTE": self.paramMomentsTEtoParamsTE.get_config(),
-            "paramsTEtoParams0TE": self.paramsTEtoParams0TE.get_config()
+            "nh": self.nh
         })
         return config
 
@@ -971,8 +999,7 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         nv: int, 
         nh: int, 
         params0toNMoments: ConvertParams0ToNMomentsLayer,
-        rxns: List[Any],
-        nMomentsTEtoParams0TE: ConvertNMomentsTEtoParams0TE,
+        rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]],
         **kwargs
         ):
         # Super
@@ -982,8 +1009,25 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         self.nh = nh
 
         self.params0toNMoments = params0toNMoments
-        self.rxns = rxns
-        self.nMomentsTEtoParams0TE = nMomentsTEtoParams0TE
+        self.nMomentsTEtoParams0TE = ConvertNMomentsTEtoParams0TE(nv,nh)
+
+        self.rxn_specs = rxn_specs
+        self.rxns = []
+        for spec in rxn_specs:
+            if spec[0] == RxnSpec.EAT:
+                rtype, i_hunter, i_prey = spec
+            else:
+                rtype, i_sp = spec
+
+            if rtype == RxnSpec.BIRTH:
+                self.rxns.append(BirthRxnLayer(nv, nh, i_sp))
+            elif rtype == RxnSpec.DEATH:
+                self.rxns.append(DeathRxnLayer(nv, nh, i_sp))
+            elif rtype == RxnSpec.EAT:
+                self.rxns.append(EatRxnLayer(nv,nh,i_hunter,i_prey))
+            else:
+                raise ValueError("Rxn type: %s not recognized" % rtype)
+
 
     @classmethod
     def construct(cls, 
@@ -1008,46 +1052,22 @@ class RxnInputsLayer(tf.keras.layers.Layer):
             varh_cos_coeffs_init=varh_cos_coeffs_init
             )
 
-        rxns = []
-        for spec in rxn_specs:
-            if spec[0] == RxnSpec.EAT:
-                rtype, i_hunter, i_prey = spec
-            else:
-                rtype, i_sp = spec
-
-            if rtype == RxnSpec.BIRTH:
-                rxns.append(BirthRxnLayer(nv, nh, i_sp))
-            elif rtype == RxnSpec.DEATH:
-                rxns.append(DeathRxnLayer(nv, nh, i_sp))
-            elif rtype == RxnSpec.EAT:
-                rxns.append(EatRxnLayer(nv,nh,i_hunter,i_prey))
-            else:
-                raise ValueError("Rxn type: %s not recognized" % rtype)
-
-        nMomentsTEtoParams0TE = ConvertNMomentsTEtoParams0TE(nv,nh)
-
         return cls(
             nv=nv,
             nh=nh,
             params0toNMoments=params0toNMoments,
-            rxns=rxns,
-            nMomentsTEtoParams0TE=nMomentsTEtoParams0TE,
+            rxn_specs=rxn_specs,
             **kwargs
             )
 
     def get_config(self):
         config = super(RxnInputsLayer, self).get_config()
 
-        rxns = []
-        for rxn in self.rxns:
-            rxns.append(rxn.get_config())
-
         config.update({
             "nv": self.nv,
             "nh": self.nh,
-            "params0toNMoments": self.params0toNMoments.get_config(),
-            "rxns": rxns,
-            "nMomentsTEtoParams0TE": self.nMomentsTEtoParams0TE.get_config()
+            "params0toNMoments": self.params0toNMoments,
+            "rxn_specs": self.rxn_specs
         })
         return config
 

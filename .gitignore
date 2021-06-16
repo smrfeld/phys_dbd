@@ -1,3 +1,4 @@
+saved_models/
 .ipynb_checkpoints/
 playground/*.txt
 build/

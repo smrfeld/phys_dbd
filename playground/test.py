@@ -152,7 +152,7 @@ model.compile(optimizer=opt,
 
 model.fit(train_inputs, train_outputs, epochs=2)
 
-model.save("model")
+model.save("saved_models/model")
 
 model_back = tf.keras.models.load_model('model')
 
