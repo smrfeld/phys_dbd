@@ -36,6 +36,38 @@ class Params:
             }
 
     @classmethod
+    def addLFdict(cls, params, lf_dict: Dict[str,float]):
+        wt = params.wt
+        sig2 = params.sig2
+        b = params.b
+        muh = params.muh
+        varh_diag = params.varh_diag
+        for lf, val in lf_dict.items():
+            if lf[:2] == "wt":
+                ih = int(lf[2])
+                iv = int(lf[3])
+                wt[ih,iv] += val
+            elif lf[:1] == "b":
+                iv = int(lf[1])
+                b[iv] += val
+            elif lf[:4] == "sig2":
+                sig2 += val
+            elif lf[:3] == "muh":
+                ih = int(lf[3])
+                muh[ih] += val
+            elif lf[:4] == "varh":
+                ih = int(lf[-1])
+                varh_diag[ih] += val
+        
+        return cls(
+            wt=wt,
+            b=b,
+            varh_diag=varh_diag,
+            muh=muh,
+            sig2=sig2
+            )
+
+    @classmethod
     def addTE(cls, params, paramsTE: ParamsTE):
         wt = params.wt + paramsTE.wt_TE
         b = params.b + paramsTE.b_TE

@@ -151,3 +151,13 @@ model.compile(optimizer=opt,
 model.fit(train_inputs, train_outputs, epochs=2)
 
 model.subnet.save("trained_subnet")
+
+# integrate
+params_integrated = model.integrate(
+    params_start=params_traj.params_traj[0],
+    tpt_start=0,
+    no_steps=3,
+    time_interval=0.1
+    )
+
+params_integrated.export("cache_integrated.txt")

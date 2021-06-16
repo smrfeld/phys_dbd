@@ -1,4 +1,6 @@
 from .net import RxnInputsLayer
+from .params import Params
+from .params_traj import ParamsTraj
 
 import tensorflow as tf
 import numpy as np
@@ -6,6 +8,7 @@ import numpy as np
 from typing import Union, List
 
 class RxnModel(tf.keras.Model):
+
     def __init__(self, 
         nv: int, 
         nh: int, 
@@ -37,6 +40,35 @@ class RxnModel(tf.keras.Model):
         self.rxn_norms_exist = False
         self.rxn_mean = np.array([])
         self.rxn_std_dev = np.array([])
+
+    def integrate(self, 
+        params_start: Params, 
+        tpt_start: int, 
+        no_steps: int,
+        time_interval: float
+        ) -> ParamsTraj:
+
+        tpts_traj = [tpt_start]
+        params_traj = [params_start]
+        for _ in range(0,no_steps):
+            tpt_curr = tpts_traj[-1]
+            input0 = params_start.get_tf_input_assuming_params0(tpt=tpt_curr)
+            output0 = self.call(input0)
+
+            # Add to params
+            tpt_new = tpt_curr + 1
+            params_new = Params.addLFdict(
+                params=params_traj[-1],
+                lf_dict=output0
+                )
+
+            params_traj.append(params_new)
+            tpts_traj.append(tpt_new)
+
+        return ParamsTraj(
+            times=time_interval*np.array(tpts_traj),
+            params_traj=params_traj
+            )
 
     def calculate_rxn_normalization(self, inputs, percent: float):
         # Size
