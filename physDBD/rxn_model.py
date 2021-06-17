@@ -50,7 +50,7 @@ class RxnModel(tf.keras.Model):
             nv=nv,
             nh=nh,
             rxn_lyr=rxn_lyr,
-            # subnet=subnet,
+            subnet=subnet,
             # output_lyr=output_lyr,
             # non_zero_outputs=non_zero_outputs_use,
             rxn_norms_exist=rxn_norms_exist,
@@ -62,7 +62,7 @@ class RxnModel(tf.keras.Model):
         nv: int, 
         nh: int,
         rxn_lyr: RxnInputsLayer, 
-        # subnet: tf.keras.Model,
+        subnet: tf.keras.Model,
         # output_lyr: tf.keras.layers.Layer,
         # non_zero_outputs : List[str],
         rxn_norms_exist : bool = False,
@@ -81,7 +81,7 @@ class RxnModel(tf.keras.Model):
         '''
 
         self.rxn_lyr = rxn_lyr
-        # self.subnet = subnet
+        self.subnet = subnet
         # self.output_lyr = output_lyr
 
         self.output_lyr = tf.keras.layers.Dense(3)
@@ -98,7 +98,7 @@ class RxnModel(tf.keras.Model):
             "nh": self.nh,
             #"non_zero_outputs": self.non_zero_outputs,
             "rxn_lyr": self.rxn_lyr,
-            # "subnet": self.subnet,
+            "subnet": self.subnet,
             # "output_lyr": self.output_lyr,
             "rxn_norms_exist": self.rxn_norms_exist,
             "rxn_mean": self.rxn_mean,
@@ -159,13 +159,12 @@ class RxnModel(tf.keras.Model):
         self.rxn_norms_exist = True
 
     def call(self, input_tensor, training=False):
-        # return input_tensor
-        return self.rxn_lyr(input_tensor)
-        # if self.rxn_norms_exist:
-        #    x -= self.rxn_mean
-        #    x /= self.rxn_std_dev
+        x = self.rxn_lyr(input_tensor)
+        if self.rxn_norms_exist:
+            x -= self.rxn_mean
+            x /= self.rxn_std_dev
 
-        # x = self.subnet(x)        
+        x = self.subnet(x)        
         # x = self.output_lyr(x)
 
         '''

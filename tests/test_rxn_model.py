@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from physDBD import Params, ImportHelper, ParamsTraj, ParamsTETraj, RxnModel, RxnSpec, RxnInputsLayer
+from physDBD import Params, ImportHelper, ParamsTraj, ParamsTETraj, RxnModel, RxnInputsLayer
 import numpy as np
 import os
 import tensorflow as tf
@@ -63,9 +63,9 @@ class TestRxnModel:
 
         # Rxns
         rxn_specs = [
-            (RxnSpec.BIRTH,0),
-            (RxnSpec.DEATH,1),
-            (RxnSpec.EAT,2,1)
+            ("BIRTH",0),
+            ("DEATH",1),
+            ("EAT",2,1)
             ]
 
         # Reaction input layer
@@ -99,7 +99,6 @@ class TestRxnModel:
             loss=tf.losses.MeanSquaredError()
             )
 
-        '''
         # Call the model once to build it
         outputs = rxn_model(inputs)
         print("Outputs without norm: ", outputs)
@@ -108,7 +107,6 @@ class TestRxnModel:
 
         print("Rxn mean: ", rxn_model.rxn_mean)
         print("Rxn std dev: ", rxn_model.rxn_std_dev)
-        '''
 
         outputs_1 = rxn_model(inputs)
         print("Outputs with norm: ", outputs_1)
@@ -121,11 +119,14 @@ class TestRxnModel:
 
         # Test load
         print(rxn_model)
-        rxn_model = tf.keras.models.load_model("saved_models/rxn_model", custom_objects={"RxnModel": RxnModel})
+        rxn_model_loaded = tf.keras.models.load_model("saved_models/rxn_model", custom_objects={"RxnModel": RxnModel})
         print(rxn_model)
 
+        # Check type
+        assert type(rxn_model) is type(rxn_model_loaded)
+
         # Run again
-        outputs_2 = rxn_model(inputs)
+        outputs_2 = rxn_model_loaded(inputs)
         print("Outputs after loading: ", outputs_2)
 
         diff = abs(outputs_2.numpy() - outputs_1.numpy())
