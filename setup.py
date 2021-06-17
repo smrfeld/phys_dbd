@@ -6,5 +6,6 @@ setup(
     packages=['physDBD'],
     author='Oliver K. Ernst',
     author_email='oernst@ucsd.edu',
-    url='https://github.com/smrfeld/phys_dbd'
+    url='https://github.com/smrfeld/phys_dbd',
+    python_requires='>=3.7'
     )
