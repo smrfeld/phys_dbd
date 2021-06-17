@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Welcome to physDBD’s documentation! &mdash; physDBD 0.1dev documentation</title>
+  <title>Physics-based dynamic PCA for modeling stochastic reaction networks with TensorFlow &mdash; physDBD 0.1dev documentation</title>
   
 
   
@@ -40,8 +40,7 @@
 
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="physDBD" href="modules.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -86,11 +85,21 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">physDBD</a></li>
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Physics-based dynamic PCA for modeling stochastic reaction networks with TensorFlow</a><ul>
+<li><a class="reference internal" href="#api-documentation">API Documentation</a></li>
+<li><a class="reference internal" href="#quickstart">Quickstart</a></li>
+<li><a class="reference internal" href="#about">About</a></li>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#tests">Tests</a></li>
+<li><a class="reference internal" href="#citing">Citing</a></li>
 </ul>
-
+</li>
+</ul>
+</div>
             
           
         </div>
@@ -137,13 +146,13 @@
     
       <li><a href="#" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Welcome to physDBD’s documentation!</li>
+      <li>Physics-based dynamic PCA for modeling stochastic reaction networks with TensorFlow</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/index.md.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -156,25 +165,68 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="welcome-to-physdbd-s-documentation">
-<h1>Welcome to physDBD’s documentation!<a class="headerlink" href="#welcome-to-physdbd-s-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">physDBD</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="physDBD.html">physDBD package</a></li>
-</ul>
+  <div class="tex2jax_ignore mathjax_ignore section" id="physics-based-dynamic-pca-for-modeling-stochastic-reaction-networks-with-tensorflow">
+<h1>Physics-based dynamic PCA for modeling stochastic reaction networks with TensorFlow<a class="headerlink" href="#physics-based-dynamic-pca-for-modeling-stochastic-reaction-networks-with-tensorflow" title="Permalink to this headline">¶</a></h1>
+<p>This is the source repo. for the <code class="docutils literal notranslate"><span class="pre">physDBD</span></code> Python package. It allows the creation of physics-based machine learning models in <code class="docutils literal notranslate"><span class="pre">TensorFlow</span></code> for modeling stochastic reaction networks.</p>
+<img src="figures/fig_1.png" alt="drawing" width="800"/>
+<div class="section" id="api-documentation">
+<h2>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="modules.html"><span class="doc std std-doc">See the API documentation here.</span></a></p>
+</div>
+<div class="section" id="quickstart">
+<h2>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h2>
+<ol>
+<li><p>Install:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">physDBD</span>
+</pre></div>
+</div>
 </li>
-</ul>
+<li><p>See the <span class="xref myst">example notebook</span>.</p></li>
+<li><p>Read the <span class="xref myst">documentation</span>.</p></li>
+</ol>
 </div>
+<div class="section" id="about">
+<h2>About<a class="headerlink" href="#about" title="Permalink to this headline">¶</a></h2>
+<p>This repo. implements a TensorFlow package for modeling stochastic reaction networks with a dynamic PCA model. Please see [this] paper for technical details:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">XXX</span>
+</pre></div>
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<p>The original implementation in the paper is written in Mathematica and can be found <a class="reference external" href="https://github.com/smrfeld/physics-based-ml-reaction-networks">here</a>. The Python package developed here translates these methods to <code class="docutils literal notranslate"><span class="pre">TensorFlow</span></code>.</p>
+<p>The only current supported probability distribution is the Gaussian distribution defined by PCA; more general Gaussian distributions are a work in progress.</p>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TensorFlow</span> <span class="pre">2.5.0</span></code> or later. <em>Note: later versions not tested.</em></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Python</span> <span class="pre">3.7.4</span></code> or later.</p></li>
 </ul>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">physDBD</span>
+</pre></div>
+</div>
+<p>Alternatively, clone this repo. and use the provided <code class="docutils literal notranslate"><span class="pre">setup.py</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>See the notebook in the <span class="xref myst">example</span> directory.</p>
+</div>
+<div class="section" id="tests">
+<h2>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h2>
+<p>Tests are run using <code class="docutils literal notranslate"><span class="pre">pytest</span></code> and are located in <span class="xref myst">tests</span>.</p>
+</div>
+<div class="section" id="citing">
+<h2>Citing<a class="headerlink" href="#citing" title="Permalink to this headline">¶</a></h2>
+<p>Please cite the following paper:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">XXX</span>
+</pre></div>
+</div>
+</div>
 </div>
 
 
@@ -182,9 +234,6 @@
            
           </div>
           <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="modules.html" class="btn btn-neutral float-right" title="physDBD" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
 
   <hr/>
 
