@@ -27,7 +27,6 @@ class RxnModel(tf.keras.Model):
         **kwargs
         ):
 
-        '''
         if len(non_zero_outputs) == 0:
             non_zero_outputs_use = []
             for ih in range(0,nh):
@@ -40,19 +39,16 @@ class RxnModel(tf.keras.Model):
             non_zero_outputs_use = non_zero_outputs
         
         no_outputs = len(non_zero_outputs_use)
-        '''
 
-        # no_outputs = 3
-
-        # output_lyr = tf.keras.layers.Dense(no_outputs, activation=None)
+        output_lyr = tf.keras.layers.Dense(no_outputs, activation=None)
 
         return cls(
             nv=nv,
             nh=nh,
             rxn_lyr=rxn_lyr,
             subnet=subnet,
-            # output_lyr=output_lyr,
-            # non_zero_outputs=non_zero_outputs_use,
+            output_lyr=output_lyr,
+            non_zero_outputs=non_zero_outputs_use,
             rxn_norms_exist=rxn_norms_exist,
             rxn_mean=rxn_mean,
             rxn_std_dev=rxn_std_dev
@@ -63,8 +59,8 @@ class RxnModel(tf.keras.Model):
         nh: int,
         rxn_lyr: RxnInputsLayer, 
         subnet: tf.keras.Model,
-        # output_lyr: tf.keras.layers.Layer,
-        # non_zero_outputs : List[str],
+        output_lyr: tf.keras.layers.Layer,
+        non_zero_outputs : List[str],
         rxn_norms_exist : bool = False,
         rxn_mean : np.array = np.array([]),
         rxn_std_dev : np.array = np.array([]),
@@ -75,16 +71,12 @@ class RxnModel(tf.keras.Model):
         self.nv = nv
         self.nh = nh
 
-        '''
         self.non_zero_outputs = non_zero_outputs
         self.no_outputs = len(self.non_zero_outputs)
-        '''
 
         self.rxn_lyr = rxn_lyr
         self.subnet = subnet
-        # self.output_lyr = output_lyr
-
-        self.output_lyr = tf.keras.layers.Dense(3)
+        self.output_lyr = output_lyr
 
         self.rxn_norms_exist = rxn_norms_exist
         self.rxn_mean = rxn_mean
@@ -96,10 +88,10 @@ class RxnModel(tf.keras.Model):
         config = {
             "nv": self.nv,
             "nh": self.nh,
-            #"non_zero_outputs": self.non_zero_outputs,
+            "non_zero_outputs": self.non_zero_outputs,
             "rxn_lyr": self.rxn_lyr,
             "subnet": self.subnet,
-            # "output_lyr": self.output_lyr,
+            "output_lyr": self.output_lyr,
             "rxn_norms_exist": self.rxn_norms_exist,
             "rxn_mean": self.rxn_mean,
             "rxn_std_dev": self.rxn_std_dev
@@ -165,9 +157,7 @@ class RxnModel(tf.keras.Model):
             x /= self.rxn_std_dev
 
         x = self.subnet(x)        
-        # x = self.output_lyr(x)
-
-        '''
+        x = self.output_lyr(x)
 
         # Reshape outputs into dictionary
         out = {}
@@ -176,5 +166,3 @@ class RxnModel(tf.keras.Model):
             out[non_zero_output] = tf.reshape(x[:,i],shape=(no_tpts,1))
         
         return out
-        '''
-        return x

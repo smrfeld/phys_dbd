@@ -111,9 +111,6 @@ class TestRxnModel:
         outputs_1 = rxn_model(inputs)
         print("Outputs with norm: ", outputs_1)
 
-        # weights_1 = rxn_model.layers[-1].get_weights()
-        # print("Weights: ", rxn_model.layers[-1], weights_1)
-
         # Test save; call the model once to build it first
         rxn_model.save("saved_models/rxn_model", save_traces=False)
 
@@ -129,12 +126,9 @@ class TestRxnModel:
         outputs_2 = rxn_model_loaded(inputs)
         print("Outputs after loading: ", outputs_2)
 
-        diff = abs(outputs_2.numpy() - outputs_1.numpy())
-        print("diff",diff)
-
-        max_diff = np.max(diff)
-        print("max_diff",max_diff)
-
-        # weights_2 = rxn_model.layers[-1].get_weights()
-        # print(np.max(abs(weights_2[0] - weights_1[0])))
-        # print("Weights: ", rxn_model.layers[-1], rxn_model.layers[-1].get_weights())
+        # Check outputs are same after loading
+        for key in outputs_1.keys():
+            diff = abs(outputs_2[key].numpy() - outputs_1[key].numpy())
+            max_diff = np.max(diff)
+            print("max_diff: ", key, max_diff)
+            assert max_diff < 1.e-10
