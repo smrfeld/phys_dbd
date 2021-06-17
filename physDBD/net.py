@@ -983,11 +983,6 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
             "wtTE": outputs4["wtTE2"]
         }
 
-class RxnSpec(Enum):
-    BIRTH = 0
-    DEATH = 1
-    EAT = 2
-
 # Model vs Layer
 # https://www.tensorflow.org/tutorials/customization/custom_layers#models_composing_layers
 # Typically you inherit from keras.Model when you need the model methods like: Model.fit,Model.evaluate, and Model.save (see Custom Keras layers and models for details).
@@ -999,7 +994,7 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         nv: int, 
         nh: int, 
         params0toNMoments: ConvertParams0ToNMomentsLayer,
-        rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]],
+        rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
         **kwargs
         ):
         # Super
@@ -1014,20 +1009,19 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         self.rxn_specs = rxn_specs
         self.rxns = []
         for spec in rxn_specs:
-            if spec[0] == RxnSpec.EAT:
+            if spec[0] == "EAT":
                 rtype, i_hunter, i_prey = spec
             else:
                 rtype, i_sp = spec
 
-            if rtype == RxnSpec.BIRTH:
+            if rtype == "BIRTH":
                 self.rxns.append(BirthRxnLayer(nv, nh, i_sp))
-            elif rtype == RxnSpec.DEATH:
+            elif rtype == "DEATH":
                 self.rxns.append(DeathRxnLayer(nv, nh, i_sp))
-            elif rtype == RxnSpec.EAT:
+            elif rtype == "EAT":
                 self.rxns.append(EatRxnLayer(nv,nh,i_hunter,i_prey))
             else:
                 raise ValueError("Rxn type: %s not recognized" % rtype)
-
 
     @classmethod
     def construct(cls, 
@@ -1038,7 +1032,7 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         muh_cos_coeffs_init : np.array,
         varh_sin_coeffs_init : np.array,
         varh_cos_coeffs_init : np.array,
-        rxn_specs : List[Union[Tuple[RxnSpec,int],Tuple[RxnSpec,int,int]]],
+        rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
         **kwargs
         ):
         

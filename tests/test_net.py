@@ -1,4 +1,4 @@
-from physDBD import RxnSpec, FourierLatentLayer, \
+from physDBD import  FourierLatentLayer, \
     ConvertParamsLayer, ConvertParamsLayerFrom0, ConvertParams0ToParamsLayer, \
         ConvertParamsToMomentsLayer, ConvertMomentsToNMomentsLayer, DeathRxnLayer, BirthRxnLayer, EatRxnLayer, \
             ConvertNMomentsTEtoMomentsTE, ConvertMomentsTEtoParamMomentsTE, ConvertParamMomentsTEtoParamsTE, \
@@ -158,7 +158,7 @@ class Vals:
     @classmethod
     def varh_TE2(cls):
         return np.tile(np.diag(cls._varh_diag_TE2), (cls.batch_size,1,1))
-
+ 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class SingleLayerModel(tf.keras.Model):
 
@@ -167,11 +167,9 @@ class SingleLayerModel(tf.keras.Model):
         self.lyr = lyr
 
     def get_config(self):
-        config = super(SingleLayerModel, self).get_config()
-        config.update({
-            "lyr": self.lyr.get_config()
-        })
-        return config
+        return {
+            "lyr": self.lyr
+            }
 
     @classmethod
     def from_config(cls, config):
@@ -210,10 +208,17 @@ class TestNet:
         # Test save; call the model once to build it first
         model = SingleLayerModel(lyr)
         x_out = model(x_in)
-        model.save("model", save_traces=False)
+
+        print(model)
+        model.save("saved_models/model", save_traces=False)
 
         # Test load
-        model = tf.keras.models.load_model("model")
+        model_rel = tf.keras.models.load_model("saved_models/model")
+        print(model_rel)
+
+        # Check types match!
+        # Otherwise we may have: tensorflow.python.keras.saving.saved_model.load.XYZ instead of XYZ
+        assert type(model_rel) is type(model)
 
     def test_fourier(self):
 
@@ -628,9 +633,9 @@ class TestNet:
         varh_cos_coeffs_init = np.random.rand(3)
 
         rxn_specs = [
-            (RxnSpec.BIRTH,0),
-            (RxnSpec.DEATH,1),
-            (RxnSpec.EAT,2,1)
+            ("BIRTH",0),
+            ("DEATH",1),
+            ("EAT",2,1)
         ]
 
         lyr = RxnInputsLayer.construct(

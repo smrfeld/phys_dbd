@@ -16,7 +16,7 @@ class TestRxnModel:
     species = ["ca2i","ip3"]
 
     def import_params(self, time: float) -> Params:
-        data = ImportHelper.import_gillespie_ssa(
+        data = ImportHelper.import_gillespie_ssa_at_time(
             fnames=self.fnames,
             time=time,
             species=self.species
@@ -69,7 +69,7 @@ class TestRxnModel:
             ]
 
         # Reaction input layer
-        rxn_lyr = RxnInputsLayer(
+        rxn_lyr = RxnInputsLayer.construct(
             nv=nv,
             nh=nh,
             freqs=freqs,
@@ -85,20 +85,55 @@ class TestRxnModel:
             tf.keras.layers.Dropout(0.2)
         ])
 
-        rxn_model = RxnModel(nv,nh,rxn_lyr,subnet)
+        rxn_model = RxnModel.construct(nv,nh,rxn_lyr,subnet)
 
+        # Calculate normalizations
         pt = self.create_params_traj()
-
-        # Inputs/outputs
         inputs = pt.get_tf_inputs_assuming_params0()
+        # rxn_model.calculate_rxn_normalization(inputs, percent=0.8)
 
+        # Compile
+        # Must compile first in order for DenseLayer output to be saved correctly
+        rxn_model.compile(
+            optimizer='adam',
+            loss=tf.losses.MeanSquaredError()
+            )
+
+        '''
+        # Call the model once to build it
         outputs = rxn_model(inputs)
         print("Outputs without norm: ", outputs)
 
-        rxn_model.calculate_rxn_normalizations(inputs)
+        rxn_model.calculate_rxn_normalization(inputs, percent=0.8)
 
         print("Rxn mean: ", rxn_model.rxn_mean)
         print("Rxn std dev: ", rxn_model.rxn_std_dev)
+        '''
 
-        outputs = rxn_model(inputs)
-        print("Outputs with norm: ", outputs)
+        outputs_1 = rxn_model(inputs)
+        print("Outputs with norm: ", outputs_1)
+
+        # weights_1 = rxn_model.layers[-1].get_weights()
+        # print("Weights: ", rxn_model.layers[-1], weights_1)
+
+        # Test save; call the model once to build it first
+        rxn_model.save("saved_models/rxn_model", save_traces=False)
+
+        # Test load
+        print(rxn_model)
+        rxn_model = tf.keras.models.load_model("saved_models/rxn_model", custom_objects={"RxnModel": RxnModel})
+        print(rxn_model)
+
+        # Run again
+        outputs_2 = rxn_model(inputs)
+        print("Outputs after loading: ", outputs_2)
+
+        diff = abs(outputs_2.numpy() - outputs_1.numpy())
+        print("diff",diff)
+
+        max_diff = np.max(diff)
+        print("max_diff",max_diff)
+
+        # weights_2 = rxn_model.layers[-1].get_weights()
+        # print(np.max(abs(weights_2[0] - weights_1[0])))
+        # print("Weights: ", rxn_model.layers[-1], rxn_model.layers[-1].get_weights())

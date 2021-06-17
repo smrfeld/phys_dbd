@@ -15,7 +15,7 @@ class TestParams:
     species = ["ca2i","ip3"]
 
     def import_params(self, time: float) -> Params:
-        data = ImportHelper.import_gillespie_ssa(
+        data = ImportHelper.import_gillespie_ssa_at_time(
             fnames=self.fnames,
             time=time,
             species=self.species

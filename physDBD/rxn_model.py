@@ -1,3 +1,4 @@
+from tensorflow.python.ops.gen_math_ops import sub
 from .net import RxnInputsLayer
 from .params import Params
 from .params_traj import ParamsTraj
@@ -5,95 +6,111 @@ from .params_traj import ParamsTraj
 import tensorflow as tf
 import numpy as np
 
-from typing import Union, List
+from typing import List
 
-import os
-import pickle
+# Do not put this:
+# @tf.keras.utils.register_keras_serializable(package="physDBD")
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class RxnModel(tf.keras.Model):
 
-    def __init__(self, 
+    @classmethod
+    def construct(cls, 
         nv: int, 
         nh: int, 
         rxn_lyr: RxnInputsLayer, 
         subnet: tf.keras.Model,
-        non_zero_outputs : List[str] = []
+        non_zero_outputs : List[str] = [],
+        rxn_norms_exist : bool = False,
+        rxn_mean : np.array = np.array([]),
+        rxn_std_dev : np.array = np.array([]),
+        **kwargs
         ):
-        super(RxnModel, self).__init__(name='')
+
+        '''
+        if len(non_zero_outputs) == 0:
+            non_zero_outputs_use = []
+            for ih in range(0,nh):
+                for iv in range(0,nv):
+                    non_zero_outputs_use.append("wt%d%d_TE" % (ih,iv))
+            for iv in range(0,nv):
+                non_zero_outputs_use.append("b%d_TE" % iv)
+            non_zero_outputs_use.append("sig2_TE")
+        else:
+            non_zero_outputs_use = non_zero_outputs
+        
+        no_outputs = len(non_zero_outputs_use)
+        '''
+
+        # no_outputs = 3
+
+        # output_lyr = tf.keras.layers.Dense(no_outputs, activation=None)
+
+        return cls(
+            nv=nv,
+            nh=nh,
+            rxn_lyr=rxn_lyr,
+            # subnet=subnet,
+            # output_lyr=output_lyr,
+            # non_zero_outputs=non_zero_outputs_use,
+            rxn_norms_exist=rxn_norms_exist,
+            rxn_mean=rxn_mean,
+            rxn_std_dev=rxn_std_dev
+            )
+
+    def __init__(self, 
+        nv: int, 
+        nh: int,
+        rxn_lyr: RxnInputsLayer, 
+        # subnet: tf.keras.Model,
+        # output_lyr: tf.keras.layers.Layer,
+        # non_zero_outputs : List[str],
+        rxn_norms_exist : bool = False,
+        rxn_mean : np.array = np.array([]),
+        rxn_std_dev : np.array = np.array([]),
+        **kwargs
+        ):
+        super(RxnModel, self).__init__(**kwargs)
 
         self.nv = nv
         self.nh = nh
-        if len(non_zero_outputs) == 0:
-            self.non_zero_outputs = []
-            for ih in range(0,nh):
-                for iv in range(0,nv):
-                    self.non_zero_outputs.append("wt%d%d_TE" % (ih,iv))
-            for iv in range(0,nv):
-                self.non_zero_outputs.append("b%d_TE" % iv)
-            self.non_zero_outputs.append("sig2_TE")
-        else:
-            self.non_zero_outputs = non_zero_outputs
-        
+
+        '''
+        self.non_zero_outputs = non_zero_outputs
         self.no_outputs = len(self.non_zero_outputs)
+        '''
 
         self.rxn_lyr = rxn_lyr
-        self.subnet = subnet
-        self.output_lyr = tf.keras.layers.Dense(self.no_outputs, activation=None)
+        # self.subnet = subnet
+        # self.output_lyr = output_lyr
 
-        self.rxn_norms_exist = False
-        self.rxn_mean = np.array([])
-        self.rxn_std_dev = np.array([])
+        self.output_lyr = tf.keras.layers.Dense(3)
+
+        self.rxn_norms_exist = rxn_norms_exist
+        self.rxn_mean = rxn_mean
+        self.rxn_std_dev = rxn_std_dev
 
     def get_config(self):
-        config = super(RxnModel, self).get_config()
-
-        config.update({
+        print("get_config")
+        # Do not call super.get_config !!!
+        config = {
             "nv": self.nv,
             "nh": self.nh,
-            "non_zero_outputs": self.non_zero_outputs,
-            "no_outputs": self.no_outputs,
-            "rxn_lyr": self.rxn_lyr.get_config(),
-            "subnet": self.subnet.get_config(),
-            "output_ly": self.output_lyr.get_config(),
+            #"non_zero_outputs": self.non_zero_outputs,
+            "rxn_lyr": self.rxn_lyr,
+            # "subnet": self.subnet,
+            # "output_lyr": self.output_lyr,
             "rxn_norms_exist": self.rxn_norms_exist,
             "rxn_mean": self.rxn_mean,
             "rxn_std_dev": self.rxn_std_dev
-        })
+        }
         return config
 
+    # from_config doesn't get called anyways?
     @classmethod
     def from_config(cls, config):
+        print("from_config")
         return cls(**config)
-
-    def __getstate__(self):
-        return {
-            'nv': self.nv, 
-            'nh': self.nh, 
-            'non_zero_outputs': self.non_zero_outputs,
-            'no_outputs': self.no_outputs,
-            'rxn_norms_exist': self.rxn_norms_exist,
-            'rxn_mean': self.rxn_mean,
-            'rxn_std_dev': self.rxn_std_dev
-        }
-
-    '''
-    def save(self, dir_name: str):
-        # Make directory
-        if not os.path.isdir(dir_name):
-            os.mkdir(dir_name)
-        
-        # Dump
-        fname = os.path.join(dir_name,"model.txt")
-        with open(fname,'wb') as f:
-            pickle.dump(self, f)
-
-        # Write subnet
-        self.subnet.save(os.path.join(dir_name,"subnet"))
-
-        # Save weights
-        self.save_weights(os.path.join(dir_name,"weights.txt"))
-    '''
 
     def integrate(self, 
         params_start: Params, 
@@ -142,14 +159,16 @@ class RxnModel(tf.keras.Model):
         self.rxn_norms_exist = True
 
     def call(self, input_tensor, training=False):
-        x = self.rxn_lyr(input_tensor)
+        # return input_tensor
+        return self.rxn_lyr(input_tensor)
+        # if self.rxn_norms_exist:
+        #    x -= self.rxn_mean
+        #    x /= self.rxn_std_dev
 
-        if self.rxn_norms_exist:
-            x -= self.rxn_mean
-            x /= self.rxn_std_dev
+        # x = self.subnet(x)        
+        # x = self.output_lyr(x)
 
-        x = self.subnet(x)
-        x = self.output_lyr(x)
+        '''
 
         # Reshape outputs into dictionary
         out = {}
@@ -158,3 +177,5 @@ class RxnModel(tf.keras.Model):
             out[non_zero_output] = tf.reshape(x[:,i],shape=(no_tpts,1))
         
         return out
+        '''
+        return x
