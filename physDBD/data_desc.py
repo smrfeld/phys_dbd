@@ -23,6 +23,15 @@ class DataDesc:
         time_interval: float, 
         species: List[str]
         ):
+        """Data description
+
+        Args:
+            no_seeds (int): no. seeds
+            time_start (float): time start (real time)
+            time_end (float): time end (real time)
+            time_interval (float): time interval (real time)
+            species (List[str]): list of species
+        """
         self.no_seeds = no_seeds
 
         self.time_start = time_start

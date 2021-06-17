@@ -14,16 +14,37 @@ class ParamsTE:
     sig2_TE: float
 
     @property
-    def nv(self):
+    def nv(self) -> int:
+        """No. visible species
+
+        Returns:
+            int: No. visible species
+        """
         return len(self.b_TE)
 
     @property
-    def nh(self):
+    def nh(self) -> int:
+        """No. hidden species
+
+        Returns:
+            int: No. hidden species
+        """
         return len(self.muh_TE)
 
     def get_tf_output_assuming_params0(self, 
         non_zero_outputs : List[str] = []
-        ) -> Dict[str, np.array]:
+        ) -> Dict[str, float]:
+        """Get TF outputs assuming these are std. params with muh=0,varh_diag=1 and muhTE=0,varh_diagTE=0
+
+        Args:
+            non_zero_outputs (List[str], optional): Long form wt00_TE, wt01_TE, etc. 
+                If provided, only these are returned, else all are. Defaults to [].
+
+        Returns:
+            Dict[str, float]: Keys are long form, i.e.
+                wt00_TE, wt01_TE, ..., b0_TE, b1_TE, ..., sig2_TE, muh0_TE, muh1_TE, ..., varh_diag0_TE, varh_diag1_TE, .... 
+                Values are floats
+        """
         out = {}
         if len(non_zero_outputs) == 0:
             for ih in range(0,self.nh):
@@ -51,6 +72,11 @@ class ParamsTE:
         return dc_eq(self, other)
 
     def to_1d_arr(self) -> np.array:
+        """Convert to 1D array
+
+        Returns:
+            np.array: 1D array of size nv*nh + nv + 1 + 2*nh
+        """
         x = np.concatenate([
             self.wt_TE.flatten(),
             self.b_TE,
@@ -62,6 +88,13 @@ class ParamsTE:
     
     @classmethod
     def from1dArr(cls, arr: np.array, nv: int, nh: int):
+        """Construct from 1D array
+
+        Args:
+            arr (np.array): 1D array of size nv*nh + nv + 1 + 2*nh
+            nv (int): No. visible species
+            nh (int): No. hidden species
+        """
         s = 0
         e = s + nv*nh
         wt_flat = arr[s:e]
@@ -92,6 +125,13 @@ class ParamsTE:
             )
 
     def to_lf_dict(self) -> Dict[str,float]:
+        """Convert to long form dictionary
+
+        Returns:
+            Dict[str, float]: Keys are long form, i.e.
+                wt00_TE, wt01_TE, ..., b0_TE, b1_TE, ..., sig2_TE, muh0_TE, muh1_TE, ..., varh_diag0_TE, varh_diag1_TE, .... 
+                Values are floats
+        """
         lf_dict = {}
 
         for ih in range(0,self.nh):
@@ -118,6 +158,15 @@ class ParamsTE:
 
     @classmethod
     def fromLFdict(cls, lf_dict: Dict[str,float], nv: int, nh: int):
+        """Construct from long form dictionary
+
+        Args:
+            lf_dict (Dict[str,float]): Keys are long form, i.e.
+                wt00_TE, wt01_TE, ..., b0_TE, b1_TE, ..., sig2_TE, muh0_TE, muh1_TE, ..., varh_diag0_TE, varh_diag1_TE, .... 
+                Values are floats
+            nv (int): No. visible species
+            nh (int): No. hidden species
+        """
         wt = np.zeros((nh,nv))
         for ih in range(0,nh):
             for iv in range(0,nv):

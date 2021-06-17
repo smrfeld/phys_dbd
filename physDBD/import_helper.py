@@ -15,6 +15,15 @@ class ImportHelper:
         data_dir: str,
         no_seeds: int
         ) -> List[str]:
+        """Create fnames for different seeds with zero padding 4
+
+        Args:
+            data_dir (str): Data directory
+            no_seeds (int): No seeds
+
+        Returns:
+            List[str]: List of filenames
+        """
 
         # Construct fnames
         fnames = []
@@ -29,6 +38,15 @@ class ImportHelper:
         data_desc: DataDesc, 
         data_dir: str
         ) -> np.array:
+        """Import Gillespie SSA data
+
+        Args:
+            data_desc (DataDesc): Data description
+            data_dir (str): Data directory
+
+        Returns:
+            np.array: Numpy array of size (no_times, no_seeds, no_species)
+        """
 
         fnames = ImportHelper.create_fnames(data_dir,data_desc.no_seeds)
 
@@ -43,13 +61,23 @@ class ImportHelper:
     def import_gillespie_ssa_from_data_desc_at_time(
         data_desc: DataDesc, 
         data_dir: str, 
-        vol_exp: int, 
-        no_ip3r: int, 
-        ip3_dir: str,
-        time: int
+        time: float
         ) -> np.array:
+        """Import Gillespie SSA data at a single timepoint
 
-        fnames = ImportHelper.create_fnames(data_dir,vol_exp,no_ip3r,ip3_dir,data_desc.no_seeds)
+        Args:
+            data_desc (DataDesc): Data description
+            data_dir (str): Data directory
+            time (float): Time (real time)
+
+        Returns:
+            np.array: Numpy array of size (no_seeds, no_species)
+        """
+
+        fnames = ImportHelper.create_fnames(
+            data_dir=data_dir,
+            no_seeds=data_desc.no_seeds
+            )
         return ImportHelper.import_gillespie_ssa_at_time(fnames, time, data_desc.species)
 
     @staticmethod
@@ -58,6 +86,20 @@ class ImportHelper:
         time: float, 
         species: List[str]
         ) -> np.array:
+        """Import seeds from different files at a single time
+
+        Args:
+            fnames (List[str]): The different files corresponding to the seeds
+            time (float): Time (real time)
+            species (List[str]): Species
+
+        Raises:
+            ValueError: If species not found
+
+        Returns:
+            np.array: Array of size (no_seeds, no_species)
+        """
+
         # Read first fname
         ff = pd.read_csv(fnames[0], sep=" ")
 
@@ -86,6 +128,19 @@ class ImportHelper:
         times: List[float], 
         species: List[str]
         ) -> np.array:
+        """Import Gillespie SSA whole file and extract multiple times for different seeds
+
+        Args:
+            fnames (List[str]): List of files corresponding to different seeds
+            times (List[float]): List of times (real time) to extract
+            species (List[str]): Species
+
+        Raises:
+            ValueError: If species not found
+
+        Returns:
+            np.array: array of size (no_times, no_seeds, no_species)
+        """
 
         # Read first fname
         ff = pd.read_csv(fnames[0], sep=" ")

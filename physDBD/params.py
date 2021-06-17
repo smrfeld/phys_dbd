@@ -17,17 +17,35 @@ class Params:
     sig2: float
 
     @property
-    def nv(self):
+    def nv(self) -> int:
+        """No. visible species
+
+        Returns:
+            int: No. visible species
+        """
         return len(self.b)
 
     @property
-    def nh(self):
+    def nh(self) -> int:
+        """No. hidden species
+
+        Returns:
+            int: No. hidden species
+        """
         return len(self.muh)
 
     def __eq__(self, other):
         return dc_eq(self, other)
 
     def get_tf_input_assuming_params0(self, tpt: int) -> Dict[str, np.array]:
+        """Get TF input assuming these are std. params with muh=0, varh_diag=1
+
+        Args:
+            tpt (int): Timepoint (not real time)
+
+        Returns:
+            Dict[str, np.array]: Keys = "tpt", "wt", "b", "sig2"; values are the arrays/floats
+        """
         return {
             "tpt": np.array([tpt]).astype(float),
             "wt": np.array([self.wt]),
@@ -37,11 +55,18 @@ class Params:
 
     @classmethod
     def addLFdict(cls, params, lf_dict: Dict[str,float]):
-        wt = params.wt
+        """Construct new parameters by adding a long form (lf) dictionary of time evolutions
+
+        Args:
+            params (Params): Params
+            lf_dict (Dict[str,float]): Long form dictionary to add. Keys should be:
+                wt00_TE, wt01_TE, ..., b0_TE, b1_TE, ..., sig2_TE, muh0_TE, muh1_TE, ..., varh_diag0_TE, varh_diag1_TE, ...
+        """
+        wt = np.array(params.wt)
         sig2 = params.sig2
-        b = params.b
-        muh = params.muh
-        varh_diag = params.varh_diag
+        b = np.array(params.b)
+        muh = np.array(params.muh)
+        varh_diag = np.array(params.varh_diag)
         for lf, val in lf_dict.items():
             if lf[:2] == "wt":
                 ih = int(lf[2])
@@ -69,6 +94,12 @@ class Params:
 
     @classmethod
     def addTE(cls, params, paramsTE: ParamsTE):
+        """Construct by adding time evolution to existing params.
+
+        Args:
+            params (Parmas): Params
+            paramsTE (ParamsTE): Time evolution
+        """
         wt = params.wt + paramsTE.wt_TE
         b = params.b + paramsTE.b_TE
         varh_diag = params.varh_diag + paramsTE.varh_diag_TE
@@ -84,6 +115,13 @@ class Params:
     
     @classmethod
     def fromPCA(cls, data: np.array, muh: np.array, varh_diag: np.array):
+        """Construct by applying PCA to data
+
+        Args:
+            data (np.array): Data matrix of size (no_seeds, no_species)
+            muh (np.array): Latent mean of size nh = no. hidden species
+            varh_diag (np.array): Latent varh_daig of size nh = no. hidden species
+        """
 
         if len(muh) != len(varh_diag):
             raise ValueError("muh and varh_diag must be of the same length")
@@ -134,6 +172,12 @@ class Params:
         return params
 
     def convert_latent_space(self, muh_new: np.array, varh_diag_new: np.array):
+        """Convert params in the latent space to a new muh,varh_diag
+
+        Args:
+            muh_new (np.array): New muh of length nh = no. hidden species
+            varh_diag_new (np.array): New varh_diag of length nh = no. hidden species
+        """
 
         b1 = self.b
         wt1 = self.wt
@@ -154,6 +198,11 @@ class Params:
         self.wt = wt2
 
     def to_lf_dict(self) -> Dict[str,float]:
+        """Convert to long form dictionary
+
+        Returns:
+            Dict[str,float]: Keys are wt00, wt01, ..., b0, b1, ..., sig2, muh0, muh1, ..., varh_diag0, varh_diag1, .... Values are floats.
+        """
         lf_dict = {}
 
         for ih in range(0,self.nh):
@@ -180,6 +229,14 @@ class Params:
 
     @classmethod
     def fromLFdict(cls, lf_dict: Dict[str,float], nv: int, nh: int):
+        """Construct from long form dictionary
+
+        Args:
+            lf_dict (Dict[str,float]): Keys are wt00, wt01, ..., b0, b1, ..., sig2, muh0, muh1, ..., varh_diag0, varh_diag1, .... 
+                Values are floats.
+            nv (int): No. visible species
+            nh (int): No. hidden species
+        """
         wt = np.zeros((nh,nv))
         for ih in range(0,nh):
             for iv in range(0,nv):
@@ -212,6 +269,11 @@ class Params:
             )
 
     def to_1d_arr(self) -> np.array:
+        """Convert to 1D numpy array
+
+        Returns:
+            np.array: 1D numpy array of (wt,b,sig2,muh,varh_diag) flattened
+        """
         x = np.concatenate([
             self.wt.flatten(),
             self.b,
@@ -223,6 +285,13 @@ class Params:
 
     @classmethod
     def from1dArr(cls, arr: np.array, nv: int, nh: int):
+        """Construct from 1D numpy array
+
+        Args:
+            arr (np.array): (wt,b,sig2,muh,varh_diag) flattened
+            nv (int): No. visible species
+            nh (int): No. hidden species
+        """
         s = 0
         e = s + nv*nh
         wt_flat = arr[s:e]

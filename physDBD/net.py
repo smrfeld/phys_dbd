@@ -28,6 +28,14 @@ class FourierLatentLayer(tf.keras.layers.Layer):
         cos_coeff : np.array,
         **kwargs
         ):
+        """Fourier latent layer
+
+        Args:
+            freqs (np.array): 1D arr of frequencies of length L
+            offset_fixed (float): Float offset (not trained)
+            sin_coeff (np.array): 1D arr of sin coeffs (trained) of length L
+            cos_coeff (np.array): 1D arr of sin coeffs (trained) of length L
+        """
         # Super
         super(FourierLatentLayer, self).__init__(**kwargs)
 
@@ -88,6 +96,11 @@ class FourierLatentLayer(tf.keras.layers.Layer):
     
     # @tf.function
     def fourier_range(self):
+        """Compute the denominator = max(1, sum(abs(coeffs)))
+
+        Returns:
+            float: denominator
+        """
         st = tf.math.reduce_sum(abs(self.sin_coeff))
         ct = tf.math.reduce_sum(abs(self.cos_coeff))
         return tf.math.maximum(1.0, st+ct+1.e-8)
@@ -111,6 +124,8 @@ class FourierLatentLayer(tf.keras.layers.Layer):
 class ConvertParamsLayer(tf.keras.layers.Layer):
 
     def __init__(self, **kwargs):
+        """Convert params latent space to different muh,varh_diag
+        """
         # Super
         super(ConvertParamsLayer, self).__init__(**kwargs)
 
@@ -167,6 +182,8 @@ class ConvertParamsLayer(tf.keras.layers.Layer):
 class ConvertParamsLayerFrom0(tf.keras.layers.Layer):
 
     def __init__(self, **kwargs):
+        """Convert params0 = std. params with muh=0, varh_diag=1 to params with different muh,varh_diag
+        """
         # Super
         super(ConvertParamsLayerFrom0, self).__init__(**kwargs)
 
@@ -208,9 +225,20 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
     def __init__(self, 
         nv: int, 
         nh: int, 
-        layer_muh: Dict[str,Any],
-        layer_varh_diag: Dict[str,Any],
+        layer_muh: Dict[str,FourierLatentLayer],
+        layer_varh_diag: Dict[str,FourierLatentLayer],
         **kwargs):
+        """Convert params0 to params layer using Fourier to represent latents.
+           Params0 = std. params with muh=0,varh_diag=1
+           Output = params with different muh,varh_diag obtained from the Fourier representation
+
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            layer_muh (Dict[str,FourierLatentLayer]): Keys = "0", "1", ..., "nh". Note that TF only likes string keys. Values = FourierLatentLayer.
+            layer_varh_diag (Dict[str,FourierLatentLayer]): Keys = "0", "1", ..., "nh". Note that TF only likes string keys. Values = FourierLatentLayer.
+        """
 
         # Super
         super(ConvertParams0ToParamsLayer, self).__init__(**kwargs)
@@ -233,6 +261,17 @@ class ConvertParams0ToParamsLayer(tf.keras.layers.Layer):
         varh_sin_coeffs_init : np.array,
         varh_cos_coeffs_init : np.array,
         **kwargs):
+        """Construct the layer including the FourierLatentLayers from initial coefficients.
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            freqs (np.array): 1D arr of frequencies of length L
+            muh_sin_coeffs_init (np.array): 1D arr of initial coeffs of length L
+            muh_cos_coeffs_init (np.array): 1D arr of initial coeffs of length L
+            varh_sin_coeffs_init (np.array): 1D arr of initial coeffs of length L
+            varh_cos_coeffs_init (np.array): 1D arr of initial coeffs of length L
+        """
 
         layer_muh = {}
         layer_varh_diag = {}
@@ -332,6 +371,14 @@ class ConvertParamsToMomentsLayer(tf.keras.layers.Layer):
         nh : int,
         **kwargs
         ):
+        """Convert params to moments.
+           Params = (wt,b,sig2,muh,varh_diag)
+           Moments = (mean, cov_matrix)
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+        """
         # Super
         super(ConvertParamsToMomentsLayer, self).__init__(**kwargs)
         self.nv = nv 
@@ -385,6 +432,10 @@ class ConvertParamsToMomentsLayer(tf.keras.layers.Layer):
 class ConvertMomentsToNMomentsLayer(tf.keras.layers.Layer):
 
     def __init__(self, **kwargs):
+        """Convert moments to nMoments
+           Moments = (mean, cov_mat)
+           nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)
+        """
         # Super
         super(ConvertMomentsToNMomentsLayer, self).__init__(**kwargs)
     
@@ -420,6 +471,15 @@ class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
         params0ToParamsLayer: ConvertParams0ToParamsLayer,
         **kwargs
         ):
+        """Convert params0 to NMoments layer in one step
+           Params0 = std. params with muh=0,varh_diag=1
+           nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            params0ToParamsLayer (ConvertParams0ToParamsLayer): Conversion layer from params0 to params via latent Fourier representation
+        """
         # Super
         super(ConvertParams0ToNMomentsLayer, self).__init__(**kwargs)
 
@@ -441,6 +501,17 @@ class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
         varh_cos_coeffs_init : np.array,
         **kwargs
         ):
+        """Construct the layer including the Fourier latent representations.
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            freqs (np.array): 1D arr of frequencies of length L
+            muh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
+            muh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
+            varh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
+            varh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
+        """
         params0ToParamsLayer = ConvertParams0ToParamsLayer.construct(
             nv=nv, 
             nh=nh, 
@@ -485,6 +556,18 @@ class ConvertParams0ToNMomentsLayer(tf.keras.layers.Layer):
 # @tf.function
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 def unit_mat_sym(n: int, i: int, j: int):
+    """Construct the symmetric unit matrix of size nxn
+       1 at (i,j) AND (j,i)
+       0 elsewhere
+
+    Args:
+        n (int): Size of square matrix
+        i (int): First idx
+        j (int): Second idx
+
+    Returns:
+        tf.Constant: Matrix that is 1 at (i,j) AND (j,i) and 0 everywhere else
+    """
     idx = i * n + j
     one_hot = tf.one_hot(indices=idx,depth=n*n, dtype='float32')
     
@@ -498,6 +581,13 @@ def unit_mat_sym(n: int, i: int, j: int):
 class DeathRxnLayer(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, i_sp: int, **kwargs):
+        """Death reaction A->0 acting on nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            i_sp (int): Species A->0 that is decaying
+        """
         # Super
         super(DeathRxnLayer, self).__init__(**kwargs)
     
@@ -554,6 +644,13 @@ class DeathRxnLayer(tf.keras.layers.Layer):
 class BirthRxnLayer(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, i_sp: int, **kwargs):
+        """Birth reaction A->2A acting on nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            i_sp (int): Species A->2A that is reproducing
+        """
         # Super
         super(BirthRxnLayer, self).__init__(**kwargs)
     
@@ -612,6 +709,14 @@ def nmoment3_batch(mu, nvar, i, j, k):
 class EatRxnLayer(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, i_hunter: int, i_prey: int, **kwargs):
+        """Predator-prey reaction H+P->2H acting on nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            i_hunter (int): Hunter species
+            i_prey (int): Prey species
+        """
         # Super
         super(EatRxnLayer, self).__init__(**kwargs)
     
@@ -711,6 +816,10 @@ class EatRxnLayer(tf.keras.layers.Layer):
 class ConvertNMomentsTEtoMomentsTE(tf.keras.layers.Layer):
 
     def __init__(self, **kwargs):
+        """Convert nMomentsTE = nMoments time evolution to momentsTE = moments time evolution
+            nMomentsTE = time evolution of (mean, n^2 matrix = cov_mat + mean.mean^T)
+            momentsTE = time evolution of (mean, cov_mat)
+        """
         # Super
         super(ConvertNMomentsTEtoMomentsTE, self).__init__(**kwargs)
 
@@ -765,6 +874,17 @@ class ConvertNMomentsTEtoMomentsTE(tf.keras.layers.Layer):
 class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, **kwargs):
+        """Convert momentsTE = moments time evolution to paramMomentsTE = param moments time evolution
+            momentsTE = time evolution of (mean, cov_mat)
+            paramMomentsTE = time evolution of (
+                    mean visible species, 
+                    varvh = off diagonal matrix in cov mat, 
+                    trace of diagonal of visible part of cov matrix, 
+                    muh = mean of hidden species, 
+                    varh_diag = diagonal of hidden part of cov matrix
+                    ) 
+                corresponding in dimensionality to (b,wt,sig2,muh,varh_diag)
+        """
         # Super
         super(ConvertMomentsTEtoParamMomentsTE, self).__init__(**kwargs)
     
@@ -810,6 +930,21 @@ class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
 class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, **kwargs):
+        """Convert time evolution of param moments to time evolution of params
+            paramMomentsTE = time evolution of (
+                    mean visible species, 
+                    varvh = off diagonal matrix in cov mat, 
+                    trace of diagonal of visible part of cov matrix, 
+                    muh = mean of hidden species, 
+                    varh_diag = diagonal of hidden part of cov matrix
+                    ) 
+                corresponding in dimensionality to (b,wt,sig2,muh,varh_diag)
+            paramsTE = time evolution of (b,wt,sig2,muh,varh_diag)
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+        """
         # Super
         super(ConvertParamMomentsTEtoParamsTE, self).__init__(**kwargs)
     
@@ -889,6 +1024,11 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
 class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
 
     def __init__(self, **kwargs):
+        """Convert paramsTE = time evolution of params to params0TE = time evolution of params0
+            paramsTE = time evolution of (b,wt,sig2,muh,varh_diag)
+            params0TE = time evolution of (b,wt,sig2) in std. space with muh=0, varh_diag=1, 
+                both constant in time i.e. muhTE=0, varh_diagTE=0
+        """
         # Super
         super(ConvertParamsTEtoParams0TE, self).__init__(**kwargs)
 
@@ -932,6 +1072,16 @@ class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
 class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, **kwargs):
+        """Convert nMomentsTE = time evolution of nMoments to params0TE = time evolution of params0 in one step
+            nMomentsTE = time evolution of (mean, n^2 matrix = cov_mat + mean.mean^T)
+            params0TE = time evolution of (b,wt,sig2) in std. space with muh=0, varh_diag=1, 
+                both constant in time i.e. muhTE=0, varh_diagTE=0
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+        """
+
         # Super
         super(ConvertNMomentsTEtoParams0TE, self).__init__(**kwargs)
         
@@ -985,8 +1135,10 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
 
 # Model vs Layer
 # https://www.tensorflow.org/tutorials/customization/custom_layers#models_composing_layers
-# Typically you inherit from keras.Model when you need the model methods like: Model.fit,Model.evaluate, and Model.save (see Custom Keras layers and models for details).
-# One other feature provided by keras.Model (instead of keras.layers.Layer) is that in addition to tracking variables, a keras.Model also tracks its internal layers, making them easier to inspect.
+# Typically you inherit from keras.Model when you need the model methods like: Model.fit,Model.evaluate, 
+# and Model.save (see Custom Keras layers and models for details).
+# One other feature provided by keras.Model (instead of keras.layers.Layer) is that in addition to 
+# tracking variables, a keras.Model also tracks its internal layers, making them easier to inspect.
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class RxnInputsLayer(tf.keras.layers.Layer):
 
@@ -997,6 +1149,22 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
         **kwargs
         ):
+        """Calculate inputs from different reaction approximations in a single layer. 
+        Input is params0 = (wt,b,sig2) in std. space where muh=0, varh_diag=1
+        Output is for every reaction in the rxn specs, the time evolution of the params0 = params0TE = (wtTE, bTE, sig2TE), flattened across all reactions
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            params0toNMoments (ConvertParams0ToNMomentsLayer): Layer that converts params0 to nMoments
+            rxn_specs (List[Union[Tuple[str,int],Tuple[str,int,int]]]): List of reaction specifications of tuples.
+                First arguments is one of "BIRTH", "DEATH" or "EAT"
+                Second/third argument are the index of the species undergoing the reaction
+                e.g. ("EAT",3,2) is the Predator-Prey reaction for species #3 being the huner, species #2 the prey
+
+        Raises:
+            ValueError: If reaaction string is not recognized
+        """
         # Super
         super(RxnInputsLayer, self).__init__(**kwargs)
         

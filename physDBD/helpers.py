@@ -3,6 +3,17 @@ import pandas as pd
 from dataclasses import astuple
 
 def convert_np_to_pd(arr_with_times: np.array, nv: int, nh: int) -> pd.DataFrame:
+    """Convert a numpy array of wt, b, sig2, muh, varh_diag to a pandas dataframe with named columns
+
+    Args:
+        arr_with_times (np.array): Array of size TxN where T is the number of timepoints and 
+            N is the size of (wt,b,sig2,muh,varh_diag) = (nv*nh, nv, 1, nh, nh) = nv*nh + nv + 1 + 2*nh
+        nv (int): No. visible species
+        nh (int): No. hidden species
+
+    Returns:
+        pd.DataFrame: Pandas data frame
+    """
 
     # Convert to pandas
     columns = ["t"]
@@ -21,12 +32,21 @@ def convert_np_to_pd(arr_with_times: np.array, nv: int, nh: int) -> pd.DataFrame
     return df
 
 def normalize(vec: np.array) -> np.array:
+    """Normalize 1D np arr
+
+    Args:
+        vec (np.array): 1D vec to normalize
+
+    Returns:
+        np.array: normalized
+    """
     return vec / np.sqrt(np.sum(vec**2))
 
 # Equality of np arrays in data class
 # https://stackoverflow.com/a/51743960/1427316
 def array_safe_eq(a, b) -> bool:
-    """Check if a and b are equal, even if they are numpy arrays"""
+    """Check if a and b are equal, even if they are numpy arrays. 
+        Needed for checking equality with @dataclass(eq=False) decorator"""
     if a is b:
         return True
     if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
@@ -37,7 +57,8 @@ def array_safe_eq(a, b) -> bool:
         return NotImplemented
 
 def dc_eq(dc1, dc2) -> bool:
-   """checks if two dataclasses which hold numpy arrays are equal"""
+   """checks if two dataclasses which hold numpy arrays are equal. 
+    Needed for checking equality with @dataclass(eq=False) decorator"""
    if dc1 is dc2:
         return True
    if dc1.__class__ is not dc2.__class__:
