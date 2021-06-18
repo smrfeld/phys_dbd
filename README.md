@@ -1,5 +1,7 @@
 # Physics-based dynamic PCA for modeling stochastic reaction networks with TensorFlow
 
+[![docs](https://github.com/smrfeld/phys_dbd/actions/workflows/docs.yml/badge.svg)](https://github.com/smrfeld/phys_dbd/actions/workflows/docs.yml)
+
 This is the source repo. for the `physDBD` Python package. It allows the creation of physics-based machine learning models in `TensorFlow` for modeling stochastic reaction networks.
 
 <img src="readme_figures/fig_1.png" alt="drawing" width="800"/>
@@ -41,6 +43,8 @@ python setup.py install
 ```
 
 ## Documentation
+
+See the dedicatdd [documentation page](https://smrfeld.github.io/phys_dbd).
 
 ## Example
 

@@ -1,3 +1,10 @@
+logs/
+cache*/
+cache/
+trained/
+mathematica/
+*.egg-info/
+dist/
 saved_models/
 .ipynb_checkpoints/
 playground/*.txt
