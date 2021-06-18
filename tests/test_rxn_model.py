@@ -44,8 +44,9 @@ class TestRxnModel:
         pt = self.create_params_traj()
 
         ptTE = pt.differentiate_with_TVR(
-            alpha=1.0,
-            no_opt_steps=10
+            alphas={"wt00": 1.0},
+            no_opt_steps=10,
+            non_zero_vals=["wt00"]
         )
 
         return ptTE
@@ -103,7 +104,7 @@ class TestRxnModel:
         outputs = rxn_model(inputs)
         print("Outputs without norm: ", outputs)
 
-        rxn_model.calculate_rxn_normalization(inputs, percent=0.8)
+        rxn_model.calculate_rxn_normalization(rxn_lyr, inputs, percent=0.8)
 
         print("Rxn mean: ", rxn_model.rxn_mean)
         print("Rxn std dev: ", rxn_model.rxn_std_dev)

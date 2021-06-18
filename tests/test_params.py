@@ -68,8 +68,9 @@ class TestParams:
         pt = self.create_params_traj()
 
         ptTE = pt.differentiate_with_TVR(
-            alpha=1.0,
-            no_opt_steps=10
+            alphas={"wt00": 1.0},
+            no_opt_steps=10,
+            non_zero_vals=["wt00"]
         )
 
         return ptTE
@@ -96,14 +97,14 @@ class TestParams:
 
     def test_tf_input(self):
         params = self.import_params(0.4)
-        input0 = params.get_tf_input_assuming_params0()
+        input0 = params.get_tf_input_assuming_params0(tpt=0)
         
         tf.debugging.assert_equal(tf.constant(params.wt, dtype="float32"), input0["wt"])
         tf.debugging.assert_equal(tf.constant(params.b, dtype="float32"), input0["b"])
         tf.debugging.assert_equal(tf.constant(params.sig2, dtype="float32"), input0["sig2"])
 
         pt = self.create_params_traj()
-        inputs = pt.get_tf_inputs_assuming_params0()
+        inputs = pt.get_tf_inputs_assuming_params0(tpt=0)
         
         assert len(inputs) == len(pt.times)
         for i in range(0,len(inputs)):

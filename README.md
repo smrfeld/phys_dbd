@@ -12,9 +12,9 @@ This is the source repo. for the `physDBD` Python package. It allows the creatio
     ```
     pip install physDBD
     ```
-2. See the [example notebook](example/).
+2. See the [example notebook](example/main.ipynb).
 
-3. Read the [documentation](...).
+3. Read the [documentation](https://smrfeld.github.io/phys_dbd).
 
 ## About
 
@@ -48,7 +48,7 @@ See the dedicatdd [documentation page](https://smrfeld.github.io/phys_dbd).
 
 ## Example
 
-See the notebook in the [example](example/) directory.
+See the notebook in the [example notebook](example/main.ipynb).
 
 ## Tests
 
