@@ -51,6 +51,8 @@ def array_safe_eq(a, b) -> bool:
         return True
     if isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
         return a.shape == b.shape and np.max(abs(a - b)) < 1e-8
+    if isinstance(a,float) and isinstance(b,float):
+        return np.max(abs(a-b)) < 1e-8
     try:
         return a == b
     except TypeError:

@@ -18,12 +18,20 @@ class Vals:
     nv = 3
     nh = 2
     batch_size = 2
+    i_death = 0
+    i_birth = 0
+    i_predator = 1
+    i_prey = 0
 
     _b = np.array([3.0,5.0,6.0])
     _wt = np.array([[2.0,4.0,8.0],[1.0,3.0,3.0]])
     _muh = np.array([4.0,8.0])
     _varh_diag = np.array([5.0,9.0])
     _sig2 = 1.0
+    _varvh = np.array([
+        [10., 20., 40.], 
+        [9., 27., 27.]
+        ])
 
     _muh2 = np.array([3.0,3.0])
     _varh_diag2 = np.array([1.0,8.0])
@@ -42,6 +50,85 @@ class Vals:
     _muh_sin_coeffs_init = np.array([1.,5.,4.])
     _varh_cos_coeffs_init = np.array([6.,2.,4.])
     _varh_sin_coeffs_init = np.array([1.,8.,4.])
+
+    _mu = np.array([19., 45., 62., 4., 8.])
+    _var = np.array([
+        [30., 67., 107., 10., 9.], 
+        [67., 162., 241., 20., 27.], 
+        [107., 241., 402., 40., 27.], 
+        [10., 20., 40., 5., 0.], 
+        [9., 27., 27., 0., 9.]
+        ])
+    _nvar = np.array([
+        [391., 922., 1285., 86., 161.],
+        [922., 2187., 3031., 200., 387.],
+        [1285., 3031., 4246., 288., 523.], 
+        [86., 200., 288., 21., 32.], 
+        [161., 387., 523., 32., 73.]
+        ])
+
+    _mu_TE = np.array([3.0, 5.0, 2.0, 1.0, 0.8])
+    _nvar_TE = np.array([
+        [12.0, 6.0, 3.0, 2.0, 1.0],
+        [6.0, 18.0, 4.0, 3.0, 1.0],
+        [3.0, 4.0, 16.0, 2.0, 1.0],
+        [2.0, 3.0, 2.0, 8.0, 0.5],
+        [1.0, 1.0, 1.0, 0.5, 6.0]
+    ])
+    _var_TE = np.array([
+        [-102., -224., -221., -29., -38.2], 
+        [-224., -432., -396., -62., -75.], 
+        [-221., -396., -232., -68., -64.6], 
+        [-29., -62., -68., 0., -10.7], 
+        [-38.2, -75., -64.6, -10.7, -6.8]
+    ])
+
+    _muv_TE = np.array([3.0,5.0,2.0])
+    _varvbar_TE = -766.0
+    _varvh_TE = np.array([
+        [-29.0, -62.0, -68.0],
+        [-38.2, -75.0, -64.60]
+    ])
+
+    @classmethod
+    def muv_TE(cls):
+        return np.tile(cls._muv_TE, (cls.batch_size,1))
+    
+    @classmethod
+    def varvbar_TE(cls):
+        return np.full(cls.batch_size, cls._varvbar_TE)
+
+    @classmethod
+    def varvh(cls):
+        return np.tile(cls._varvh, (cls.batch_size,1,1))
+
+    @classmethod
+    def varvh_TE(cls):
+        return np.tile(cls._varvh_TE, (cls.batch_size,1,1))
+
+    @classmethod
+    def var_TE(cls):
+        return np.tile(cls._var_TE, (cls.batch_size,1,1))
+
+    @classmethod
+    def mu_TE(cls):
+        return np.tile(cls._mu_TE, (cls.batch_size,1))
+
+    @classmethod
+    def nvar_TE(cls):
+        return np.tile(cls._nvar_TE, (cls.batch_size,1,1))
+
+    @classmethod
+    def mu(cls):
+        return np.tile(cls._mu, (cls.batch_size,1))
+
+    @classmethod
+    def var(cls):
+        return np.tile(cls._var, (cls.batch_size,1,1))
+
+    @classmethod
+    def nvar(cls):
+        return np.tile(cls._nvar, (cls.batch_size,1,1))
 
     @classmethod
     def tpt(cls):
@@ -116,6 +203,10 @@ class Vals:
         return np.tile(cls._varh_diag_TE, (cls.batch_size,1))
 
     @classmethod
+    def varh_TE(cls):
+        return np.tile(np.diag(cls._varh_diag_TE), (cls.batch_size,1))
+
+    @classmethod
     def muh_TE2(cls):
         return np.tile(cls._muh_TE2, (cls.batch_size,1))
 
@@ -184,13 +275,13 @@ class TestNet:
         # Convert x_out_true varh to varh_diag as needed
         y_out_true = copy.copy(x_out_true)
         for key,val in x_out_true.items():
-            print(key)
             if key == "varh":
                 y_out_true["varh_diag"] = np.diag(val)
-        x_out_true = y_out_true
+        if "varh" in y_out_true:
+            del y_out_true["varh"]
 
-        for key, val in x_out.items():
-            val_true = x_out_true[key]
+        for key, val_true in y_out_true.items():
+            val = x_out[key]
 
             self.assert_equal_arrs(val,val_true)
 
@@ -365,22 +456,21 @@ class TestNet:
 
     def test_params_to_moments(self):
 
-        nv = 3
-        nh = 2
+        v = Vals()
 
         lyr = ConvertParamsToMomentsLayer(
-            nv=nv,
-            nh=nh
+            nv=v.nv,
+            nh=v.nh
         )
 
         # Input
         batch_size = 2
         x_in = {
-            "b": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
-            "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
-            "sig2": tf.constant(np.random.rand(batch_size), dtype='float32'),
-            "varh_diag": tf.constant(np.random.rand(batch_size,nh), dtype='float32'),
-            "muh": tf.constant(np.random.rand(batch_size,nh), dtype='float32')
+            "b": tf.constant(v.b(), dtype="float32"),
+            "wt": tf.constant(v.wt(), dtype="float32"),
+            "sig2": tf.constant(v.sig2(), dtype='float32'),
+            "varh_diag": tf.constant(v.varh_diag(), dtype='float32'),
+            "muh": tf.constant(v.muh(), dtype='float32')
             }   
              
         # Output
@@ -388,20 +478,31 @@ class TestNet:
 
         print(x_out)
 
+        x_out_true = {
+            "mu": np.array([19., 45., 62., 4., 8.]),
+            "var": np.array([
+                [30., 67., 107., 10., 9.], 
+                [67., 162., 241., 20., 27.], 
+                [107., 241., 402., 40., 27.], 
+                [10., 20., 40., 5., 0.], 
+                [9., 27., 27., 0., 9.]
+            ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
+
         self.save_load_model(lyr, x_in)
 
     def test_moments_to_nmoments(self):
 
+        v = Vals()
+
         lyr = ConvertMomentsToNMomentsLayer()
 
-        nv = 3
-        nh = 2
-
         # Input
-        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "var": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
+            "mu": tf.constant(v.mu(), dtype="float32"),
+            "var": tf.constant(v.var(), dtype="float32")
             }   
             
         # Output
@@ -409,36 +510,41 @@ class TestNet:
 
         print(x_out)
 
+        x_out_true = {
+            "mu": np.array([19., 45., 62., 4., 8.]),
+            "nvar": np.array([
+                [391., 922., 1285., 86., 161.],
+                [922., 2187., 3031., 200., 387.],
+                [1285., 3031., 4246., 288., 523.], 
+                [86., 200., 288., 21., 32.], 
+                [161., 387., 523., 32., 73.]
+            ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
+
         self.save_load_model(lyr, x_in)
 
     def test_params0_to_nmoments(self):
 
-        nv = 3
-        nh = 2
-
-        freqs = np.random.rand(3)
-        muh_sin_coeffs_init = np.random.rand(3)
-        muh_cos_coeffs_init = np.random.rand(3)
-        varh_sin_coeffs_init = np.random.rand(3)
-        varh_cos_coeffs_init = np.random.rand(3)
+        v = Vals()
 
         lyr = ConvertParams0ToNMomentsLayer.construct(
-            nv=nv,
-            nh=nh,
-            freqs=freqs,
-            muh_sin_coeffs_init=muh_sin_coeffs_init,
-            muh_cos_coeffs_init=muh_cos_coeffs_init,
-            varh_sin_coeffs_init=varh_sin_coeffs_init,
-            varh_cos_coeffs_init=varh_cos_coeffs_init
+            nv=v.nv,
+            nh=v.nh,
+            freqs=v.freqs(),
+            muh_sin_coeffs_init=v.muh_sin_coeffs_init(),
+            muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
+            varh_sin_coeffs_init=v.varh_sin_coeffs_init(),
+            varh_cos_coeffs_init=v.varh_cos_coeffs_init()
         )
 
         # Input
-        batch_size = 2
         x_in = {
-            "tpt": tf.constant(np.arange(4,4+batch_size), dtype='float32'),
-            "b": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
-            "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
-            "sig2": tf.constant(np.random.rand(batch_size), dtype='float32')
+            "tpt": tf.constant(v.tpt(), dtype='float32'),
+            "b": tf.constant(v.b(), dtype="float32"),
+            "wt": tf.constant(v.wt(), dtype="float32"),
+            "sig2": tf.constant(v.sig2(), dtype='float32')
             }
              
         # Output
@@ -446,98 +552,160 @@ class TestNet:
         
         print(x_out)
     
+        x_out_true = {
+            "mu": np.array([3., 5., 6., -0.110302, -0.110302]),
+            "nvar": np.array([
+                [15., 26., 37., 1.41374, 0.541419], 
+                [26., 51., 71., 2.93779, 2.06546], 
+                [37., 71., 110., 6.31678, 1.95516], 
+                [1.41374, 2.93779, 6.31678, 0.773116, 0.0121665], 
+                [0.541419, 2.06546, 1.95516, 0.0121665, 0.773116]
+                ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
+
         self.save_load_model(lyr, x_in)
 
     def test_death_rxn(self):
 
-        nv = 3
-        nh = 2
-        lyr = DeathRxnLayer(nv=nv,nh=nh,i_sp=1)
+        v = Vals()
+
+        lyr = DeathRxnLayer(nv=v.nv,nh=v.nh,i_sp=v.i_death)
 
         # Input
-        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "nvar": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
+            "mu": tf.constant(v.mu(), dtype="float32"),
+            "nvar": tf.constant(v.nvar(), dtype="float32")
             }
             
         # Output
         x_out = lyr(x_in)
 
         print(x_out)
+
+        x_out_true = {
+            "muTE": np.array([-19., 0., 0., 0., 0.]),
+            "nvarTE": np.array([
+                [-763., -922., -1285., -86., -161.], 
+                [-922., 0., 0., 0., 0.],
+                [-1285., 0., 0., 0., 0.], 
+                [-86., 0., 0., 0., 0.], 
+                [-161., 0., 0., 0., 0.]
+            ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 
     def test_birth_rxn(self):
 
-        nv = 3
-        nh = 2
-        lyr = BirthRxnLayer(nv=nv,nh=nh,i_sp=1)
+        v = Vals()
+
+        lyr = BirthRxnLayer(nv=v.nv,nh=v.nh,i_sp=v.i_birth)
 
         # Input
-        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "nvar": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
+            "mu": tf.constant(v.mu(), dtype="float32"),
+            "nvar": tf.constant(v.nvar(), dtype="float32")
             }
             
         # Output
         x_out = lyr(x_in)
 
         print(x_out)
+
+        x_out_true = {
+            "muTE": np.array([19., 0., 0., 0., 0.]),
+            "nvarTE": np.array([
+                [801., 922., 1285., 86., 161.], 
+                [922., 0., 0., 0., 0.], 
+                [1285., 0., 0., 0., 0.], 
+                [86., 0., 0., 0., 0.], 
+                [161., 0., 0., 0., 0.]
+            ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 
     def test_eat_rxn(self):
 
-        nv = 3
-        nh = 2
-        lyr = EatRxnLayer(nv=nv,nh=nh,i_prey=1,i_hunter=2)
+        v = Vals()
+
+        lyr = EatRxnLayer(nv=v.nv,nh=v.nh,i_prey=v.i_prey,i_hunter=v.i_predator)
 
         # Input
-        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "nvar": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
+            "mu": tf.constant(v.mu(), dtype="float32"),
+            "nvar": tf.constant(v.nvar(), dtype="float32")
             }
             
         # Output
         x_out = lyr(x_in)
 
         print(x_out)
+
+        x_out_true = {
+            "muTE": np.array([-922., 922., 0., 0., 0.]),
+            "nvarTE": np.array([
+                [-39360., -28364., -66558., -4518., -8294.], 
+                [-28364., 96088., 66558., 4518., 8294.], 
+                [-66558., 66558., 0., 0., 0.], 
+                [-4518., 4518., 0., 0., 0.], 
+                [-8294., 8294., 0., 0., 0.]
+            ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 
     def test_convert_nmomentsTE_to_momentsTE(self):
-        nv = 3
-        nh = 2
+
+        v = Vals()
+
         lyr = ConvertNMomentsTEtoMomentsTE()
 
         # Input
-        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "muTE": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "nvarTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
+            "mu": tf.constant(v.mu(), dtype="float32"),
+            "muTE": tf.constant(v.mu_TE(), dtype="float32"),
+            "nvarTE": tf.constant(v.nvar_TE(), dtype="float32")
             }
             
         # Output
         x_out = lyr(x_in)
 
         print(x_out)
+
+        x_out_true = {
+            "muTE": np.array([3., 5., 2., 1., 0.8]),
+            "varTE": np.array([
+                [-102., -224., -221., -29., -38.2], 
+                [-224., -432., -396., -62., -75.], 
+                [-221., -396., -232., -68., -64.6], 
+                [-29., -62., -68., 0., -10.7], 
+                [-38.2, -75., -64.6, -10.7, -6.8]
+            ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 
     def test_convert_momentsTE_to_paramMomentsTE(self):
-        nv = 3
-        nh = 2
-        lyr = ConvertMomentsTEtoParamMomentsTE(nv=nv,nh=nh)
+
+        v = Vals()
+
+        lyr = ConvertMomentsTEtoParamMomentsTE(nv=v.nv,nh=v.nh)
 
         # Input
-        batch_size = 2
         x_in = {
-            "muTE": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "varTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32")
+            "muTE": tf.constant(v.mu_TE(), dtype="float32"),
+            "varTE": tf.constant(v.var_TE(), dtype="float32")
             }
             
         # Output
@@ -545,24 +713,37 @@ class TestNet:
 
         print(x_out)
 
+        x_out_true = {
+            "muhTE": np.array([1.0, 0.8]),
+            "muvTE": np.array([3., 5., 2.]),
+            "varh_diagTE": np.array([0., -6.8]),
+            "varvbarTE": -766.,
+            "varvhTE": np.array([
+                [-29., -62., -68.], 
+                [-38.2, -75., -64.6]
+                ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
+
         self.save_load_model(lyr, x_in)
 
     def test_convert_paramMomentsTE_to_paramsTE(self):
-        nv = 3
-        nh = 2
-        lyr = ConvertParamMomentsTEtoParamsTE(nv=nv,nh=nh)
+
+        v = Vals()
+
+        lyr = ConvertParamMomentsTEtoParamsTE(nv=v.nv,nh=v.nh)
 
         # Input
-        batch_size = 2
         x_in = {
-            "muvTE": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
-            "varvhTE": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
-            "varh_diagTE": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "varh_diag": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "muh": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "varvh": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
-            "muhTE": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "varvbarTE": tf.constant(np.random.rand(batch_size), dtype="float32")
+            "muvTE": tf.constant(v.muv_TE(), dtype="float32"),
+            "varvhTE": tf.constant(v.varvh_TE(), dtype="float32"),
+            "varh_diagTE": tf.constant(v.varh_diag_TE(), dtype="float32"),
+            "varh_diag": tf.constant(v.varh_diag(), dtype="float32"),
+            "muh": tf.constant(v.muh(), dtype="float32"),
+            "varvh": tf.constant(v.varvh(), dtype="float32"),
+            "muhTE": tf.constant(v.muh_TE(), dtype="float32"),
+            "varvbarTE": tf.constant(v.varvbar_TE(), dtype="float32")
             }
         
         # Output
@@ -570,23 +751,36 @@ class TestNet:
 
         print(x_out)
 
+        x_out_true = {
+            "bTE": np.array([60.81777, 122.41333, 116.64888]),
+            "muhTE": np.array([0.3, 0.8]),
+            "varh_diagTE": np.array([0.9, 0.7]),
+            "sig2TE": 645.63333,
+            "wtTE": np.array([
+                [-6.16, -13.12, -15.04], 
+                [-4.32222, -8.56667, -7.41111]
+                ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
+
         self.save_load_model(lyr, x_in)
 
     def test_convert_paramsTE_to_params0TE(self):
+
+        v = Vals()
+
         lyr = ConvertParamsTEtoParams0TE()
 
-        nv = 3
-        nh = 2
-        batch_size = 2
         x_in = {
-            "bTE1": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
-            "wtTE1": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
-            "muh1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "wt1": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
-            "muhTE1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "varh_diag1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "varh_diagTE1": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "sig2TE": tf.constant(np.random.rand(batch_size), dtype="float32")
+            "bTE1": tf.constant(v.b_TE(), dtype="float32"),
+            "wtTE1": tf.constant(v.wt_TE(), dtype="float32"),
+            "muh1": tf.constant(v.muh(), dtype="float32"),
+            "wt1": tf.constant(v.wt(), dtype="float32"),
+            "muhTE1": tf.constant(v.muh_TE(), dtype="float32"),
+            "varh_diag1": tf.constant(v.varh_diag(), dtype="float32"),
+            "varh_diagTE1": tf.constant(v.varh_diag_TE(), dtype="float32"),
+            "sig2TE": tf.constant(v.sig2_TE(), dtype="float32")
         }
                 
         # Output
@@ -594,25 +788,37 @@ class TestNet:
 
         print(x_out)
 
+        x_out_true = {
+            "bTE2": np.array([29.7, 36., 41.6]),
+            "sig2TE": 0.3,
+            "wtTE2": np.array([
+                [2.63856, 5.27712, 8.31817],
+                [9.11667, 9.35, 9.35]
+                ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
+
         self.save_load_model(lyr, x_in)
 
     def test_convert_nmomentsTE_to_params0TE(self):
 
-        nv = 3
-        nh = 2
-        lyr = ConvertNMomentsTEtoParams0TE(nv,nh)
+        v = Vals()
+
+        lyr = ConvertNMomentsTEtoParams0TE(v.nv,v.nh)
 
         # Input
-        batch_size = 2
         x_in = {
-            "mu": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "muTE": tf.constant(np.random.rand(batch_size,nv+nh), dtype="float32"),
-            "nvarTE": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32"),
-            "varh_diag": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "muh": tf.constant(np.random.rand(batch_size,nh), dtype="float32"),
-            "var": tf.constant(self.get_random_var(batch_size,nv,nh), dtype="float32"),
-            "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32")
+            "mu": tf.constant(v.mu(), dtype="float32"),
+            "muTE": tf.constant(v.mu_TE(), dtype="float32"),
+            "nvarTE": tf.constant(v.nvar_TE(), dtype="float32"),
+            "varh_diag": tf.constant(v.varh_diag(), dtype="float32"),
+            "muh": tf.constant(v.muh(), dtype="float32"),
+            "var": tf.constant(v.var(), dtype="float32"),
+            "wt": tf.constant(v.wt(), dtype="float32")
             }
+
+        print(x_in)
             
         # Output
         x_out = lyr(x_in)
@@ -623,39 +829,31 @@ class TestNet:
 
     def test_rxn_inputs(self):
 
-        nv = 3
-        nh = 2
-
-        freqs = np.random.rand(3)
-        muh_sin_coeffs_init = np.random.rand(3)
-        muh_cos_coeffs_init = np.random.rand(3)
-        varh_sin_coeffs_init = np.random.rand(3)
-        varh_cos_coeffs_init = np.random.rand(3)
+        v = Vals()
 
         rxn_specs = [
-            ("BIRTH",0),
-            ("DEATH",1),
-            ("EAT",2,1)
+            ("BIRTH",v.i_birth),
+            ("DEATH",v.i_death),
+            ("EAT",v.i_predator,v.i_prey)
         ]
 
         lyr = RxnInputsLayer.construct(
-            nv=nv,
-            nh=nh,
-            freqs=freqs,
-            muh_sin_coeffs_init=muh_sin_coeffs_init,
-            muh_cos_coeffs_init=muh_cos_coeffs_init,
-            varh_sin_coeffs_init=varh_sin_coeffs_init,
-            varh_cos_coeffs_init=varh_cos_coeffs_init,
+            nv=v.nv,
+            nh=v.nh,
+            freqs=v.freqs(),
+            muh_sin_coeffs_init=v.muh_sin_coeffs_init(),
+            muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
+            varh_sin_coeffs_init=v.varh_sin_coeffs_init(),
+            varh_cos_coeffs_init=v.varh_cos_coeffs_init(),
             rxn_specs=rxn_specs
             )
 
         # Input
-        batch_size = 2
         x_in = {
-            "tpt": tf.constant(np.arange(3,3+batch_size), dtype='float32'),
-            "b": tf.constant(np.random.rand(batch_size,nv), dtype="float32"),
-            "wt": tf.constant(np.random.rand(batch_size,nh,nv), dtype="float32"),
-            "sig2": tf.constant(np.random.rand(batch_size), dtype='float32')
+            "tpt": tf.constant(v.tpt(), dtype='float32'),
+            "b": tf.constant(v.b(), dtype="float32"),
+            "wt": tf.constant(v.wt(), dtype="float32"),
+            "sig2": tf.constant(v.sig2(), dtype='float32')
             }
              
         # Output

@@ -67,10 +67,11 @@ class TestParams:
     def create_params_te_traj(self):
         pt = self.create_params_traj()
 
+        alphas={"wt00": 1.0, "wt01": 1.0, "b0": 1.0, "b1": 1.0, "sig2": 1.0}
         ptTE = pt.differentiate_with_TVR(
-            alphas={"wt00": 1.0},
+            alphas=alphas,
             no_opt_steps=10,
-            non_zero_vals=["wt00"]
+            non_zero_vals=list(alphas.keys())
         )
 
         return ptTE
@@ -99,27 +100,30 @@ class TestParams:
         params = self.import_params(0.4)
         input0 = params.get_tf_input_assuming_params0(tpt=0)
         
-        tf.debugging.assert_equal(tf.constant(params.wt, dtype="float32"), input0["wt"])
-        tf.debugging.assert_equal(tf.constant(params.b, dtype="float32"), input0["b"])
-        tf.debugging.assert_equal(tf.constant(params.sig2, dtype="float32"), input0["sig2"])
+        tf.debugging.assert_equal(tf.constant(params.wt, dtype="float32"), input0["wt"].astype("float32"))
+        tf.debugging.assert_equal(tf.constant(params.b, dtype="float32"), input0["b"].astype("float32"))
+        tf.debugging.assert_equal(tf.constant(params.sig2, dtype="float32"), input0["sig2"].astype("float32"))
 
         pt = self.create_params_traj()
-        inputs = pt.get_tf_inputs_assuming_params0(tpt=0)
+        inputs = pt.get_tf_inputs_assuming_params0()
         
-        assert len(inputs) == len(pt.times)
-        for i in range(0,len(inputs)):
-            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].wt, dtype="float32"), inputs[i]["wt"])
-            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].b, dtype="float32"), inputs[i]["b"])
-            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].sig2, dtype="float32"), inputs[i]["sig2"])
+        assert len(inputs["b"]) == len(pt.times)-1
+        for i in range(0,len(inputs["b"])):
+            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].wt, dtype="float32"), inputs["wt"][i].astype("float32"))
+            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].b, dtype="float32"), inputs["b"][i].astype("float32"))
+            tf.debugging.assert_equal(tf.constant(pt.params_traj[i].sig2, dtype="float32"), inputs["sig2"][i].astype("float32"))
 
     def test_tf_output(self):
         ptTE = self.create_params_te_traj()
 
         outputs_normalized, mean, std = ptTE.get_tf_outputs_normalized_assuming_params0(1.0)
-        
+        print(outputs_normalized)
+
         for val in outputs_normalized.values():
             mean = np.mean(val,axis=0)
             std = np.std(val,axis=0)
+            print(mean)
+            print(std)
 
-            assert np.max(abs(mean - np.full(mean.shape,0.0))) < 1e-6
-            assert np.max(abs(std - np.full(mean.shape,1.0))) < 1e-6
+            assert np.max(abs(mean - 0.0)) < 1e-6
+            assert np.max(abs(std - 1.0)) < 1e-6
