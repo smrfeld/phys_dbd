@@ -21,6 +21,7 @@ jobs:
       run: |
         pip3 install sphinx-rtd-theme
         pip3 install --upgrade myst-parser
+        python3 setup.py install
 
     - name: Build docs
       run: |
