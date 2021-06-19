@@ -20,7 +20,7 @@ This is the source repo. for the `physDBD` Python package. It allows the creatio
 
 This repo. implements a TensorFlow package for modeling stochastic reaction networks with a dynamic PCA model. Please see [this] paper for technical details:
 ```
-XXX
+O. K. Ernst, T. Bartol, T. Sejnowski and E. Mjolsness. Physics-based machine learning for modeling stochastic IP3-dependent calcium dynamics. In preparation.
 ```
 The original implementation in the paper is written in Mathematica and can be found [here](https://github.com/smrfeld/physics-based-ml-reaction-networks). The Python package developed here translates these methods to `TensorFlow`.
 
@@ -58,5 +58,5 @@ Tests are run using `pytest` and are located in [tests](tests/).
 
 Please cite the following paper:
 ```
-XXX
+O. K. Ernst, T. Bartol, T. Sejnowski and E. Mjolsness. Physics-based machine learning for modeling stochastic IP3-dependent calcium dynamics. In preparation.
 ```
