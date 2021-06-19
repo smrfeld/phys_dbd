@@ -2,8 +2,7 @@ from .helpers import dc_eq, normalize
 from .paramsTE import ParamsTE
 
 import numpy as np
-from typing import Dict, Any
-import tensorflow as tf
+from typing import Dict
 
 from dataclasses import dataclass
 

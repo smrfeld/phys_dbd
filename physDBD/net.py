@@ -1,11 +1,7 @@
 import tensorflow as tf
 
 import numpy as np
-from typing import List, Tuple, Union, Any, Dict
-
-from enum import Enum
-
-from tensorflow.python.ops.gen_resource_variable_ops import var_handle_op
+from typing import List, Tuple, Union, Dict
 
 # Make new layers and models via subclassing
 # https://www.tensorflow.org/guide/keras/custom_layers_and_models

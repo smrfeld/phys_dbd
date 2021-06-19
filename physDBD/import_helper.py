@@ -1,7 +1,5 @@
 from .data_desc import DataDesc
 
-from tqdm import tqdm
-
 import pandas as pd
 import numpy as np
 from typing import List

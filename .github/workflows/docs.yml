@@ -21,7 +21,7 @@ jobs:
       run: |
         pip3 install sphinx-rtd-theme
         pip3 install --upgrade myst-parser
-        pip3 install numpy tensorflow
+        pip3 install numpy tensorflow pandas
         python3 setup.py install
 
     - name: Build docs
