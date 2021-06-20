@@ -1,3 +1,4 @@
+from .comparison_model import *
 from .data_desc import *
 from .import_helper import *
 from .net import *

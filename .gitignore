@@ -1,3 +1,7 @@
+.gitignore~
+trained_compare/
+logs_compare/
+.vscode/
 MANIFEST
 logs/
 cache*/

@@ -1,5 +1,5 @@
 from tensorflow.python.ops.gen_math_ops import sub
-from .net import RxnInputsLayer
+from .net import ComparisonInputsLayer
 from .params import Params
 from .params_traj import ParamsTraj
 
@@ -9,35 +9,35 @@ import numpy as np
 from typing import List
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
-class RxnModel(tf.keras.Model):
+class ComparisonModel(tf.keras.Model):
 
     @classmethod
     def construct(cls, 
         nv: int, 
         nh: int, 
-        rxn_lyr: RxnInputsLayer, 
+        compare_lyr: ComparisonInputsLayer, 
         subnet: tf.keras.Model,
         non_zero_outputs : List[str] = [],
-        rxn_norms_exist : bool = False,
-        rxn_mean : np.array = np.array([]),
-        rxn_std_dev : np.array = np.array([]),
+        param_norms_exist : bool = False,
+        param_mean : np.array = np.array([]),
+        param_std_dev : np.array = np.array([]),
         **kwargs
         ):
-        """Construct complete TF model with reaction approximations as inputs
+        """Construct complete TF model withOUT reaction approximations as inputs
 
         Args:
             nv (int): No. visible species
             nh (int): No. hidden species
-            rxn_lyr (RxnInputsLayer): Reaction input layer.
+            compare_lyr (ComparisonInputsLayer): Reaction input layer.
             subnet (tf.keras.Model): Subnet; any keras model. Do not put output layer - last layer is automatically placed.
             non_zero_outputs (List[str], optional): List of non-zero outputs in long form.
                 E.g. if ["wt00", "b0"], then output of network will just be 2D for these variables. Defaults to [].
-            rxn_norms_exist (bool, optional): Flag whether the reaction normalizations exist. 
-                Calling calculate_rxn_normalization later constructs them. Defaults to False.
-            rxn_mean (np.array, optional): Reaction normalization means. 
-                Calling calculate_rxn_normalization later constructs them.. Defaults to np.array([]).
-            rxn_std_dev (np.array, optional): Reaction normalization std. devs. 
-                Calling calculate_rxn_normalization later constructs them.. Defaults to np.array([]).
+            param_norms_exist (bool, optional): Flag whether the param normalizations exist. 
+                Calling calculate_param_normalization later constructs them. Defaults to False.
+            param_mean (np.array, optional): Param normalization means. 
+                Calling calculate_param_normalization later constructs them.. Defaults to np.array([]).
+            param_std_dev (np.array, optional): Param normalization std. devs. 
+                Calling calculate_param_normalization later constructs them.. Defaults to np.array([]).
         """
 
         if len(non_zero_outputs) == 0:
@@ -58,46 +58,46 @@ class RxnModel(tf.keras.Model):
         return cls(
             nv=nv,
             nh=nh,
-            rxn_lyr=rxn_lyr,
+            compare_lyr=compare_lyr,
             subnet=subnet,
             output_lyr=output_lyr,
             non_zero_outputs=non_zero_outputs_use,
-            rxn_norms_exist=rxn_norms_exist,
-            rxn_mean=rxn_mean,
-            rxn_std_dev=rxn_std_dev,
+            param_norms_exist=param_norms_exist,
+            param_mean=param_mean,
+            param_std_dev=param_std_dev,
             **kwargs
             )
 
     def __init__(self, 
         nv: int, 
         nh: int,
-        rxn_lyr: RxnInputsLayer, 
+        compare_lyr: ComparisonInputsLayer, 
         subnet: tf.keras.Model,
         output_lyr: tf.keras.layers.Layer,
         non_zero_outputs : List[str],
-        rxn_norms_exist : bool = False,
-        rxn_mean : np.array = np.array([]),
-        rxn_std_dev : np.array = np.array([]),
+        param_norms_exist : bool = False,
+        param_mean : np.array = np.array([]),
+        param_std_dev : np.array = np.array([]),
         **kwargs
         ):
-        """Constructor for the complete model with reaction approximations. NOTE: better to use the 'construct' static method helper.
+        """Constructor for the complete model withOUT reaction approximations. NOTE: better to use the 'construct' static method helper.
 
         Args:
             nv (int): No. visible species
             nh (int): No. hidden species
-            rxn_lyr (RxnInputsLayer): Reaction input layer.
+            compare_lyr (ComparisonInputsLayer): Reaction input layer.
             subnet (tf.keras.Model): Subnet; any keras model. Do not put output layer - last layer is automatically placed.
             output_lyr (tf.keras.layers.Layer): Final output layer.
             non_zero_outputs (List[str], optional): List of non-zero outputs in long form.
                 E.g. if ["wt00", "b0"], then output of network will just be 2D for these variables. Defaults to [].
-            rxn_norms_exist (bool, optional): Flag whether the reaction normalizations exist. 
-                Calling calculate_rxn_normalization later constructs them. Defaults to False.
-            rxn_mean (np.array, optional): Reaction normalization means. 
-                Calling calculate_rxn_normalization later constructs them.. Defaults to np.array([]).
-            rxn_std_dev (np.array, optional): Reaction normalization std. devs. 
-                Calling calculate_rxn_normalization later constructs them.. Defaults to np.array([]).
+            param_norms_exist (bool, optional): Flag whether the param normalizations exist. 
+                Calling calculate_param_normalization later constructs them. Defaults to False.
+            param_mean (np.array, optional): Param normalization means. 
+                Calling calculate_param_normalization later constructs them.. Defaults to np.array([]).
+            param_std_dev (np.array, optional): Param normalization std. devs. 
+                Calling calculate_param_normalization later constructs them.. Defaults to np.array([]).
         """
-        super(RxnModel, self).__init__(**kwargs)
+        super(ComparisonModel, self).__init__(**kwargs)
 
         self.nv = nv
         self.nh = nh
@@ -105,13 +105,13 @@ class RxnModel(tf.keras.Model):
         self.non_zero_outputs = non_zero_outputs
         self.no_outputs = len(self.non_zero_outputs)
 
-        self.rxn_lyr = rxn_lyr
+        self.compare_lyr = compare_lyr
         self.subnet = subnet
         self.output_lyr = output_lyr
 
-        self.rxn_norms_exist = rxn_norms_exist
-        self.rxn_mean = rxn_mean
-        self.rxn_std_dev = rxn_std_dev
+        self.param_norms_exist = param_norms_exist
+        self.param_mean = param_mean
+        self.param_std_dev = param_std_dev
 
     def get_config(self):
         # Do not call super.get_config !!!
@@ -119,12 +119,12 @@ class RxnModel(tf.keras.Model):
             "nv": self.nv,
             "nh": self.nh,
             "non_zero_outputs": self.non_zero_outputs,
-            "rxn_lyr": self.rxn_lyr,
+            "compare_lyr": self.compare_lyr,
             "subnet": self.subnet,
             "output_lyr": self.output_lyr,
-            "rxn_norms_exist": self.rxn_norms_exist,
-            "rxn_mean": self.rxn_mean,
-            "rxn_std_dev": self.rxn_std_dev
+            "param_norms_exist": self.param_norms_exist,
+            "param_mean": self.param_mean,
+            "param_std_dev": self.param_std_dev
         }
         return config
 
@@ -189,11 +189,11 @@ class RxnModel(tf.keras.Model):
             params_traj=params_traj
             )
 
-    def calculate_rxn_normalization(self, rxn_lyr: RxnInputsLayer, inputs, percent: float):
-        """Calculate reaction normalization
+    def calculate_param_normalization(self, compare_lyr: ComparisonInputsLayer, inputs, percent: float):
+        """Calculate param normalization
 
         Args:
-            rxn_lyr (RxnInputsLayer): Reaction input layer to use for the normalization.
+            compare_lyr (ComparisonInputsLayer): Reaction input layer to use for the normalization.
             inputs: Inputs to use for the normalization
             percent (float): Percent of the inputs to use for the normalization. Should be in (0,1]
         """
@@ -211,16 +211,16 @@ class RxnModel(tf.keras.Model):
         for key, val in inputs.items():
             inputs_norm[key] = val[idxs_subset]
 
-        x = rxn_lyr(inputs_norm)
-        self.rxn_mean = np.mean(x,axis=0)
-        self.rxn_std_dev = np.std(x,axis=0) + 1e-10
-        self.rxn_norms_exist = True
+        x = compare_lyr(inputs_norm)
+        self.param_mean = np.mean(x,axis=0)
+        self.param_std_dev = np.std(x,axis=0) + 1e-10
+        self.param_norms_exist = True
 
     def call(self, input_tensor, training=False):
-        x = self.rxn_lyr(input_tensor)
-        if self.rxn_norms_exist:
-            x -= self.rxn_mean
-            x /= self.rxn_std_dev
+        x = self.compare_lyr(input_tensor)
+        if self.param_norms_exist:
+            x -= self.param_mean
+            x /= self.param_std_dev
 
         x = self.subnet(x)        
         x = self.output_lyr(x)

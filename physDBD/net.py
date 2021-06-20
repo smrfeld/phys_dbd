@@ -1269,3 +1269,95 @@ class RxnInputsLayer(tf.keras.layers.Layer):
         params0TE = tf.concat(params0TEforRxns, 1)
 
         return params0TE
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ComparisonInputsLayer(tf.keras.layers.Layer):
+
+    def __init__(self, 
+        nv: int, 
+        nh: int, 
+        params0toParams: ConvertParams0ToParamsLayer,
+        **kwargs
+        ):
+        """Calculate inputs in a single layer. 
+        Input is params0 = (wt,b,sig2) in std. space where muh=0, varh_diag=1
+        Output is params = (wt,b,sig2,muh,varh_diag)
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            params0toParams (ConvertParams0ToParamsLayer): Layer that converts params0 to params
+
+        Raises:
+            ValueError: If reaaction string is not recognized
+        """
+        # Super
+        super(ComparisonInputsLayer, self).__init__(**kwargs)
+        
+        self.nv = nv
+        self.nh = nh
+
+        self.params0toParams = params0toParams
+
+    @classmethod
+    def construct(cls, 
+        nv: int, 
+        nh: int, 
+        freqs : np.array,
+        muh_sin_coeffs_init : np.array,
+        muh_cos_coeffs_init : np.array,
+        varh_sin_coeffs_init : np.array,
+        varh_cos_coeffs_init : np.array,
+        **kwargs
+        ):
+        
+        params0toParams = ConvertParams0ToParamsLayer.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            varh_sin_coeffs_init=varh_sin_coeffs_init,
+            varh_cos_coeffs_init=varh_cos_coeffs_init
+            )
+
+        return cls(
+            nv=nv,
+            nh=nh,
+            params0toParams=params0toParams,
+            **kwargs
+            )
+
+    def get_config(self):
+        config = super(ComparisonInputsLayer, self).get_config()
+
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "params0toParams": self.params0toParams
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def call(self, inputs):
+        params = self.params0toParams(inputs)
+        batch_size = tf.shape(params["wt"])[0]
+
+        # Flatten
+        # Reshape (batch_size, a, b) into (batch_size, a*b) for each thing in the dict
+        paramsarr = [
+            tf.reshape(params["wt"], (batch_size, self.nh * self.nv)),
+            tf.reshape(params["b"], (batch_size, self.nv)),
+            tf.reshape(params["sig2"], (batch_size,1)),
+            tf.reshape(params["muh"], (batch_size,self.nh)),
+            tf.reshape(params["varh_diag"], (batch_size,self.nh))
+        ]
+
+        # Combine different tensors of size (batch_size, a), (batch_size, b), ... 
+        # into one of (batch_size, a+b+...)
+        paramsflat = tf.concat(paramsarr, 1)
+
+        return paramsflat
