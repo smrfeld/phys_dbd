@@ -164,7 +164,7 @@ class ComparisonModel(tf.keras.Model):
                 print("%d / %d ..." % (step,no_steps))
 
             tpt_curr = tpts_traj[-1]
-            input0 = params_start.get_tf_input_assuming_params0(tpt=tpt_curr)
+            input0 = params_traj[-1].get_tf_input_assuming_params0(tpt=tpt_curr)
             output0 = self.call(input0)
 
             # Undo normalization on outputs
@@ -213,7 +213,15 @@ class ComparisonModel(tf.keras.Model):
 
         x = compare_lyr(inputs_norm)
         self.param_mean = np.mean(x,axis=0)
-        self.param_std_dev = np.std(x,axis=0) + 1e-10
+        self.param_std_dev = np.std(x,axis=0)
+
+        # Correct small
+        for i in range(0,len(self.param_mean)):
+            if abs(self.param_mean[i]) < 1e-5:
+                self.param_mean[i] = 0.0
+            if abs(self.param_std_dev[i]) < 1e-5:
+                self.param_std_dev[i] = 1.0
+
         self.param_norms_exist = True
 
     def call(self, input_tensor, training=False):

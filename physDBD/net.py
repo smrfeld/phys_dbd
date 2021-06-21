@@ -877,9 +877,9 @@ class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
                     varvh = off diagonal matrix in cov mat, 
                     trace of diagonal of visible part of cov matrix, 
                     muh = mean of hidden species, 
-                    varh_diag = diagonal of hidden part of cov matrix
+                    varh = diagonal of hidden part of cov matrix
                     ) 
-                corresponding in dimensionality to (b,wt,sig2,muh,varh_diag)
+                corresponding in dimensionality to (b,wt,sig2,muh,varh)
         """
         # Super
         super(ConvertMomentsTEtoParamMomentsTE, self).__init__(**kwargs)
@@ -910,8 +910,8 @@ class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
         varvbarTE = tf.map_fn(
             lambda varTEL: tf.linalg.trace(varTEL[:self.nv,:self.nv]), 
             varTE)
-        varh_diagTE = tf.map_fn(
-            lambda varTEL: tf.linalg.diag_part(varTEL[self.nv:,self.nv:]),
+        varhTE = tf.map_fn(
+            lambda varTEL: varTEL[self.nv:,self.nv:],
             varTE)
 
         return {
@@ -919,7 +919,7 @@ class ConvertMomentsTEtoParamMomentsTE(tf.keras.layers.Layer):
             "muhTE": muhTE,
             "varvhTE": varvhTE,
             "varvbarTE": varvbarTE,
-            "varh_diagTE": varh_diagTE
+            "varhTE": varhTE
         }
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
@@ -932,10 +932,10 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
                     varvh = off diagonal matrix in cov mat, 
                     trace of diagonal of visible part of cov matrix, 
                     muh = mean of hidden species, 
-                    varh_diag = diagonal of hidden part of cov matrix
+                    varh = diagonal of hidden part of cov matrix
                     ) 
-                corresponding in dimensionality to (b,wt,sig2,muh,varh_diag)
-            paramsTE = time evolution of (b,wt,sig2,muh,varh_diag)
+                corresponding in dimensionality to (b,wt,sig2,muh,varh)
+            paramsTE = time evolution of (b,wt,sig2,muh,varh)
 
         Args:
             nv (int): No. visible species
@@ -963,7 +963,7 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
 
         muvTE = inputs["muvTE"]
         varvhTE = inputs["varvhTE"]
-        varh_diagTE = inputs["varh_diagTE"]
+        varhTE = inputs["varhTE"]
         varh_diag = inputs["varh_diag"]
         muh = inputs["muh"]
         varvh = inputs["varvh"]
@@ -973,9 +973,6 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
         varh_inv = tf.map_fn(
             lambda varh_diagL: tf.linalg.tensor_diag(1.0 / varh_diagL), 
             varh_diag)
-        varhTE = tf.map_fn(
-            lambda varh_diagTEL: tf.linalg.tensor_diag(varh_diagTEL),
-            varh_diagTE)
 
         varvh_Trans = tf.transpose(varvh,perm=[0,2,1])
         varvhTE_Trans = tf.transpose(varvhTE,perm=[0,2,1])
@@ -1013,7 +1010,7 @@ class ConvertParamMomentsTEtoParamsTE(tf.keras.layers.Layer):
             "wtTE": wtTE,
             "sig2TE": sig2TE,
             "muhTE": muhTE,
-            "varh_diagTE": varh_diagTE
+            "varhTE": varhTE
         }
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
@@ -1021,9 +1018,9 @@ class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
 
     def __init__(self, **kwargs):
         """Convert paramsTE = time evolution of params to params0TE = time evolution of params0
-            paramsTE = time evolution of (b,wt,sig2,muh,varh_diag)
-            params0TE = time evolution of (b,wt,sig2) in std. space with muh=0, varh_diag=1, 
-                both constant in time i.e. muhTE=0, varh_diagTE=0
+            paramsTE = time evolution of (b,wt,sig2,muh,varh)
+            params0TE = time evolution of (b,wt,sig2) in std. space with muh=0, varh=1, 
+                both constant in time i.e. muhTE=0, varhTE=0
         """
         # Super
         super(ConvertParamsTEtoParams0TE, self).__init__(**kwargs)
@@ -1044,12 +1041,11 @@ class ConvertParamsTEtoParams0TE(tf.keras.layers.Layer):
         wt1 = inputs["wt1"]
         muhTE1 = inputs["muhTE1"]
         varh_diag1 = inputs["varh_diag1"]
-        varh_diagTE1 = inputs["varh_diagTE1"]
+        varhTE1 = inputs["varhTE1"]
         sig2TE = inputs["sig2TE"]
 
         varh1 = tf.map_fn(lambda varh_diag1L: tf.linalg.tensor_diag(varh_diag1L), varh_diag1)
         varh_inv1 = tf.map_fn(lambda varh_diag1L: tf.linalg.tensor_diag(1.0 / varh_diag1L), varh_diag1)
-        varhTE1 = tf.map_fn(lambda varh_diagTE1L: tf.linalg.tensor_diag(varh_diagTE1L), varh_diagTE1)
 
         wTE1 = tf.transpose(wtTE1,perm=[0,2,1])
         w1 = tf.transpose(wt1,perm=[0,2,1])
@@ -1070,8 +1066,8 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
     def __init__(self, nv: int, nh: int, **kwargs):
         """Convert nMomentsTE = time evolution of nMoments to params0TE = time evolution of params0 in one step
             nMomentsTE = time evolution of (mean, n^2 matrix = cov_mat + mean.mean^T)
-            params0TE = time evolution of (b,wt,sig2) in std. space with muh=0, varh_diag=1, 
-                both constant in time i.e. muhTE=0, varh_diagTE=0
+            params0TE = time evolution of (b,wt,sig2) in std. space with muh=0, varh=1, 
+                both constant in time i.e. muhTE=0, varhTE=0
 
         Args:
             nv (int): No. visible species
@@ -1118,7 +1114,7 @@ class ConvertNMomentsTEtoParams0TE(tf.keras.layers.Layer):
             "wt1": inputs["wt"],
             "muhTE1": outputs3["muhTE"],
             "varh_diag1": inputs["varh_diag"],
-            "varh_diagTE1": outputs3["varh_diagTE"],
+            "varhTE1": outputs3["varhTE"],
             "sig2TE": outputs3["sig2TE"]
         }
         outputs4 = self.paramsTEtoParams0TE(inputs4)

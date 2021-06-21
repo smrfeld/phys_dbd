@@ -716,7 +716,10 @@ class TestNet:
         x_out_true = {
             "muhTE": np.array([1.0, 0.8]),
             "muvTE": np.array([3., 5., 2.]),
-            "varh_diagTE": np.array([0., -6.8]),
+            "varhTE": np.array([
+                [0., -10.7],
+                [-10.7, -6.8]
+                ]),
             "varvbarTE": -766.,
             "varvhTE": np.array([
                 [-29., -62., -68.], 
@@ -738,7 +741,7 @@ class TestNet:
         x_in = {
             "muvTE": tf.constant(v.muv_TE(), dtype="float32"),
             "varvhTE": tf.constant(v.varvh_TE(), dtype="float32"),
-            "varh_diagTE": tf.constant(v.varh_diag_TE(), dtype="float32"),
+            "varhTE": tf.constant(v.varh_TE(), dtype="float32"),
             "varh_diag": tf.constant(v.varh_diag(), dtype="float32"),
             "muh": tf.constant(v.muh(), dtype="float32"),
             "varvh": tf.constant(v.varvh(), dtype="float32"),
@@ -754,7 +757,10 @@ class TestNet:
         x_out_true = {
             "bTE": np.array([60.81777, 122.41333, 116.64888]),
             "muhTE": np.array([0.3, 0.8]),
-            "varh_diagTE": np.array([0.9, 0.7]),
+            "varhTE": np.array([
+                [0.9, 0],
+                [0, 0.7],
+                ]),
             "sig2TE": 645.63333,
             "wtTE": np.array([
                 [-6.16, -13.12, -15.04], 
@@ -779,7 +785,7 @@ class TestNet:
             "wt1": tf.constant(v.wt(), dtype="float32"),
             "muhTE1": tf.constant(v.muh_TE(), dtype="float32"),
             "varh_diag1": tf.constant(v.varh_diag(), dtype="float32"),
-            "varh_diagTE1": tf.constant(v.varh_diag_TE(), dtype="float32"),
+            "varhTE1": tf.constant(v.varh_TE(), dtype="float32"),
             "sig2TE": tf.constant(v.sig2_TE(), dtype="float32")
         }
                 
@@ -819,11 +825,22 @@ class TestNet:
             }
 
         print(x_in)
-            
+        
         # Output
         x_out = lyr(x_in)
 
         print(x_out)
+
+        x_out_true = {
+            "bTE": np.array([3., 5., 2.00002]),
+            "sig2TE": 301.86667,
+            "wtTE": np.array([
+                [-10.5766, -20.5495, -23.2327],
+                [-8.03333, -14.4667, -3.86667]
+                ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 

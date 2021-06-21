@@ -25,7 +25,8 @@ class ParamsTraj:
         paramsTE_traj: ParamsTETraj, 
         params_init: Params, 
         tpt_start: int, 
-        no_steps: int
+        no_steps: int,
+        constant_vals_lf: Dict[str,float]
         ):
         """Construct the trajectory by integrating
 
@@ -34,6 +35,8 @@ class ParamsTraj:
             params_init (Params): Initial params
             tpt_start (int): Timepoint to start at (index in paramsTE_traj, NOT real time)
             no_steps (int): No. steps to integrate for
+            constant_vals_lf: Dict[str,float]: Values that are constant. Keys are in the long form format, i.e.
+                wt00, wt01, ..., b0, b1, ..., sig2, muh0, muh1, ..., varh_diag0, varh_diag1, ...
         """
 
         assert no_steps > 0
@@ -52,7 +55,29 @@ class ParamsTraj:
 
             # Add to previous and store
             params = Params.addTE(params_traj[-1], paramsTE_traj.paramsTE_traj[tpt_curr])
+
             params_traj.append(params)
+        
+        # Constants
+        for i in range(0,len(params_traj)):
+            for lf,val in constant_vals_lf.items():
+                if lf[:2] == "wt":
+                    ih = int(lf[2])
+                    iv = int(lf[3])
+                    params_traj[i].wt[ih,iv] = val
+                elif lf[:1] == "b":
+                    iv = int(lf[1])
+                    params_traj[i].b[iv] = val
+                elif lf[:4] == "sig2":
+                    params_traj[i].sig2 = val
+                elif lf[:3] == "muh":
+                    ih = int(lf[3])
+                    params_traj[i].muh[ih] = val
+                elif lf[:9] == "varh_diag":
+                    ih = int(lf[9])
+                    params_traj[i].varh_diag[ih] = val
+                else:
+                    raise ValueError("LF: %s not recognized!" % lf)
 
         return cls(
             times=times,
