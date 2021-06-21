@@ -23,7 +23,7 @@ copyright = '2021, Oliver K. Ernst'
 author = 'Oliver K. Ernst'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1dev'
+release = '0.1.1'
 
 
 # -- General configuration ---------------------------------------------------
