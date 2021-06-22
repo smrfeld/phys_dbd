@@ -22,14 +22,16 @@ Quickstart
 
    pip install physDBD
     
-2. See the example notebook in the example folder of the `GitHub repo <https://github.com/smrfeld/phys_dbd>`_.
+2. See the :doc:`Quickstart </quickstart>`.
 
-3. Scan the :ref:`api_ref`.
+3. See the example notebook in the example folder of the `GitHub repo <https://github.com/smrfeld/phys_dbd>`_.
+
+4. Scan the :ref:`api_ref`.
 
 About
 =====
 
-This repo. implements a TensorFlow package for modeling stochastic reaction networks 
+This package for TensorFlow implements modeling stochastic reaction networks 
 with a dynamic PCA model. Please see this paper for technical details:
 
 `O. K. Ernst, T. Bartol, T. Sejnowski and E. Mjolsness. Physics-based machine learning for modeling stochastic IP3-dependent calcium dynamics. In preparation.`
@@ -92,4 +94,5 @@ Contents
    :maxdepth: 2
    :caption: Contents:
 
+   quickstart.md
    modules.rst

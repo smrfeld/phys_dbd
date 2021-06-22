@@ -4,6 +4,14 @@ physDBD package
 Submodules
 ----------
 
+physDBD.comparison\_model module
+-------------------------
+
+.. automodule:: physDBD.comparison_model
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 physDBD.data\_desc module
 -------------------------
 
