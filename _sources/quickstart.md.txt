@@ -58,6 +58,9 @@ You can write the params to a cache for later usage:
 params_traj.export("cache/cache_params/%s.txt" % ip3)
 ```
 
+<img src="figures_quickstart/params_b0.png" alt="drawing" width="400"/>
+<img src="figures_quickstart/params_wt00.png" alt="drawing" width="400"/>
+
 ## Differentiate PCA parameters = network outputs
 
 To differentiate the PCA parameters in time, different strategies can be used, but total variation regulatization (TVR) is the best at calculating derivatives of noisy signals.
@@ -83,6 +86,9 @@ paramsTE_traj.export("cache/cache_deriv/%s.txt" % ip3)
 ```
 Again, we have written the parameters to a cache for convenience.
 
+<img src="figures_quickstart/derivs_b0.png" alt="drawing" width="400"/>
+<img src="figures_quickstart/derivs_wt00.png" alt="drawing" width="400"/>
+
 After differentiating, you should re-integrate the derivatives to use as the inputs to the network. Otherwise the training data is inconsistent!
 ```
 b1 = np.array([p.b[1] for p in params_traj.params_traj])
@@ -107,6 +113,9 @@ params_traj_filtered.export("cache/cache_filtered/%s.txt" % ip3)
 ```
 You can set some of the values to be a constant here if they don't seem to contain any relevant information (looking at the PCA parameters, some are mostly just noise).
 
+<img src="figures_quickstart/filtered_b0.png" alt="drawing" width="400"/>
+<img src="figures_quickstart/filtered_wt00.png" alt="drawing" width="400"/>
+
 ## Build the network to be trained
 
 Now to the heart of it to build the network.
@@ -117,6 +126,10 @@ First specify the Fourier frequencies we intend to use to represent the latent v
 freqs = np.array([1.,2.,3.,4.,5.,6.])
 freqs = 2.0 * np.pi * freqs / data_desc.no_times
 ```
+
+<img src="figures_quickstart/freqs_sin.png" alt="drawing" width="400"/>
+<img src="figures_quickstart/freqs_cos.png" alt="drawing" width="400"/>
+
 Next specify the reactions:
 ```
 # Rxns
@@ -289,6 +302,9 @@ model.fit(
 # Save final
 model.save("trained/trained_final", save_traces=False)
 ```
+The training can be visualized using `tensorboard` in the usual fashion:
+
+<img src="figures_quickstart/tensorboard.png" alt="drawing" width="400"/>
 
 ## Analyze the trained network
 
@@ -303,6 +319,10 @@ params_traj_int = model_trained.integrate(
     output_std_dev=train_outputs_std_dev
 )
 ```
+The learned trajectories (may) look like this:
+
+<img src="figures_quickstart/integrated_b0.png" alt="drawing" width="400"/>
+<img src="figures_quickstart/integrated_wt00.png" alt="drawing" width="400"/>
 
 
 

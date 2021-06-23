@@ -167,6 +167,7 @@
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
+ | <a href="#J"><strong>J</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
@@ -228,6 +229,8 @@
 </li>
         <li><a href="physDBD.html#physDBD.rxn_model.RxnModel.__init__">(physDBD.rxn_model.RxnModel method)</a>
 </li>
+        <li><a href="physDBD.html#physDBD.training_data.TrainingData.__init__">(physDBD.training_data.TrainingData method)</a>
+</li>
       </ul></li>
   </ul></td>
 </tr></table>
@@ -263,6 +266,8 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.calculate_output_standardizations_and_apply">calculate_output_standardizations_and_apply() (physDBD.training_data.TrainingData method)</a>
+</li>
       <li><a href="physDBD.html#physDBD.rxn_model.RxnModel.calculate_rxn_normalization">calculate_rxn_normalization() (physDBD.rxn_model.RxnModel method)</a>
 </li>
       <li><a href="physDBD.html#physDBD.net.BirthRxnLayer.call">call() (physDBD.net.BirthRxnLayer method)</a>
@@ -368,6 +373,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="physDBD.html#physDBD.data_desc.DataDesc">DataDesc (class in physDBD.data_desc)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.DataType">DataType (class in physDBD.training_data)</a>
 </li>
       <li><a href="physDBD.html#physDBD.helpers.dc_eq">dc_eq() (in module physDBD.helpers)</a>
 </li>
@@ -554,6 +561,14 @@
   </ul></td>
 </tr></table>
 
+<h2 id="J">J</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="physDBD.html#physDBD.training_data.join_dicts">join_dicts() (in module physDBD.training_data)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -590,6 +605,8 @@
         <li><a href="physDBD.html#module-physDBD.paramsTE_traj">physDBD.paramsTE_traj</a>
 </li>
         <li><a href="physDBD.html#module-physDBD.rxn_model">physDBD.rxn_model</a>
+</li>
+        <li><a href="physDBD.html#module-physDBD.training_data">physDBD.training_data</a>
 </li>
       </ul></li>
   </ul></td>
@@ -741,16 +758,31 @@
         <li><a href="physDBD.html#module-physDBD.rxn_model">module</a>
 </li>
       </ul></li>
+      <li>
+    physDBD.training_data
+
+      <ul>
+        <li><a href="physDBD.html#module-physDBD.training_data">module</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="physDBD.html#physDBD.net.RxnInputsLayer">RxnInputsLayer (class in physDBD.net)</a>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.read_output_standardizations">read_output_standardizations() (physDBD.training_data.TrainingData method)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.read_output_standardizations_and_apply">read_output_standardizations_and_apply() (physDBD.training_data.TrainingData method)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.reap_params_traj_for_inputs">reap_params_traj_for_inputs() (physDBD.training_data.TrainingData method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.reap_paramsTE_traj_for_ouputs">reap_paramsTE_traj_for_ouputs() (physDBD.training_data.TrainingData method)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.net.RxnInputsLayer">RxnInputsLayer (class in physDBD.net)</a>
+</li>
       <li><a href="physDBD.html#physDBD.rxn_model.RxnModel">RxnModel (class in physDBD.rxn_model)</a>
 </li>
   </ul></td>
@@ -781,8 +813,6 @@
 </li>
       <li><a href="physDBD.html#physDBD.data_desc.DataDesc.times">times (physDBD.data_desc.DataDesc attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="physDBD.html#physDBD.params.Params.to_1d_arr">to_1d_arr() (physDBD.params.Params method)</a>
 
       <ul>
@@ -795,6 +825,22 @@
         <li><a href="physDBD.html#physDBD.paramsTE.ParamsTE.to_lf_dict">(physDBD.paramsTE.ParamsTE method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.train_inputs">train_inputs (physDBD.training_data.TrainingData attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.train_outputs_mean">train_outputs_mean (physDBD.training_data.TrainingData attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.train_outputs_not_stdrd">train_outputs_not_stdrd (physDBD.training_data.TrainingData attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.train_outputs_std_dev">train_outputs_std_dev (physDBD.training_data.TrainingData attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.train_outputs_stdrd">train_outputs_stdrd (physDBD.training_data.TrainingData attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.DataType.TRAINING">TRAINING (physDBD.training_data.DataType attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData">TrainingData (class in physDBD.training_data)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -809,10 +855,18 @@
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="physDBD.html#physDBD.params.Params.varh_diag">varh_diag (physDBD.params.Params attribute)</a>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.valid_inputs">valid_inputs (physDBD.training_data.TrainingData attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.valid_outputs_not_stdrd">valid_outputs_not_stdrd (physDBD.training_data.TrainingData attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.valid_outputs_stdrd">valid_outputs_stdrd (physDBD.training_data.TrainingData attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="physDBD.html#physDBD.training_data.DataType.VALIDATION">VALIDATION (physDBD.training_data.DataType attribute)</a>
+</li>
+      <li><a href="physDBD.html#physDBD.params.Params.varh_diag">varh_diag (physDBD.params.Params attribute)</a>
+</li>
       <li><a href="physDBD.html#physDBD.paramsTE.ParamsTE.varh_diag_TE">varh_diag_TE (physDBD.paramsTE.ParamsTE attribute)</a>
 </li>
   </ul></td>
@@ -821,10 +875,12 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="physDBD.html#physDBD.params.Params.wt">wt (physDBD.params.Params attribute)</a>
+      <li><a href="physDBD.html#physDBD.training_data.TrainingData.write_output_standardizations">write_output_standardizations() (physDBD.training_data.TrainingData method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="physDBD.html#physDBD.params.Params.wt">wt (physDBD.params.Params attribute)</a>
+</li>
       <li><a href="physDBD.html#physDBD.paramsTE.ParamsTE.wt_TE">wt_TE (physDBD.paramsTE.ParamsTE attribute)</a>
 </li>
   </ul></td>

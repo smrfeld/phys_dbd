@@ -92,6 +92,14 @@ physDBD.rxn\_model module
    :undoc-members:
    :show-inheritance:
 
+physDBD.training\_data module
+-------------------------
+
+.. automodule:: physDBD.training_data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
