@@ -223,8 +223,8 @@
 <span class="n">params_traj</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;cache/cache_params/</span><span class="si">%s</span><span class="s2">.txt&quot;</span> <span class="o">%</span> <span class="n">ip3</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="figures_quickstart/params_b0.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/params_wt00.png" alt="drawing" width="400"/>
+<p><img alt="Params" src="_images/params_b0.png" />
+<img alt="Params" src="_images/params_wt00.png" /></p>
 </div>
 <div class="section" id="differentiate-pca-parameters-network-outputs">
 <h2>Differentiate PCA parameters = network outputs<a class="headerlink" href="#differentiate-pca-parameters-network-outputs" title="Permalink to this headline">¶</a></h2>
@@ -250,8 +250,8 @@
 </pre></div>
 </div>
 <p>Again, we have written the parameters to a cache for convenience.</p>
-<img src="figures_quickstart/derivs_b0.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/derivs_wt00.png" alt="drawing" width="400"/>
+<p><img alt="Derivs" src="_images/derivs_b0.png" />
+<img alt="Derivs" src="_images/derivs_wt00.png" /></p>
 <p>After differentiating, you should re-integrate the derivatives to use as the inputs to the network. Otherwise the training data is inconsistent!</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">b1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params_traj</span><span class="o">.</span><span class="n">params_traj</span><span class="p">])</span>
 <span class="n">b1_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">b1</span><span class="p">)</span>
@@ -275,8 +275,8 @@
 </pre></div>
 </div>
 <p>You can set some of the values to be a constant here if they don’t seem to contain any relevant information (looking at the PCA parameters, some are mostly just noise).</p>
-<img src="figures_quickstart/filtered_b0.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/filtered_wt00.png" alt="drawing" width="400"/>
+<p><img alt="Filtered" src="_images/filtered_b0.png" />
+<img alt="Filtered" src="_images/filtered_wt00.png" /></p>
 </div>
 <div class="section" id="build-the-network-to-be-trained">
 <h2>Build the network to be trained<a class="headerlink" href="#build-the-network-to-be-trained" title="Permalink to this headline">¶</a></h2>
@@ -287,8 +287,8 @@
 <span class="n">freqs</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">freqs</span> <span class="o">/</span> <span class="n">data_desc</span><span class="o">.</span><span class="n">no_times</span>
 </pre></div>
 </div>
-<img src="figures_quickstart/freqs_sin.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/freqs_cos.png" alt="drawing" width="400"/>
+<p><img alt="Freqs" src="_images/freqs_sin.png" />
+<img alt="Freqs" src="_images/freqs_cos.png" /></p>
 <p>Next specify the reactions:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Rxns</span>
 <span class="n">rxn_specs</span> <span class="o">=</span> <span class="p">[</span>
@@ -456,7 +456,7 @@
 </pre></div>
 </div>
 <p>The training can be visualized using <code class="docutils literal notranslate"><span class="pre">tensorboard</span></code> in the usual fashion:</p>
-<img src="figures_quickstart/tensorboard.png" alt="drawing" width="400"/>
+<p><img alt="TensorBoard" src="_images/tensorboard.png" /></p>
 </div>
 <div class="section" id="analyze-the-trained-network">
 <h2>Analyze the trained network<a class="headerlink" href="#analyze-the-trained-network" title="Permalink to this headline">¶</a></h2>
@@ -472,8 +472,8 @@
 </pre></div>
 </div>
 <p>The learned trajectories (may) look like this:</p>
-<img src="figures_quickstart/integrated_b0.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/integrated_wt00.png" alt="drawing" width="400"/>
+<p><img alt="Integrated" src="_images/integrated_b0.png" />
+<img alt="Integrated" src="_images/integrated_wt00.png" /></p>
 </div>
 </div>
 

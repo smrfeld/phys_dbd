@@ -93,7 +93,7 @@ physDBD.rxn\_model module
    :show-inheritance:
 
 physDBD.training\_data module
--------------------------
+-----------------------------
 
 .. automodule:: physDBD.training_data
    :members:
