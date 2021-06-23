@@ -58,8 +58,8 @@ You can write the params to a cache for later usage:
 params_traj.export("cache/cache_params/%s.txt" % ip3)
 ```
 
-<img src="figures_quickstart/params_b0.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/params_wt00.png" alt="drawing" width="400"/>
+![Params](figures_quickstart/params_b0.png)
+![Params](figures_quickstart/params_wt00.png)
 
 ## Differentiate PCA parameters = network outputs
 
@@ -86,8 +86,8 @@ paramsTE_traj.export("cache/cache_deriv/%s.txt" % ip3)
 ```
 Again, we have written the parameters to a cache for convenience.
 
-<img src="figures_quickstart/derivs_b0.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/derivs_wt00.png" alt="drawing" width="400"/>
+![Derivs](figures_quickstart/derivs_b0.png)
+![Derivs](figures_quickstart/derivs_wt00.png)
 
 After differentiating, you should re-integrate the derivatives to use as the inputs to the network. Otherwise the training data is inconsistent!
 ```
@@ -113,8 +113,8 @@ params_traj_filtered.export("cache/cache_filtered/%s.txt" % ip3)
 ```
 You can set some of the values to be a constant here if they don't seem to contain any relevant information (looking at the PCA parameters, some are mostly just noise).
 
-<img src="figures_quickstart/filtered_b0.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/filtered_wt00.png" alt="drawing" width="400"/>
+![Filtered](figures_quickstart/filtered_b0.png)
+![Filtered](figures_quickstart/filtered_wt00.png)
 
 ## Build the network to be trained
 
@@ -127,8 +127,8 @@ freqs = np.array([1.,2.,3.,4.,5.,6.])
 freqs = 2.0 * np.pi * freqs / data_desc.no_times
 ```
 
-<img src="figures_quickstart/freqs_sin.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/freqs_cos.png" alt="drawing" width="400"/>
+![Freqs](figures_quickstart/freqs_sin.png)
+![Freqs](figures_quickstart/freqs_cos.png)
 
 Next specify the reactions:
 ```
@@ -304,7 +304,7 @@ model.save("trained/trained_final", save_traces=False)
 ```
 The training can be visualized using `tensorboard` in the usual fashion:
 
-<img src="figures_quickstart/tensorboard.png" alt="drawing" width="400"/>
+![TensorBoard](figures_quickstart/tensorboard.png)
 
 ## Analyze the trained network
 
@@ -321,8 +321,7 @@ params_traj_int = model_trained.integrate(
 ```
 The learned trajectories (may) look like this:
 
-<img src="figures_quickstart/integrated_b0.png" alt="drawing" width="400"/>
-<img src="figures_quickstart/integrated_wt00.png" alt="drawing" width="400"/>
-
+![Integrated](figures_quickstart/integrated_b0.png)
+![Integrated](figures_quickstart/integrated_wt00.png)
 
 
