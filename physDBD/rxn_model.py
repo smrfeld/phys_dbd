@@ -216,11 +216,11 @@ class RxnModel(tf.keras.Model):
         self.rxn_std_dev = np.std(x,axis=0)
 
         # Correct small
-        for i in range(0,len(self.param_mean)):
-            if abs(self.param_mean[i]) < 1e-5:
-                self.param_mean[i] = 0.0
-            if abs(self.param_std_dev[i]) < 1e-5:
-                self.param_std_dev[i] = 1.0
+        for i in range(0,len(self.rxn_mean)):
+            if abs(self.rxn_mean[i]) < 1e-5:
+                self.rxn_mean[i] = 0.0
+            if abs(self.rxn_std_dev[i]) < 1e-5:
+                self.rxn_std_dev[i] = 1.0
 
         self.rxn_norms_exist = True
 
