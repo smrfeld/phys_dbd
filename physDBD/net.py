@@ -1184,6 +1184,44 @@ class RxnInputsLayer(tf.keras.layers.Layer):
                 raise ValueError("Rxn type: %s not recognized" % rtype)
 
     @classmethod
+    def construct_zero_init(cls, 
+        nv: int, 
+        nh: int, 
+        freqs : np.array,
+        rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
+        **kwargs
+        ):
+        return cls.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=np.full(len(freqs),0.0),
+            muh_cos_coeffs_init=np.full(len(freqs),0.0),
+            varh_sin_coeffs_init=np.full(len(freqs),0.0),
+            varh_cos_coeffs_init=np.full(len(freqs),0.0),
+            rxn_specs=rxn_specs
+            )
+
+    @classmethod
+    def construct_one_init(cls, 
+        nv: int, 
+        nh: int, 
+        freqs : np.array,
+        rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
+        **kwargs
+        ):
+        return cls.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=np.full(len(freqs),1.0),
+            muh_cos_coeffs_init=np.full(len(freqs),1.0),
+            varh_sin_coeffs_init=np.full(len(freqs),1.0),
+            varh_cos_coeffs_init=np.full(len(freqs),1.0),
+            rxn_specs=rxn_specs
+            )
+    
+    @classmethod
     def construct(cls, 
         nv: int, 
         nh: int, 
@@ -1295,6 +1333,40 @@ class ComparisonInputsLayer(tf.keras.layers.Layer):
 
         self.params0toParams = params0toParams
 
+    @classmethod
+    def construct_zero_init(cls, 
+        nv: int, 
+        nh: int, 
+        freqs : np.array,
+        **kwargs
+        ):
+        return cls.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=np.full(len(freqs),0.0),
+            muh_cos_coeffs_init=np.full(len(freqs),0.0),
+            varh_sin_coeffs_init=np.full(len(freqs),0.0),
+            varh_cos_coeffs_init=np.full(len(freqs),0.0)
+            )
+
+    @classmethod
+    def construct_one_init(cls, 
+        nv: int, 
+        nh: int, 
+        freqs : np.array,
+        **kwargs
+        ):
+        return cls.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=np.full(len(freqs),1.0),
+            muh_cos_coeffs_init=np.full(len(freqs),1.0),
+            varh_sin_coeffs_init=np.full(len(freqs),1.0),
+            varh_cos_coeffs_init=np.full(len(freqs),1.0)
+            )
+    
     @classmethod
     def construct(cls, 
         nv: int, 
