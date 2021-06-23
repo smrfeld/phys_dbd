@@ -42,6 +42,8 @@ class TrainingData:
     valid_outputs_stdrd : Dict[str,np.array]
 
     def __init__(self):
+        """Constructor
+        """
         self.train_inputs = {}
         self.valid_inputs = {}
 
@@ -54,21 +56,47 @@ class TrainingData:
         self.train_outputs_stdrd = {}
         self.valid_outputs_stdrd = {}
 
-    def reap_params_traj_for_inputs(self, params_traj: ParamsTraj, data_type: DataType):
+    def reap_params_traj_for_inputs(self, 
+        params_traj: ParamsTraj, 
+        data_type: DataType):
+        """Reap inputs from a ParamTraj at all timepoints by calling get_tf_inputs_assuming_params0
+            Fills out train_inputs, valid_inputs
+
+        Args:
+            params_traj (ParamsTraj): The param trajectory
+            data_type (DataType): Training vs validation
+        """
         inputs0 = params_traj.get_tf_inputs_assuming_params0()
         if data_type == DataType.TRAINING:
             self.train_inputs = join_dicts(self.train_inputs, inputs0)
         elif data_type == DataType.VALIDATION:
             self.valid_inputs = join_dicts(self.valid_inputs, inputs0)
 
-    def reap_paramsTE_traj_for_ouputs(self, paramsTE_traj: ParamsTETraj, data_type: DataType, non_zero_outputs: List[str]):
+    def reap_paramsTE_traj_for_ouputs(self, 
+        paramsTE_traj: ParamsTETraj, 
+        data_type: DataType, 
+        non_zero_outputs: List[str]):
+        """Reap outputs from a ParamTETraj at all timepoints by calling get_tf_outputs_assuming_params0
+
+        Args:
+            paramsTE_traj (ParamsTETraj): The paramTE trajectory
+            data_type (DataType): Training vs validation
+            non_zero_outputs (List[str]): See ParamTETraj.get_tf_outputs_assuming_params0
+        """
         outputs0 = paramsTE_traj.get_tf_outputs_assuming_params0(non_zero_outputs=non_zero_outputs)
         if data_type == DataType.TRAINING:
             self.train_outputs_not_stdrd = join_dicts(self.train_outputs_not_stdrd, outputs0)
         elif data_type == DataType.VALIDATION:
             self.valid_outputs_not_stdrd = join_dicts(self.valid_outputs_not_stdrd, outputs0)
 
-    def calculate_output_standardizations(self, percent: float):
+    def calculate_output_standardizations_and_apply(self, percent: float):
+        """Calculate output standardizations and apply them
+            Constructs train_outputs_stdrd, valid_outputs_stdrd from 
+            train_outputs_not_stdrd, valid_outputs_not_stdrd
+
+        Args:
+            percent (float): Percent of data to calculate mean, std. dev from
+        """
 
         # Normalization size
         norm_size = int(percent * len(self.train_outputs_not_stdrd["wt00_TE"]))
@@ -95,6 +123,13 @@ class TrainingData:
         self._standardize_ouputs(self.train_outputs_mean, self.train_outputs_std_dev)
 
     def _standardize_ouputs(self, mean: Dict[str,np.array], std_dev: Dict[str,np.array]):
+        """Internal helper to construct train_outputs_stdrd, valid_outputs_stdrd
+            from train_outputs_not_stdrd, valid_outputs_not_stdrd
+
+        Args:
+            mean (Dict[str,np.array]): Mean
+            std_dev (Dict[str,np.array]): Std. dev.
+        """
         self.train_outputs_stdrd = {}
         self.valid_outputs_stdrd = {}
         for key, val in self.train_outputs_not_stdrd.items():
@@ -103,6 +138,12 @@ class TrainingData:
             self.valid_outputs_stdrd[key] = (val - mean[key]) / std_dev[key]
 
     def write_output_standardizations(self, dir_name: str):
+        """Write standardizations mean and std. dev. with pickle.dump
+
+        Args:
+            dir_name (str): Directory name, files are "cache_outputs_mean.txt" 
+                and "cache_outputs_std_dev.txt"
+        """
         # Save the output mean/std dev
         fname = os.path.join(dir_name, "cache_outputs_mean.txt")
         with open(fname,'wb') as f:
@@ -113,6 +154,14 @@ class TrainingData:
             pickle.dump(self.train_outputs_std_dev, f)
 
     def read_output_standardizations(self, dir_name: str):
+        """Read standardizations back with pickle.load
+            Does NOT calculate train_outputs_stdrd, valid_outputs_stdrd automatically
+            Use read_output_standardizations_and_apply for that
+
+        Args:
+            dir_name (str): Directory name, files are "cache_outputs_mean.txt" 
+                and "cache_outputs_std_dev.txt"
+        """
         # Try to load
         fname = os.path.join(dir_name, "cache_outputs_mean.txt")
         with open(fname,'rb') as f:
@@ -123,6 +172,13 @@ class TrainingData:
             self.train_outputs_std_dev = pickle.load(f)
 
     def read_output_standardizations_and_apply(self, dir_name: str):
+        """Read standardizations back with pickle.load
+            AND automatically calculates train_outputs_stdrd, valid_outputs_stdrd
+
+        Args:
+            dir_name (str): Directory name, files are "cache_outputs_mean.txt" 
+                and "cache_outputs_std_dev.txt"
+        """
         self.read_output_standardizations(dir_name)
 
         # Apply standardization
