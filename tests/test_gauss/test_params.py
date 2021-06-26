@@ -72,3 +72,23 @@ class TestParamsGauss:
         for i in range(0,len(inputs["mu"])):
             tf.debugging.assert_equal(tf.constant(pt.params_traj[i].mu, dtype="float32"), inputs["mu"][i].astype("float32"))
             tf.debugging.assert_equal(tf.constant(pt.params_traj[i].chol, dtype="float32"), inputs["chol"][i].astype("float32"))
+
+    def test_convert(self):
+
+        params = self.import_params(0.2)
+        cov = params.cov
+        cov_v = cov[:self.nv,:self.nv]
+
+        mu_h_new = np.random.rand(self.nh)
+        chol_vh_new = np.random.rand(self.nh,self.nv)
+        chol_h_new = np.tril(np.random.rand(self.nh,self.nh))
+        params.convert_latent_space(
+            mu_h_new=mu_h_new,
+            chol_vh_new=chol_vh_new,
+            chol_h_new=chol_h_new
+            )
+        
+        cov_new = params.cov
+        cov_new_v = cov_new[:self.nv,:self.nv]
+
+        assert np.max(abs(cov_v - cov_new_v)) < 1e-10
