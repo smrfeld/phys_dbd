@@ -59,7 +59,7 @@ class ParamsGaussLF:
             int: No. species
         """
         return self._nv + self._nh
-
+    
     @classmethod
     def fromParamsGauss(cls, params: ParamsGauss):
         lf = {}
@@ -145,6 +145,14 @@ class ParamsGauss:
 
     def __eq__(self, other):
         return dc_eq(self, other)
+
+    @property
+    def prec(self) -> np.array:
+        return np.dot(self.chol, np.transpose(self.chol))
+
+    @property
+    def cov(self) -> np.array:
+        return np.linalg.inv(self.prec)
 
     def get_tf_input_assuming_params0(self, tpt: int) -> Dict[str, np.array]:
         """Get TF input assuming these are std. params with muh=0, varh = I
@@ -254,7 +262,7 @@ class ParamsGauss:
 
         tmp = np.dot(chol_h, chol_h_t) + np.dot(chol_vh, chol_vh_t)
         tmp = np.linalg.inv(tmp)
-        return np.eye(self.nh) - np.dot(chol_vh_t, np.dot(tmp, chol_vh))
+        return np.eye(self.nv) - np.dot(chol_vh_t, np.dot(tmp, chol_vh))
 
     def convert_latent_space(self, mu_h_new: np.array, chol_vh_new: np.array, chol_h_new: np.array):
         
