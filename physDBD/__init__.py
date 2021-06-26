@@ -1,5 +1,6 @@
 from .comparison_model import *
 from .data_desc import *
+from .gauss import *
 from .import_helper import *
 from .net import *
 from .params_traj import *

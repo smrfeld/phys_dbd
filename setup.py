@@ -6,7 +6,7 @@ with open("README_pypi.md", "r", encoding="utf-8") as fh:
 setup(
     name='physDBD',
     version='0.1.1',
-    packages=['physDBD'],
+    packages=['physDBD','physDBD/gauss'],
     author='Oliver K. Ernst',
     author_email='oernst@ucsd.edu',
     url='https://github.com/smrfeld/phys_dbd',
