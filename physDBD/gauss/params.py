@@ -61,6 +61,20 @@ class ParamsGaussLF:
         return self._nv + self._nh
     
     @classmethod
+    def from1dArr(cls, nv: int, nh: int, columns: np.array, arr: np.array):
+        assert len(columns) == len(arr)
+
+        lf = {}
+        for i in range(0,len(columns)):
+            lf[columns[i]] = arr[i]
+        
+        return cls(
+            nv=nv, 
+            nh=nh, 
+            lf=lf
+            )
+    
+    @classmethod
     def fromParamsGauss(cls, params: ParamsGauss):
         lf = {}
         
@@ -69,7 +83,7 @@ class ParamsGaussLF:
             lf[s] = params.mu[i]
 
         for i in range(0,params.n):
-            for j in range(0,i):
+            for j in range(0,i+1):
                 s = "chol_%d_%d" % (i,j)
                 lf[s] = params.chol[i,j]
         
@@ -93,7 +107,17 @@ class ParamsGauss:
         self._nh = nh
 
         self.mu = mu
-        self.chol = chol
+        self.chol = chol        
+
+    @classmethod
+    def from1dArr(cls, nv: int, nh: int, columns: np.array, arr: np.array):
+        paramsLF = ParamsGaussLF.from1dArr(
+            nv=nv,
+            nh=nh,
+            columns=columns,
+            arr=arr
+            )
+        return cls.fromParamsGaussLF(paramsLF)
 
     @classmethod
     def fromParamsGaussLF(cls, paramsLF: ParamsGaussLF):

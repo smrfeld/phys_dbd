@@ -135,6 +135,15 @@ class ParamsGaussTraj:
         return len(self.params_traj)
 
     @property
+    def n(self) -> int:
+        """No. species
+
+        Returns:
+            int: No. species
+        """
+        return self.params_traj[0].n
+    
+    @property
     def nv(self) -> int:
         """No. visible species
 
@@ -179,11 +188,19 @@ class ParamsGaussTraj:
             pd.DataFrame: The pandas data frame
         """
 
-        no_params = self.n + self.n * (self.n + 1) / 2
-        vals = np.zeros((self.nt, no_params))
+        no_params = int(self.n + self.n * (self.n + 1) / 2)
+        vals = np.zeros((self.nt, no_params + 1))
 
         idx = 0
         columns = []
+
+        # Time
+        columns.append("t")
+        for t in range(0,self.nt):
+            vals[t,idx] = self.times[t]
+        idx += 1
+
+        # Mean
         for i in range(0,self.n):
             s = "mu_%d" % i
             columns.append(s)
@@ -192,9 +209,10 @@ class ParamsGaussTraj:
                 vals[t,idx] = self.params_traj[t].mu[i]
             
             idx += 1
-
+        
+        # Chol
         for i in range(0,self.n):
-            for j in range(0,i):
+            for j in range(0,i+1):
                 s = "chol_%d_%d" % (i,j)
                 columns.append(s)
 
@@ -230,7 +248,6 @@ class ParamsGaussTraj:
 
         # Import
         df = pd.read_csv(fname, sep=" ")
-        print(df)
 
         # To numpy
         arr = df.to_numpy()
@@ -241,8 +258,12 @@ class ParamsGaussTraj:
             t = arr1d[1]
             times.append(t)
 
-            arr1d0 = arr1d[2:]
-            params = ParamsGauss.from1dArr(arr1d0, nv, nh)
+            params = ParamsGauss.from1dArr(
+                nv=nv,
+                nh=nh,
+                columns=df.columns[2:],
+                arr=arr1d[2:]
+                )
             params_traj.append(params)
 
         return cls(np.array(times),params_traj)
