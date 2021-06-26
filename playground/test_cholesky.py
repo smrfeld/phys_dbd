@@ -28,5 +28,18 @@ print(data.shape)
 
 # Params
 nh = 4
+nv = data.shape[2]
 params = ParamsGauss.fromDataStd(data[1],nh)
 print(params)
+print(params.cov)
+
+mu_h_new = np.random.rand(nh)
+chol_vh_new = np.random.rand(nh,nv)
+chol_h_new = np.tril(np.random.rand(nh,nh))
+params.convert_latent_space(
+    mu_h_new=mu_h_new,
+    chol_vh_new=chol_vh_new,
+    chol_h_new=chol_h_new
+    )
+print(params)
+print(params.cov)
