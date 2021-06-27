@@ -1,14 +1,11 @@
-from .params0 import Params0Gauss, Params0GaussLF
+from .dparams0_traj import DParams0GaussTraj
+from .params0 import Params0Gauss
 from ..diff_tvr import DiffTVR
-from ..helpers import convert_np_to_pd
 
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
 import tensorflow as tf
-
-class Params0GaussTETraj:
-    pass
 
 class Params0GaussTraj:
 
@@ -24,7 +21,7 @@ class Params0GaussTraj:
 
     @classmethod
     def fromIntegrating(cls, 
-        params0TE_traj: Params0GaussTETraj, 
+        dparams0_traj: DParams0GaussTraj, 
         params0_init: Params0Gauss, 
         tpt_start: int, 
         no_steps: int,
@@ -33,7 +30,7 @@ class Params0GaussTraj:
         """Construct the trajectory by integrating
 
         Args:
-            params0TE_traj (Params0GaussTETraj): Time evolution of the params to integrate
+            dparams0_traj (DParams0GaussTraj): Time evolution of the params to integrate
             params0_init (Params0Gauss): Initial params
             tpt_start (int): Timepoint to start at (index in params0TE_traj, NOT real time)
             no_steps (int): No. steps to integrate for
@@ -44,19 +41,19 @@ class Params0GaussTraj:
         assert no_steps > 0
 
         params0_traj = [params0_init]
-        times = [params0TE_traj.times[tpt_start]]
+        times = [dparams0_traj.times[tpt_start]]
 
         for step in range(0,no_steps):
             tpt_curr = tpt_start + step
             tpt_next = tpt_curr + 1
 
-            if tpt_next < len(params0TE_traj.times):
-                times.append(params0TE_traj.times[tpt_next])
+            if tpt_next < len(dparams0_traj.times):
+                times.append(dparams0_traj.times[tpt_next])
             else:
                 times.append(times[-1] + (times[-1] - times[-2]))
 
             # Add to previous and store
-            params = Params0Gauss.addTE(params0_traj[-1], params0TE_traj.params0TE_traj[tpt_curr])
+            params = Params0Gauss.addTE(params0_traj[-1], dparams0_traj.dparams0TE_traj[tpt_curr])
 
             params0_traj.append(params)
         
@@ -149,9 +146,9 @@ class Params0GaussTraj:
         data = {}
         data["t"] = self.times
 
-        params0LF_traj = [Params0GaussLF.fromParamsGauss(params0) for params0 in self.params0_traj]
-        for key in params0LF_traj[0].lf.keys():
-            data[key] = [params0LF.lf[key] for params0LF in params0LF_traj]
+        lf_dicts = [params0.to_lf_dict() for params0 in self.params0_traj]
+        for key in lf_dicts[0].keys():
+            data[key] = [lf[key] for lf in lf_dicts]
         
         return pd.DataFrame.from_dict(data)
 
@@ -193,12 +190,7 @@ class Params0GaussTraj:
 
             lf = {key: val[t] for key,val in arr_dict.items()}
 
-            params0LF = Params0GaussLF(
-                nv=nv,
-                lf=lf
-                )
-
-            params0 = Params0Gauss.fromParams0GaussLF(params0LF)
+            params0 = Params0Gauss.fromLFdict(lf=lf, nv=nv)
             params0_traj.append(params0)
 
         return cls(times,params0_traj)
@@ -207,7 +199,7 @@ class Params0GaussTraj:
         alphas: Dict[str,float], 
         no_opt_steps: int, 
         non_zero_vals: List[str] = []
-        ) -> Params0GaussTETraj:
+        ) -> DParams0GaussTraj:
         """Differentiate the trajectory using TVR = total variation regularization
 
         Args:
@@ -224,7 +216,7 @@ class Params0GaussTraj:
 
         diff_tvr = DiffTVR(n=n,dx=1.0)
 
-        params0LF_traj = [Params0GaussLF.fromParamsGauss(params0) for params0 in self.params0_traj]
+        params0LF_traj = [params0.to_lf_dict() for params0 in self.params0_traj]
 
         deriv_guess = np.zeros(n-1)
 
@@ -248,4 +240,8 @@ class Params0GaussTraj:
                 # Zero
                 lf_derivs[key] = np.zeros(n-1)
 
-        return Params0GaussTETraj.fromLFdict(self.times[:-1], lf_derivs, self.nv, self.nh)
+        return DParams0GaussTraj.fromLFdict(
+            times=self.times[:-1], 
+            lf=lf_derivs, 
+            nv=self.nv
+            )

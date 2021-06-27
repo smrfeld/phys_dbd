@@ -1,3 +1,4 @@
+from .dparams0 import DParams0Gauss
 from ..helpers import dc_eq
 
 import numpy as np
@@ -5,57 +6,8 @@ from typing import Dict
 
 from dataclasses import dataclass
 
-def array_flatten_lower_tri(a, lt, d):
-    zeros = np.zeros(np.transpose(lt).shape)
-    return array_flatten_sym(a, zeros, lt, d)
-
-def array_flatten_sym(a, b, c, d):
-    top = np.concatenate((a,b),axis=1)
-    bottom = np.concatenate((c,d),axis=1)
-    return np.concatenate((top,bottom),axis=0)
-
-class Params0GaussTE:
-    pass
-
 class Params0Gauss:
     pass
-
-@dataclass(eq=False)
-class Params0GaussLF:
-
-    lf: Dict[str,float]
-    _nv: int
-    
-    def __init__(self, nv: int, lf: Dict[str,float]):
-        self.lf = lf
-        self._nv = nv
-
-    @property
-    def nv(self) -> int:
-        """No. visible species
-
-        Returns:
-            int: No. visible species
-        """
-        return self._nv
-
-    @classmethod
-    def fromParamsGauss(cls, params0: Params0Gauss):
-        lf = {}
-        
-        for i in range(0,params0.nv):
-            s = "mu_v_%d" % i
-            lf[s] = params0.mu_v[i]
-
-        for i in range(0,params0.nv):
-            for j in range(0,i+1):
-                s = "chol_v_%d_%d" % (i,j)
-                lf[s] = params0.chol_v[i,j]
-        
-        return cls(
-            nv=params0.nv, 
-            lf=lf
-            )
 
 @dataclass(eq=False)
 class Params0Gauss:
@@ -71,13 +23,27 @@ class Params0Gauss:
         self.mu_v = mu_v
         self.chol_v = chol_v
 
-    @classmethod
-    def fromParams0GaussLF(cls, params0LF: Params0GaussLF):
+    def to_lf_dict(self):
+        lf = {}
         
-        mu_v = np.zeros(params0LF.nv)
-        chol_v = np.zeros((params0LF.nv,params0LF.nv))
+        for i in range(0,self.nv):
+            s = "mu_v_%d" % i
+            lf[s] = self.mu_v[i]
 
-        for key,val in params0LF.lf.items():
+        for i in range(0,self.nv):
+            for j in range(0,i+1):
+                s = "chol_v_%d_%d" % (i,j)
+                lf[s] = self.chol_v[i,j]
+        
+        return lf
+
+    @classmethod
+    def fromLFdict(cls, lf: Dict[str,float], nv: int):
+        
+        mu_v = np.zeros(nv)
+        chol_v = np.zeros((nv,nv))
+
+        for key,val in lf.items():
             s = key.split('_')
             
             if s[0] == "mu" and s[1] == "v" and s[2].isdigit():
@@ -86,7 +52,7 @@ class Params0Gauss:
                 chol_v[int(s[2]),int(s[3])] = val
 
         return cls(
-            nv=params0LF.nv,
+            nv=nv,
             mu_v=mu_v,
             chol_v=chol_v
             )
@@ -127,7 +93,7 @@ class Params0Gauss:
             }
 
     @classmethod
-    def addParams0Gauss(cls, params0: Params0Gauss, params0_to_add: Params0GaussLF):
+    def addParams0Gauss(cls, params0: Params0Gauss, params0_to_add: Params0Gauss):
 
         mu_v = params0.mu_v + params0_to_add.mu_v
         chol_v = params0.chol_v + params0_to_add.chol_v
@@ -139,20 +105,20 @@ class Params0Gauss:
             )
 
     @classmethod
-    def addParamsGaussLF(cls, params0: Params0Gauss, params0LF: Params0GaussLF):
-        params0_to_add = Params0Gauss.fromParams0GaussLF(params0LF)
+    def addLFdict(cls, params0: Params0Gauss, lf: Dict[str, float], nv: int):
+        params0_to_add = Params0Gauss.fromLFdict(lf=lf, nv=nv)
         return cls.addParams0Gauss(params0, params0_to_add)
 
     @classmethod
-    def addTE(cls, params0: Params0Gauss, params0TE: Params0GaussTE):
+    def addDeriv(cls, params0: Params0Gauss, dparams0: DParams0Gauss):
         """Construct by adding time evolution to existing params.
 
         Args:
             params0 (Params0Gauss): ParamsGauss
-            params0TE (Params0GaussTE): Time evolution
+            dparams0 (DParams0Gauss): Time evolution
         """
-        mu_v = params0.mu_v + params0TE.mu_v_TE
-        chol_v = params0.chol_v + params0TE.chol_v_TE
+        mu_v = params0.mu_v + dparams0.dmu_v
+        chol_v = params0.chol_v + dparams0.dchol_v
         return cls(
             nv=params0.nv,
             mu_v=mu_v,
