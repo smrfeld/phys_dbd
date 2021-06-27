@@ -156,3 +156,67 @@ class ConvertParamsGaussLayer(tf.keras.layers.Layer):
             "mu2": mu2,
             "chol2": chol2
         }
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ConvertParamsGaussLayerFrom0(tf.keras.layers.Layer):
+
+    def __init__(self, **kwargs):
+        """Convert params0 = std. params with muh=0, varh_diag=1 to params with different muh,varh_diag
+        """
+        # Super
+        super(ConvertParamsGaussLayerFrom0, self).__init__(**kwargs)
+
+    def get_config(self):
+        config = super(ConvertParamsGaussLayerFrom0, self).get_config()
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
+    def make_amat(self, chol_vh, chol_h):
+        chol_vh_t = tf.transpose(chol_vh,perm=[0,2,1])
+        chol_h_t = tf.transpose(chol_h,perm=[0,2,1])
+
+        batch_size = tf.shape(chol_vh)[0]
+
+        amat = tf.matmul(chol_h, chol_h_t) + tf.matmul(chol_vh, chol_vh_t)
+        amat = tf.linalg.inv(amat)
+        amat = tf.matmul(chol_vh_t, tf.matmul(amat, chol_vh))
+        return tf.eye(self.nv,batch_shape=[batch_size]) - amat
+
+    def array_flatten_low_tri(self, matv, matvh, math):
+        
+        batch_size = tf.shape(matv)[0]
+        zeros = tf.zeros((batch_size, self.nv, self.nh))
+        upper = tf.concat([matv,zeros],2)
+        lower = tf.concat([matvh,math],2)
+        mat = tf.concat([upper,lower],1)
+        return mat
+
+    def call(self, inputs):
+        
+        mu_v1 = inputs["mu_v1"]
+        chol_v1 = inputs["chol_v1"]
+
+        mu_h2 = inputs["mu_h2"]
+        chol_vh2 = inputs["chol_vh2"]
+        chol_h2 = inputs["chol_h2"]
+
+        # Concatenatu mu
+        mu2 = tf.concat([mu_v1,mu_h2],1)
+
+        # A matrix
+        amat2 = self.make_amat(chol_vh2,chol_h2)
+        chol_a2 = tf.linalg.cholesky(amat2)
+
+        # Chol v
+        chol_v2 = tf.matmul(chol_v1, tf.linalg.inv(chol_a2))
+
+        # Array flatten to new cholesky
+        chol2 = self.array_flatten_low_tri(chol_v2, chol_vh2, chol_h2)
+
+        return {
+            "mu2": mu2,
+            "chol2": chol2
+        }
