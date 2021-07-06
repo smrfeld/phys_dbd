@@ -41,7 +41,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="API reference" href="modules.html" /> 
+    <link rel="prev" title="physDBD" href="modules.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -89,7 +89,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API reference</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">physDBD</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">physDBD package</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#physdbd-comparison-model-module">physDBD.comparison_model module</a></li>
@@ -103,7 +103,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#module-physDBD.paramsTE_traj">physDBD.paramsTE_traj module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-physDBD.params_traj">physDBD.params_traj module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-physDBD.rxn_model">physDBD.rxn_model module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-physDBD.training_data">physDBD.training_data module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physdbd-training-data-module">physDBD.training_data module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-physDBD">Module contents</a></li>
 </ul>
 </li>
@@ -157,7 +157,7 @@
     
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-          <li><a href="modules.html">API reference</a> &raquo;</li>
+          <li><a href="modules.html">physDBD</a> &raquo;</li>
         
       <li>physDBD package</li>
     
@@ -2580,160 +2580,8 @@ output_std_dev (np.array): Output std. devs. to undo the normalization.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-physDBD.training_data">
-<span id="physdbd-training-data-module"></span><h2>physDBD.training_data module<a class="headerlink" href="#module-physDBD.training_data" title="Permalink to this headline">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="physDBD.training_data.DataType">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">physDBD.training_data.</span></span><span class="sig-name descname"><span class="pre">DataType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.DataType" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
-<p>An enumeration.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.DataType.TRAINING">
-<span class="sig-name descname"><span class="pre">TRAINING</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#physDBD.training_data.DataType.TRAINING" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.DataType.VALIDATION">
-<span class="sig-name descname"><span class="pre">VALIDATION</span></span><em class="property"> <span class="pre">=</span> <span class="pre">1</span></em><a class="headerlink" href="#physDBD.training_data.DataType.VALIDATION" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">physDBD.training_data.</span></span><span class="sig-name descname"><span class="pre">TrainingData</span></span><a class="headerlink" href="#physDBD.training_data.TrainingData" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.TrainingData.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constructor</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.calculate_output_standardizations_and_apply">
-<span class="sig-name descname"><span class="pre">calculate_output_standardizations_and_apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.TrainingData.calculate_output_standardizations_and_apply" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Calculate output standardizations and apply them</dt><dd><p>Constructs train_outputs_stdrd, valid_outputs_stdrd from 
-train_outputs_not_stdrd, valid_outputs_not_stdrd</p>
-</dd>
-<dt>Args:</dt><dd><p>percent (float): Percent of data to calculate mean, std. dev from</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.read_output_standardizations">
-<span class="sig-name descname"><span class="pre">read_output_standardizations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.TrainingData.read_output_standardizations" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Read standardizations back with pickle.load</dt><dd><p>Does NOT calculate train_outputs_stdrd, valid_outputs_stdrd automatically
-Use read_output_standardizations_and_apply for that</p>
-</dd>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>dir_name (str): Directory name, files are “cache_outputs_mean.txt” </dt><dd><p>and “cache_outputs_std_dev.txt”</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.read_output_standardizations_and_apply">
-<span class="sig-name descname"><span class="pre">read_output_standardizations_and_apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.TrainingData.read_output_standardizations_and_apply" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Read standardizations back with pickle.load</dt><dd><p>AND automatically calculates train_outputs_stdrd, valid_outputs_stdrd</p>
-</dd>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>dir_name (str): Directory name, files are “cache_outputs_mean.txt” </dt><dd><p>and “cache_outputs_std_dev.txt”</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.reap_paramsTE_traj_for_ouputs">
-<span class="sig-name descname"><span class="pre">reap_paramsTE_traj_for_ouputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paramsTE_traj</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#physDBD.paramsTE_traj.ParamsTETraj" title="physDBD.paramsTE_traj.ParamsTETraj"><span class="pre">physDBD.paramsTE_traj.ParamsTETraj</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#physDBD.training_data.DataType" title="physDBD.training_data.DataType"><span class="pre">physDBD.training_data.DataType</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_zero_outputs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.TrainingData.reap_paramsTE_traj_for_ouputs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reap outputs from a ParamTETraj at all timepoints by calling get_tf_outputs_assuming_params0</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>paramsTE_traj (ParamsTETraj): The paramTE trajectory
-data_type (DataType): Training vs validation
-non_zero_outputs (List[str]): See ParamTETraj.get_tf_outputs_assuming_params0</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.reap_params_traj_for_inputs">
-<span class="sig-name descname"><span class="pre">reap_params_traj_for_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params_traj</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#physDBD.params_traj.ParamsTraj" title="physDBD.params_traj.ParamsTraj"><span class="pre">physDBD.params_traj.ParamsTraj</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_type</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#physDBD.training_data.DataType" title="physDBD.training_data.DataType"><span class="pre">physDBD.training_data.DataType</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.TrainingData.reap_params_traj_for_inputs" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Reap inputs from a ParamTraj at all timepoints by calling get_tf_inputs_assuming_params0</dt><dd><p>Fills out train_inputs, valid_inputs</p>
-</dd>
-<dt>Args:</dt><dd><p>params_traj (ParamsTraj): The param trajectory
-data_type (DataType): Training vs validation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.train_inputs">
-<span class="sig-name descname"><span class="pre">train_inputs</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physDBD.training_data.TrainingData.train_inputs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.train_outputs_mean">
-<span class="sig-name descname"><span class="pre">train_outputs_mean</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physDBD.training_data.TrainingData.train_outputs_mean" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.train_outputs_not_stdrd">
-<span class="sig-name descname"><span class="pre">train_outputs_not_stdrd</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physDBD.training_data.TrainingData.train_outputs_not_stdrd" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.train_outputs_std_dev">
-<span class="sig-name descname"><span class="pre">train_outputs_std_dev</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physDBD.training_data.TrainingData.train_outputs_std_dev" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.train_outputs_stdrd">
-<span class="sig-name descname"><span class="pre">train_outputs_stdrd</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physDBD.training_data.TrainingData.train_outputs_stdrd" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.valid_inputs">
-<span class="sig-name descname"><span class="pre">valid_inputs</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physDBD.training_data.TrainingData.valid_inputs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.valid_outputs_not_stdrd">
-<span class="sig-name descname"><span class="pre">valid_outputs_not_stdrd</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physDBD.training_data.TrainingData.valid_outputs_not_stdrd" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.valid_outputs_stdrd">
-<span class="sig-name descname"><span class="pre">valid_outputs_stdrd</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.array</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#physDBD.training_data.TrainingData.valid_outputs_stdrd" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="physDBD.training_data.TrainingData.write_output_standardizations">
-<span class="sig-name descname"><span class="pre">write_output_standardizations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dir_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.TrainingData.write_output_standardizations" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write standardizations mean and std. dev. with pickle.dump</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>dir_name (str): Directory name, files are “cache_outputs_mean.txt” </dt><dd><p>and “cache_outputs_std_dev.txt”</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="physDBD.training_data.join_dicts">
-<span class="sig-prename descclassname"><span class="pre">physDBD.training_data.</span></span><span class="sig-name descname"><span class="pre">join_dicts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">existing_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.training_data.join_dicts" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<div class="section" id="physdbd-training-data-module">
+<h2>physDBD.training_data module<a class="headerlink" href="#physdbd-training-data-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-physDBD">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-physDBD" title="Permalink to this headline">¶</a></h2>
@@ -2746,7 +2594,7 @@ data_type (DataType): Training vs validation</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="modules.html" class="btn btn-neutral float-left" title="API reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="modules.html" class="btn btn-neutral float-left" title="physDBD" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

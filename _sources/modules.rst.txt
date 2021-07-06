@@ -1,7 +1,5 @@
-.. _api_ref:
-
-API reference
-=============
+physDBD
+=======
 
 .. toctree::
    :maxdepth: 4
