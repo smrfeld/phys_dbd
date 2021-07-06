@@ -5,7 +5,7 @@ Submodules
 ----------
 
 physDBD.comparison\_model module
--------------------------
+--------------------------------
 
 .. automodule:: physDBD.comparison_model
    :members:

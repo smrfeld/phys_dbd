@@ -2,16 +2,17 @@ from dataclasses import dataclass
 from physDBD import Params, ImportHelper, ParamsTraj, ParamsTETraj, RxnModel, RxnInputsLayer
 import numpy as np
 import os
+import shutil
 import tensorflow as tf
 
 class TestRxnModel:
 
     fnames = [
-        "data_test/0000.txt",
-        "data_test/0001.txt",
-        "data_test/0002.txt",
-        "data_test/0003.txt",
-        "data_test/0004.txt"
+        "../data_test/0000.txt",
+        "../data_test/0001.txt",
+        "../data_test/0002.txt",
+        "../data_test/0003.txt",
+        "../data_test/0004.txt"
         ]
     species = ["ca2i","ip3"]
 
@@ -133,3 +134,7 @@ class TestRxnModel:
             max_diff = np.max(diff)
             print("max_diff: ", key, max_diff)
             assert max_diff < 1.e-10
+        
+        # Remove
+        if os.path.isdir("saved_models"):
+            shutil.rmtree("saved_models")

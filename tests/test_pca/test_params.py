@@ -6,11 +6,11 @@ import tensorflow as tf
 class TestParams:
 
     fnames = [
-        "data_test/0000.txt",
-        "data_test/0001.txt",
-        "data_test/0002.txt",
-        "data_test/0003.txt",
-        "data_test/0004.txt"
+        "../data_test/0000.txt",
+        "../data_test/0001.txt",
+        "../data_test/0002.txt",
+        "../data_test/0003.txt",
+        "../data_test/0004.txt"
         ]
     species = ["ca2i","ip3"]
 

@@ -178,17 +178,23 @@ class ConvertParamsGaussLayerFrom0(tf.keras.layers.Layer):
         chol_vh_t = tf.transpose(chol_vh,perm=[0,2,1])
         chol_h_t = tf.transpose(chol_h,perm=[0,2,1])
 
-        batch_size = tf.shape(chol_vh)[0]
+        shape = tf.shape(chol_vh)
+        batch_size = shape[0]
+        nv = shape[2]
 
         amat = tf.matmul(chol_h, chol_h_t) + tf.matmul(chol_vh, chol_vh_t)
         amat = tf.linalg.inv(amat)
         amat = tf.matmul(chol_vh_t, tf.matmul(amat, chol_vh))
-        return tf.eye(self.nv,batch_shape=[batch_size]) - amat
+        return tf.eye(nv,batch_shape=[batch_size]) - amat
 
     def array_flatten_low_tri(self, matv, matvh, math):
         
-        batch_size = tf.shape(matv)[0]
-        zeros = tf.zeros((batch_size, self.nv, self.nh))
+        shape = tf.shape(matvh)
+        batch_size = shape[0]
+        nh = shape[1]
+        nv = shape[2]
+
+        zeros = tf.zeros((batch_size, nv, nh))
         upper = tf.concat([matv,zeros],2)
         lower = tf.concat([matvh,math],2)
         mat = tf.concat([upper,lower],1)

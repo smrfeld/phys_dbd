@@ -9,6 +9,8 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 import copy
+import os
+import shutil
 
 import numpy as np
 import tensorflow as tf
@@ -199,26 +201,6 @@ class Vals:
         return np.tile(cls._muh_TE, (cls.batch_size,1))
 
     @classmethod
-    def varh_diag_TE(cls):
-        return np.tile(cls._varh_diag_TE, (cls.batch_size,1))
-
-    @classmethod
-    def varh_TE(cls):
-        return np.tile(np.diag(cls._varh_diag_TE), (cls.batch_size,1))
-
-    @classmethod
-    def muh_TE2(cls):
-        return np.tile(cls._muh_TE2, (cls.batch_size,1))
-
-    @classmethod
-    def varh_diag_TE2(cls):
-        return np.tile(cls._varh_diag_TE2, (cls.batch_size,1))
-
-    @classmethod
-    def varh(cls):
-        return np.tile(np.diag(cls._varh_diag), (cls.batch_size,1,1))
-
-    @classmethod
     def muh1(cls):
         return cls.muh()
 
@@ -227,28 +209,8 @@ class Vals:
         return cls.varh_diag()
 
     @classmethod
-    def varh1(cls):
-        return cls.varh()
-
-    @classmethod
-    def varh2(cls):
-        return cls.varh_diag2()
-
-    @classmethod
     def varh_TE(cls):
         return np.tile(np.diag(cls._varh_diag_TE), (cls.batch_size,1,1))
-
-    @classmethod
-    def muh_TE1(cls):
-        return cls.muh_TE()
-
-    @classmethod
-    def varh_TE1(cls):
-        return cls.varh_TE()
-
-    @classmethod
-    def varh_TE2(cls):
-        return np.tile(np.diag(cls._varh_diag_TE2), (cls.batch_size,1,1))
  
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class SingleLayerModel(tf.keras.Model):
@@ -295,7 +257,6 @@ class TestNet:
         model = SingleLayerModel(lyr)
         x_out = model(x_in)
 
-        print(model)
         model.save("saved_models/model", save_traces=False)
 
         # Test load
@@ -305,6 +266,10 @@ class TestNet:
         # Check types match!
         # Otherwise we may have: tensorflow.python.keras.saving.saved_model.load.XYZ instead of XYZ
         assert type(model_rel) is type(model)
+
+        # Remove
+        if os.path.isdir("saved_models"):
+            shutil.rmtree("saved_models")
 
     def test_fourier(self):
 

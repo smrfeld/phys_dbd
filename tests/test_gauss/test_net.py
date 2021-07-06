@@ -1,5 +1,5 @@
 from physDBD.gauss import FourierLatentGaussLayer, \
-    ConvertParamsGaussLayer
+    ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0
 
 # Depreciation warnings
 import warnings
@@ -59,6 +59,11 @@ class Vals:
         return np.tile(mat, (cls.batch_size,1,1))
 
     @classmethod
+    def mu_v1(cls):
+        mu_v1 = cls._mu[:cls.nv]
+        return cls.tile_vec(mu_v1)
+
+    @classmethod
     def mu(cls):
         return cls.tile_vec(cls._mu)
     
@@ -69,6 +74,11 @@ class Vals:
     @classmethod
     def chol(cls):
         return cls.tile_mat(cls._chol)
+
+    @classmethod
+    def chol_v1(cls):
+        chol_v1 = cls._chol[:cls.nv,:cls.nv]
+        return cls.tile_mat(chol_v1)
 
     @classmethod
     def chol_vh2(cls):
@@ -211,33 +221,39 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    '''
     def test_convert_from_0(self):
 
         v = Vals()
 
-        lyr = ConvertParamsLayerFrom0()
+        lyr = ConvertParamsGaussLayerFrom0()
 
         x_in = {
-            "b1": tf.constant(v.b(), dtype="float32"),
-            "wt1": tf.constant(v.wt(), dtype="float32"),
-            "muh2": tf.constant(v.muh2(), dtype="float32"),
-            "varh_diag2": tf.constant(v.varh_diag2(), dtype="float32")
+            "mu_v1": tf.constant(v.mu_v1(), dtype="float32"),
+            "chol_v1": tf.constant(v.chol_v1(), dtype="float32"),
+            "mu_h2": tf.constant(v.mu_h2(), dtype="float32"),
+            "chol_vh2": tf.constant(v.chol_vh2(), dtype="float32"),
+            "chol_h2": tf.constant(v.chol_h2(), dtype="float32")
             }
 
         x_out = lyr(x_in)
         
         print(x_out)
 
-        x_out_true = {
-            "wt2": np.array([[2., 4., 8.], [0.353553, 1.06066, 1.06066]]),
-            "b2": np.array([-4.06066, -10.182, -21.182])
-        }
+        chol2 = x_out["chol2"]
+        chol2_t = tf.transpose(chol2, perm=[0,2,1])
+        prec2 = tf.matmul(chol2, chol2_t)
+        cov2 = tf.linalg.inv(prec2)
+        cov_v2 = cov2[:,:v.nv,:v.nv]
 
-        self.assert_equal_dicts(x_out, x_out_true)
+        print('')
+        print(cov_v2)
+        print(v.cov_v())
+
+        self.assert_equal_arrs(cov_v2,v.cov_v())
 
         self.save_load_model(lyr, x_in)
 
+    '''
     def test_convert_params0_to_params(self):
         
         v = Vals()
