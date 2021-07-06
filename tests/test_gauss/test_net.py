@@ -173,20 +173,25 @@ class TestNetGauss:
             cos_coeff=v.cos_coeffs_init()
             )
 
+        print("Freqs: ", v.freqs())
+        print("Sin: ", v.sin_coeffs_init())
+        print("Cos: ", v.cos_coeffs_init())
+
         # Input
         x_in = {
             "tpt": tf.constant(v.tpt(), dtype="float32")
         }
+
+        print("Inputs: ", x_in)
         
         # Output
         x_out = fl(x_in)
 
-        print(x_out)
+        print("Outputs: ",x_out)
 
-        # TODO: XXX
-        # x_out_true = np.full(v.batch_size,-0.110302)
+        x_out_true = np.full(v.batch_size,-1.8751299)
 
-        # self.assert_equal_arrs(x_out, x_out_true)
+        self.assert_equal_arrs(x_out, x_out_true)
 
         self.save_load_model(fl, x_in)
 
@@ -203,21 +208,25 @@ class TestNetGauss:
             "chol_h2": tf.constant(v.chol_h2(), dtype="float32"),
             "mu_h2": tf.constant(v.mu_h2(), dtype="float32")
             }
+        
+        print("Inputs: ", x_in)
 
         x_out = lyr(x_in)
         
-        print(x_out)
+        print("Outputs: ",x_out)
 
-        chol2 = x_out["chol2"]
-        chol2_t = tf.transpose(chol2, perm=[0,2,1])
-        prec2 = tf.matmul(chol2, chol2_t)
-        cov2 = tf.linalg.inv(prec2)
-        cov_v2 = cov2[:,:v.nv,:v.nv]
+        x_out_true = {
+            "mu2": np.array([10., 8., 4., 4., 80.]), 
+            "chol2": np.array([
+                [3.0437, 0., 0., 0, 0], 
+                [5.57349, 7.85566, 0., 0, 0],
+                [-2.13828, 3.44518, 6.63218, 0, 0], 
+                [-4., -5., -8., 15., 0.], 
+                [-2., 9., 8., 12., 30.]
+            ])
+        }
 
-        print(cov_v2)
-        print(v.cov_v())
-
-        self.assert_equal_arrs(cov_v2,v.cov_v())
+        self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 
@@ -235,21 +244,24 @@ class TestNetGauss:
             "chol_h2": tf.constant(v.chol_h2(), dtype="float32")
             }
 
+        print("Input: ", x_in)
+
         x_out = lyr(x_in)
         
-        print(x_out)
+        print("Output: ", x_out)
 
-        chol2 = x_out["chol2"]
-        chol2_t = tf.transpose(chol2, perm=[0,2,1])
-        prec2 = tf.matmul(chol2, chol2_t)
-        cov2 = tf.linalg.inv(prec2)
-        cov_v2 = cov2[:,:v.nv,:v.nv]
+        x_out_true = {
+            "mu2": np.array([10., 8., 4., 4., 80.]),
+            "chol2": np.array([
+                [3.07698, 0., 0., 0, 0], 
+                [5.6037, 8.76592, 0., 0, 0], 
+                [-1.92121, 6.57703, 8.61553, 0, 0], 
+                [-4., -5., -8., 15., 0.], 
+                [-2., 9., 8., 12., 30.]
+                ])
+        }
 
-        print('')
-        print(cov_v2)
-        print(v.cov_v())
-
-        self.assert_equal_arrs(cov_v2,v.cov_v())
+        self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 
