@@ -312,6 +312,77 @@ nv (int): No. visible species</p>
 <div class="section" id="module-physDBD.gauss.net">
 <span id="physdbd-gauss-net-module"></span><h2>physDBD.gauss.net module<a class="headerlink" href="#module-physDBD.gauss.net" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">physDBD.gauss.net.</span></span><span class="sig-name descname"><span class="pre">ConvertMomentsToNMomentsGaussLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow.python.keras.engine.base_layer.Layer</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert moments to nMoments
+Moments = (mean, cov_mat)
+nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer.call" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is where the layer’s logic lives.</p>
+<p>Note here that <cite>call()</cite> method in <cite>tf.keras</cite> is little bit different
+from <cite>keras</cite> API. In <cite>keras</cite> API, you can pass support masking for
+layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_mask()</cite>
+method to support masking.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
+<a href="#id1"><span class="problematic" id="id2">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+</dd>
+<dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer.from_config">
+<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer.from_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a layer from its config.</p>
+<p>This method is the reverse of <cite>get_config</cite>,
+capable of instantiating the same layer from the config
+dictionary. It does not handle layer connectivity
+(handled by Network), nor weights (handled by <cite>set_weights</cite>).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>config: A Python dictionary, typically the</dt><dd><p>output of get_config.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>A layer instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertMomentsToNMomentsGaussLayer.get_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the config of the layer.</p>
+<p>A layer config is a Python dictionary (serializable)
+containing the configuration of a layer.
+The same layer can be reinstantiated later
+(without its trained weights) from this configuration.</p>
+<p>The config of a layer does not include connectivity
+information, nor the layer class name. These are handled
+by <cite>Network</cite> (one layer of abstraction above).</p>
+<p>Note that <cite>get_config()</cite> does not guarantee to return a fresh copy of dict
+every time it is called. The callers should make a copy of the returned dict
+if they want to modify it.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Python dictionary.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="physDBD.gauss.net.ConvertParams0ToParamsGaussLayer">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">physDBD.gauss.net.</span></span><span class="sig-name descname"><span class="pre">ConvertParams0ToParamsGaussLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertParams0ToParamsGaussLayer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow.python.keras.engine.base_layer.Layer</span></code></p>
@@ -330,8 +401,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id1"><span class="problematic" id="id2">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id5"><span class="problematic" id="id6">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
@@ -409,8 +480,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id5"><span class="problematic" id="id6">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id9"><span class="problematic" id="id10">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id11"><span class="problematic" id="id12">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
@@ -488,8 +559,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id9"><span class="problematic" id="id10">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id11"><span class="problematic" id="id12">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id13"><span class="problematic" id="id14">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id15"><span class="problematic" id="id16">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
@@ -561,8 +632,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id13"><span class="problematic" id="id14">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id15"><span class="problematic" id="id16">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id17"><span class="problematic" id="id18">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id19"><span class="problematic" id="id20">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
@@ -637,8 +708,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id17"><span class="problematic" id="id18">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id19"><span class="problematic" id="id20">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id21"><span class="problematic" id="id22">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id23"><span class="problematic" id="id24">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
