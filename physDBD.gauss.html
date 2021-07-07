@@ -383,6 +383,101 @@ if they want to modify it.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">physDBD.gauss.net.</span></span><span class="sig-name descname"><span class="pre">ConvertParams0ToNMomentsGaussLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow.python.keras.engine.base_layer.Layer</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nv</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params0ToParamsLayer</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="#physDBD.gauss.net.ConvertParams0ToParamsGaussLayer" title="physDBD.gauss.net.ConvertParams0ToParamsGaussLayer"><span class="pre">physDBD.gauss.net.ConvertParams0ToParamsGaussLayer</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Convert params0 to NMoments layer in one step</dt><dd><p>Params0 = std. params with muh=0,varh_diag=1
+nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)</p>
+</dd>
+<dt>Args:</dt><dd><p>nv (int): No. visible species
+nh (int): No. hidden species
+params0ToParamsLayer (ConvertParams0ToParamsGaussLayer): Conversion layer from params0 to params via latent Fourier representation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.call" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is where the layer’s logic lives.</p>
+<p>Note here that <cite>call()</cite> method in <cite>tf.keras</cite> is little bit different
+from <cite>keras</cite> API. In <cite>keras</cite> API, you can pass support masking for
+layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_mask()</cite>
+method to support masking.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
+<a href="#id5"><span class="problematic" id="id6">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+</dd>
+<dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.construct">
+<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">construct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nv</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freqs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">muh_sin_coeffs_init</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">muh_cos_coeffs_init</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cholvh_sin_coeffs_init</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cholvh_cos_coeffs_init</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cholh_sin_coeffs_init</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cholh_cos_coeffs_init</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.array</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.construct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the layer including the Fourier latent representations.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>nv (int): No. visible species
+nh (int): No. hidden species
+freqs (np.array): 1D arr of frequencies of length L
+muh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
+muh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
+cholvh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
+cholvh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
+cholh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
+cholh_cos_coeffs_init (np.array): 1D arr of coefficients of length L</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.from_config">
+<em class="property"><span class="pre">classmethod</span> </em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.from_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a layer from its config.</p>
+<p>This method is the reverse of <cite>get_config</cite>,
+capable of instantiating the same layer from the config
+dictionary. It does not handle layer connectivity
+(handled by Network), nor weights (handled by <cite>set_weights</cite>).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><dl class="simple">
+<dt>config: A Python dictionary, typically the</dt><dd><p>output of get_config.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>A layer instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertParams0ToNMomentsGaussLayer.get_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the config of the layer.</p>
+<p>A layer config is a Python dictionary (serializable)
+containing the configuration of a layer.
+The same layer can be reinstantiated later
+(without its trained weights) from this configuration.</p>
+<p>The config of a layer does not include connectivity
+information, nor the layer class name. These are handled
+by <cite>Network</cite> (one layer of abstraction above).</p>
+<p>Note that <cite>get_config()</cite> does not guarantee to return a fresh copy of dict
+every time it is called. The callers should make a copy of the returned dict
+if they want to modify it.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Python dictionary.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="physDBD.gauss.net.ConvertParams0ToParamsGaussLayer">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">physDBD.gauss.net.</span></span><span class="sig-name descname"><span class="pre">ConvertParams0ToParamsGaussLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#physDBD.gauss.net.ConvertParams0ToParamsGaussLayer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow.python.keras.engine.base_layer.Layer</span></code></p>
@@ -401,8 +496,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id5"><span class="problematic" id="id6">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id9"><span class="problematic" id="id10">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id11"><span class="problematic" id="id12">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
@@ -480,8 +575,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id9"><span class="problematic" id="id10">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id11"><span class="problematic" id="id12">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id13"><span class="problematic" id="id14">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id15"><span class="problematic" id="id16">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
@@ -559,8 +654,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id13"><span class="problematic" id="id14">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id15"><span class="problematic" id="id16">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id17"><span class="problematic" id="id18">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id19"><span class="problematic" id="id20">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
@@ -632,8 +727,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id17"><span class="problematic" id="id18">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id19"><span class="problematic" id="id20">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id21"><span class="problematic" id="id22">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id23"><span class="problematic" id="id24">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
@@ -708,8 +803,8 @@ layers as additional arguments. Whereas <cite>tf.keras</cite> has <cite>compute_
 method to support masking.</p>
 <dl class="simple">
 <dt>Args:</dt><dd><p>inputs: Input tensor, or list/tuple of input tensors.
-<a href="#id21"><span class="problematic" id="id22">*</span></a>args: Additional positional arguments. Currently unused.
-<a href="#id23"><span class="problematic" id="id24">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
+<a href="#id25"><span class="problematic" id="id26">*</span></a>args: Additional positional arguments. Currently unused.
+<a href="#id27"><span class="problematic" id="id28">**</span></a>kwargs: Additional keyword arguments. Currently unused.</p>
 </dd>
 <dt>Returns:</dt><dd><p>A tensor or list/tuple of tensors.</p>
 </dd>
