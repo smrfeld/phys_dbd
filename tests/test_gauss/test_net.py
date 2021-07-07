@@ -1,6 +1,7 @@
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
-        ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer
+        ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
+            ConvertMomentsToNMomentsGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -173,7 +174,7 @@ class TestNetGauss:
             self.assert_equal_arrs(val,val_true)
 
     def assert_equal_arrs(self, x_out, x_out_true):
-        tol = 1.e-4
+        tol = 5.e-4
         assert np.max(abs(x_out-x_out_true)) < tol
 
     def save_load_model(self, lyr, x_in):
@@ -377,17 +378,16 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    '''
     def test_moments_to_nmoments(self):
 
         v = Vals()
 
-        lyr = ConvertMomentsToNMomentsLayer()
+        lyr = ConvertMomentsToNMomentsGaussLayer()
 
         # Input
         x_in = {
             "mu": tf.constant(v.mu(), dtype="float32"),
-            "var": tf.constant(v.var(), dtype="float32")
+            "cov": tf.constant(v.cov(), dtype="float32")
             }   
             
         # Output
@@ -396,13 +396,13 @@ class TestNetGauss:
         print(x_out)
 
         x_out_true = {
-            "mu": np.array([19., 45., 62., 4., 8.]),
-            "nvar": np.array([
-                [391., 922., 1285., 86., 161.],
-                [922., 2187., 3031., 200., 387.],
-                [1285., 3031., 4246., 288., 523.], 
-                [86., 200., 288., 21., 32.], 
-                [161., 387., 523., 32., 73.]
+            "mu": np.array([10., 8., 4., 20., 3.]),
+            "ncov": np.array([
+                [100.231, 79.9567, 40.0463, 200.011, 29.9982],
+                [79.9567, 64.0212, 31.9923, 160.002, 23.9991],
+                [40.0463, 31.9923, 16.0344, 80.0121, 11.995], 
+                [200.011, 160.002, 80.0121, 400.015, 59.9975], 
+                [29.9982, 23.9991, 11.995, 59.9975, 9.0025]
             ])
         }
 
@@ -410,6 +410,7 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
+    '''
     def test_params0_to_nmoments(self):
 
         v = Vals()
