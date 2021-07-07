@@ -1,3 +1,5 @@
+from ..net_common import ConvertMomentsToNMomentsLayer
+
 import tensorflow as tf
 
 import numpy as np
@@ -428,40 +430,6 @@ class ConvertParamsToMomentsGaussLayer(tf.keras.layers.Layer):
         }
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
-class ConvertMomentsToNMomentsGaussLayer(tf.keras.layers.Layer):
-
-    def __init__(self, **kwargs):
-        """Convert moments to nMoments
-           Moments = (mean, cov_mat)
-           nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)
-        """
-        # Super
-        super(ConvertMomentsToNMomentsGaussLayer, self).__init__(**kwargs)
-    
-    def get_config(self):
-        config = super(ConvertMomentsToNMomentsGaussLayer, self).get_config()
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)
-
-    def call(self, inputs):
-        
-        mu = inputs["mu"]
-        cov = inputs["cov"]
-
-        # kronecker product of two vectors = tf.tensordot(a,b,axes=0)
-        kpv = tf.map_fn(lambda muL: tf.tensordot(muL,muL,axes=0),mu)
-
-        ncov = cov + kpv
-
-        return {
-            "mu": mu,
-            "ncov": ncov
-        }
-
-@tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
@@ -487,7 +455,7 @@ class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
 
         self.params0ToParamsLayer = params0ToParamsLayer
         self.paramsToMomentsLayer = ConvertParamsToMomentsGaussLayer(nv,nh)
-        self.momentsToNMomentsLayer = ConvertMomentsToNMomentsGaussLayer()
+        self.momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
 
     @classmethod
     def construct(cls,
