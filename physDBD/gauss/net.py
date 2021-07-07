@@ -460,3 +460,100 @@ class ConvertMomentsToNMomentsGaussLayer(tf.keras.layers.Layer):
             "mu": mu,
             "ncov": ncov
         }
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
+
+    def __init__(self, 
+        nv: int,
+        nh: int,
+        params0ToParamsLayer: ConvertParams0ToParamsGaussLayer,
+        **kwargs
+        ):
+        """Convert params0 to NMoments layer in one step
+           Params0 = std. params with muh=0,varh_diag=1
+           nMoments = (mean, n^2 matrix = cov_mat + mean.mean^T)
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            params0ToParamsLayer (ConvertParams0ToParamsGaussLayer): Conversion layer from params0 to params via latent Fourier representation
+        """
+        # Super
+        super(ConvertParams0ToNMomentsGaussLayer, self).__init__(**kwargs)
+
+        self.nv = nv
+        self.nh = nh
+
+        self.params0ToParamsLayer = params0ToParamsLayer
+        self.paramsToMomentsLayer = ConvertParamsToMomentsGaussLayer(nv,nh)
+        self.momentsToNMomentsLayer = ConvertMomentsToNMomentsGaussLayer()
+
+    @classmethod
+    def construct(cls,
+        nv: int, 
+        nh: int,
+        freqs : np.array,
+        muh_sin_coeffs_init : np.array,
+        muh_cos_coeffs_init : np.array,
+        cholvh_sin_coeffs_init : np.array,
+        cholvh_cos_coeffs_init : np.array,
+        cholh_sin_coeffs_init : np.array,
+        cholh_cos_coeffs_init : np.array,
+        **kwargs
+        ):
+        """Construct the layer including the Fourier latent representations.
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            freqs (np.array): 1D arr of frequencies of length L
+            muh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
+            muh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
+            cholvh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
+            cholvh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
+            cholh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
+            cholh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
+        """
+        params0ToParamsLayer = ConvertParams0ToParamsGaussLayer.construct(
+            nv=nv, 
+            nh=nh, 
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            cholvh_sin_coeffs_init=cholvh_sin_coeffs_init,
+            cholvh_cos_coeffs_init=cholvh_cos_coeffs_init,
+            cholh_sin_coeffs_init=cholh_sin_coeffs_init,
+            cholh_cos_coeffs_init=cholh_cos_coeffs_init
+            )
+
+        return cls(
+            nv=nv,
+            nh=nh,
+            params0ToParamsLayer=params0ToParamsLayer,
+            **kwargs
+            )
+
+    def get_config(self):
+        config = super(ConvertParams0ToNMomentsGaussLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "params0ToParamsLayer": self.params0ToParamsLayer
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def call(self, inputs):
+        params = self.params0ToParamsLayer(inputs)
+        moments = self.paramsToMomentsLayer(params)
+        nmoments = self.momentsToNMomentsLayer(moments)
+
+        dall = {}
+        for d in [params,moments,nmoments]:
+            dall.update(d)
+        
+        return dall

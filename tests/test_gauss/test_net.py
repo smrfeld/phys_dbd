@@ -1,7 +1,7 @@
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
-            ConvertMomentsToNMomentsGaussLayer
+            ConvertMomentsToNMomentsGaussLayer, ConvertParams0ToNMomentsGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -410,27 +410,27 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    '''
     def test_params0_to_nmoments(self):
 
         v = Vals()
 
-        lyr = ConvertParams0ToNMomentsLayer.construct(
+        lyr = ConvertParams0ToNMomentsGaussLayer.construct(
             nv=v.nv,
             nh=v.nh,
             freqs=v.freqs(),
             muh_sin_coeffs_init=v.muh_sin_coeffs_init(),
             muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
-            varh_sin_coeffs_init=v.varh_sin_coeffs_init(),
-            varh_cos_coeffs_init=v.varh_cos_coeffs_init()
+            cholvh_sin_coeffs_init=v.cholvh_sin_coeffs_init(),
+            cholvh_cos_coeffs_init=v.cholvh_cos_coeffs_init(),
+            cholh_sin_coeffs_init=v.cholh_sin_coeffs_init(),
+            cholh_cos_coeffs_init=v.cholh_cos_coeffs_init()
         )
 
         # Input
         x_in = {
             "tpt": tf.constant(v.tpt(), dtype='float32'),
-            "b": tf.constant(v.b(), dtype="float32"),
-            "wt": tf.constant(v.wt(), dtype="float32"),
-            "sig2": tf.constant(v.sig2(), dtype='float32')
+            "mu_v": tf.constant(v.mu_v1(), dtype="float32"),
+            "chol_v": tf.constant(v.chol_v1(), dtype="float32")
             }
              
         # Output
@@ -439,20 +439,21 @@ class TestNetGauss:
         print(x_out)
     
         x_out_true = {
-            "mu": np.array([3., 5., 6., -0.110302, -0.110302]),
-            "nvar": np.array([
-                [15., 26., 37., 1.41374, 0.541419], 
-                [26., 51., 71., 2.93779, 2.06546], 
-                [37., 71., 110., 6.31678, 1.95516], 
-                [1.41374, 2.93779, 6.31678, 0.773116, 0.0121665], 
-                [0.541419, 2.06546, 1.95516, 0.0121665, 0.773116]
-                ])
+            "mu": np.array([10., 8., 4., -3.31234, -3.31234]),
+            "ncov": np.array([
+                [100.223, 79.9553, 40.0374, -33.0993, -33.1234], 
+                [79.9553, 64.0207, 31.9898, -26.4965, -26.4987], 
+                [40.0374, 31.9898, 16.0204, -13.2386, -13.2494], 
+                [-33.0993, -26.4965, -13.2386, 11.0266, 10.9441], 
+                [-33.1234, -26.4987, -13.2494, 10.9441, 10.9991]
+            ])
         }
 
         self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 
+    '''
     def test_death_rxn(self):
 
         v = Vals()
