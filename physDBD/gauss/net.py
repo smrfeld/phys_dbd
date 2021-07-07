@@ -386,3 +386,43 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
         }
 
         return output
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ConvertParamsToMomentsGaussLayer(tf.keras.layers.Layer):
+
+    def __init__(self,
+        nv : int,
+        nh : int,
+        **kwargs
+        ):
+        # Super
+        super(ConvertParamsToMomentsGaussLayer, self).__init__(**kwargs)
+        self.nv = nv 
+        self.nh = nh
+    
+    def get_config(self):
+        config = super(ConvertParamsToMomentsGaussLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh
+            })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def call(self, inputs):
+        
+        mu = inputs["mu"]
+        chol = inputs["chol"]
+
+        cholt = tf.transpose(chol, perm=[0,2,1])
+
+        prec = tf.matmul(chol,cholt)
+        cov = tf.linalg.inv(prec)
+
+        return {
+            "mu": mu,
+            "cov": cov
+        }

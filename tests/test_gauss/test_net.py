@@ -1,6 +1,6 @@
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
-        ConvertParams0ToParamsGaussLayer
+        ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -342,24 +342,19 @@ class TestNetGauss:
     
         self.save_load_model(lyr, x_in)
 
-    '''
     def test_params_to_moments(self):
 
         v = Vals()
 
-        lyr = ConvertParamsToMomentsLayer(
+        lyr = ConvertParamsToMomentsGaussLayer(
             nv=v.nv,
             nh=v.nh
         )
 
         # Input
-        batch_size = 2
         x_in = {
-            "b": tf.constant(v.b(), dtype="float32"),
-            "wt": tf.constant(v.wt(), dtype="float32"),
-            "sig2": tf.constant(v.sig2(), dtype='float32'),
-            "varh_diag": tf.constant(v.varh_diag(), dtype='float32'),
-            "muh": tf.constant(v.muh(), dtype='float32')
+            "mu": tf.constant(v.mu(), dtype="float32"),
+            "chol": tf.constant(v.chol(), dtype="float32")
             }   
              
         # Output
@@ -368,13 +363,13 @@ class TestNetGauss:
         print(x_out)
 
         x_out_true = {
-            "mu": np.array([19., 45., 62., 4., 8.]),
-            "var": np.array([
-                [30., 67., 107., 10., 9.], 
-                [67., 162., 241., 20., 27.], 
-                [107., 241., 402., 40., 27.], 
-                [10., 20., 40., 5., 0.], 
-                [9., 27., 27., 0., 9.]
+            "mu": np.array([10., 8., 4., 20., 3.]), 
+            "cov": np.array([
+                [0.231417, -0.0432518, 0.0462896, 0.0111036, -0.00177083], 
+                [-0.0432518, 0.021177, -0.0076992, 0.00203979, -0.0009375], 
+                [0.0462896, -0.0076992, 0.0344394, 0.0120547, -0.005], 
+                [0.0111036, 0.00203979, 0.0120547, 0.0148457, -0.0025], 
+                [-0.00177083, -0.0009375, -0.005, -0.0025, 0.0025]
             ])
         }
 
@@ -382,6 +377,7 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
+    '''
     def test_moments_to_nmoments(self):
 
         v = Vals()
