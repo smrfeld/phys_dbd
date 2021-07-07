@@ -1,4 +1,3 @@
-from tensorflow.python.ops.gen_math_ops import sub
 from .net import RxnInputsLayer
 from .params import Params
 from .params_traj import ParamsTraj

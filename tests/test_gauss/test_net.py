@@ -1,5 +1,6 @@
 from physDBD.gauss import FourierLatentGaussLayer, \
-    ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0
+    ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
+        ConvertParams0ToParamsGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -45,6 +46,13 @@ class Vals:
     _freqs = np.array([1.,2.,3.])
     _cos_coeffs_init = np.array([1.,2.,4.])
     _sin_coeffs_init = np.array([1.,5.,4.])
+
+    _muh_cos_coeffs_init = np.array([2.,5.,3.])
+    _muh_sin_coeffs_init = np.array([3.,6.,1.])
+    _cholvh_cos_coeffs_init = np.array([1.,8.,4.])
+    _cholvh_sin_coeffs_init = np.array([4.,5.,4.])
+    _cholh_cos_coeffs_init = np.array([8.,10.,9.])
+    _cholh_sin_coeffs_init = np.array([3.,7.,8.])
 
     @classmethod
     def tpt(cls):
@@ -112,6 +120,30 @@ class Vals:
     @classmethod
     def sin_coeffs_init(cls):
         return cls._sin_coeffs_init
+
+    @classmethod
+    def muh_cos_coeffs_init(cls):
+        return cls._muh_cos_coeffs_init
+
+    @classmethod
+    def muh_sin_coeffs_init(cls):
+        return cls._muh_sin_coeffs_init
+
+    @classmethod
+    def cholh_cos_coeffs_init(cls):
+        return cls._cholh_cos_coeffs_init
+
+    @classmethod
+    def cholh_sin_coeffs_init(cls):
+        return cls._cholh_sin_coeffs_init
+
+    @classmethod
+    def cholvh_cos_coeffs_init(cls):
+        return cls._cholvh_cos_coeffs_init
+
+    @classmethod
+    def cholvh_sin_coeffs_init(cls):
+        return cls._cholvh_sin_coeffs_init
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class SingleLayerModel(tf.keras.Model):
@@ -265,46 +297,52 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    '''
     def test_convert_params0_to_params(self):
         
         v = Vals()
 
-        lyr = ConvertParams0ToParamsLayer.construct(
+        lyr = ConvertParams0ToParamsGaussLayer.construct(
             nv=v.nv,
             nh=v.nh,
             freqs=v.freqs(),
             muh_sin_coeffs_init=v.muh_sin_coeffs_init(),
             muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
-            varh_sin_coeffs_init=v.varh_sin_coeffs_init(),
-            varh_cos_coeffs_init=v.varh_cos_coeffs_init()
+            cholh_cos_coeffs_init=v.cholh_cos_coeffs_init(),
+            cholh_sin_coeffs_init=v.cholh_sin_coeffs_init(),
+            cholvh_cos_coeffs_init=v.cholvh_cos_coeffs_init(),
+            cholvh_sin_coeffs_init=v.cholvh_sin_coeffs_init()
         )
 
         # Input
         x_in = {
             "tpt": tf.constant(v.tpt(), dtype='float32'),
-            "b": tf.constant(v.b(), dtype="float32"),
-            "wt": tf.constant(v.wt(), dtype="float32"),
-            "sig2": tf.constant(v.sig2(), dtype='float32')
+            "mu_v": tf.constant(v.mu_v1(), dtype="float32"),
+            "chol_v": tf.constant(v.chol_v1(), dtype="float32")
             }   
-             
+        
+        print("Inputs: ", x_in)
+
         # Output
         x_out = lyr(x_in)
 
-        print(x_out)
+        print("Outputs: ", x_out)
 
         x_out_true = {
-            "b": np.array([3.37934, 5.88512, 7.3909]), 
-            "wt": np.array([[2.29273, 4.58545, 9.1709], [1.14636, 3.43909, 3.43909]]), 
-            "muh": np.array([-0.110302, -0.110302]), 
-            "varh": np.array([[0.760949, 0.], [0., 0.760949]]),
-            "sig2": np.array([1.])
+            "mu": np.array([10., 8., 4., -3.31234, -3.31234]), 
+            "chol": np.array([
+                [3.24593, 0., 0., 0, 0], 
+                [6.90921, 8.78471, 0., 0, 0], 
+                [-0.879767, 6.00886, 7.85476, 0, 0], 
+                [-3.0691, -3.0691, -3.0691, -6.02913, 0], 
+                [-3.0691, -3.0691, -3.0691, -6.02913, -6.02913]
+            ])
         }
-        
+
         self.assert_equal_dicts(x_out,x_out_true)
     
         self.save_load_model(lyr, x_in)
 
+    '''
     def test_params_to_moments(self):
 
         v = Vals()

@@ -1,7 +1,7 @@
 from .paramsTE_traj import ParamsTETraj
 from .params import Params
-from .diff_tvr import DiffTVR
-from .helpers import convert_np_to_pd
+from ..diff_tvr import DiffTVR
+from ..helpers import convert_np_to_pd
 
 import pandas as pd
 import numpy as np

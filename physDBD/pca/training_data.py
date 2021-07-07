@@ -1,7 +1,5 @@
 from physDBD.paramsTE_traj import ParamsTETraj
-from physDBD.paramsTE import ParamsTE
 from .params_traj import ParamsTraj
-import tensorflow as tf
 import numpy as np
 
 from typing import Dict, List

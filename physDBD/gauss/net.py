@@ -226,3 +226,163 @@ class ConvertParamsGaussLayerFrom0(tf.keras.layers.Layer):
             "mu2": mu2,
             "chol2": chol2
         }
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
+
+    def __init__(self, 
+        nv: int, 
+        nh: int, 
+        layer_muh: Dict[str,FourierLatentGaussLayer],
+        layer_cholvh: Dict[str,FourierLatentGaussLayer],
+        layer_cholh: Dict[str,FourierLatentGaussLayer],
+        **kwargs):
+
+        super(ConvertParams0ToParamsGaussLayer, self).__init__(**kwargs)
+
+        self.nv = nv
+        self.nh = nh
+
+        self.layer_muh = layer_muh
+        self.layer_cholvh = layer_cholvh
+        self.layer_cholh = layer_cholh
+
+        self.convert_from_0 = ConvertParamsGaussLayerFrom0()
+
+    @classmethod
+    def construct(cls, 
+        nv : int,
+        nh : int,
+        freqs : np.array,
+        muh_sin_coeffs_init : np.array,
+        muh_cos_coeffs_init : np.array,
+        cholvh_sin_coeffs_init : np.array,
+        cholvh_cos_coeffs_init : np.array,
+        cholh_sin_coeffs_init : np.array,
+        cholh_cos_coeffs_init : np.array,
+        **kwargs):
+
+        layer_muh = {}
+        for ih in range(0,nh):
+            layer_muh[str(ih)] = FourierLatentGaussLayer(
+                freqs=freqs,
+                offset=0.0,
+                sin_coeff=muh_sin_coeffs_init,
+                cos_coeff=muh_cos_coeffs_init
+                )
+
+        layer_cholvh = {}
+        for ih in range(0,nh):
+            for iv in range(0,nv):
+
+                layer_cholvh[str(iv) + "_" + str(ih)] = FourierLatentGaussLayer(
+                    freqs=freqs,
+                    offset=0.0,
+                    sin_coeff=cholvh_sin_coeffs_init,
+                    cos_coeff=cholvh_cos_coeffs_init
+                    )
+
+        layer_cholh = {}
+        for ih in range(0,nh):
+            for jh in range(0,ih+1):
+                layer_cholh[str(ih) + "_" + str(jh)] = FourierLatentGaussLayer(
+                    freqs=freqs,
+                    offset=0.0,
+                    sin_coeff=cholh_sin_coeffs_init,
+                    cos_coeff=cholh_cos_coeffs_init
+                    )
+
+        return cls(
+            nv=nv,
+            nh=nh,
+            layer_muh=layer_muh,
+            layer_cholvh=layer_cholvh,
+            layer_cholh=layer_cholh,
+            **kwargs
+            )
+
+    def get_config(self):
+        config = super(ConvertParams0ToParamsGaussLayer, self).get_config()
+
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "layer_muh": self.layer_muh,
+            "layer_cholvh": self.layer_cholvh,
+            "layer_cholh": self.layer_cholh
+        })
+        
+        return config
+    
+    @classmethod
+    def from_config(cls, config):
+
+        layer_muh = {}
+        for key, val in config["layer_muh"].items():
+            layer_muh[key] = FourierLatentGaussLayer(**val['config'])
+        
+        layer_cholvh = {}
+        for key, val in config["layer_cholvh"].items():
+            layer_cholvh[key] = FourierLatentGaussLayer(**val['config'])
+
+        layer_cholh = {}
+        for key, val in config["layer_cholh"].items():
+            layer_cholh[key] = FourierLatentGaussLayer(**val['config'])
+
+        config["layer_muh"] = layer_muh
+        config["layer_cholvh"] = layer_cholvh
+        config["layer_cholh"] = layer_cholh
+
+        return cls(**config)
+    
+    def call(self, inputs):
+
+        batch_size = tf.shape(inputs["tpt"])[0]
+
+        # Get fourier
+        muhs = []
+        for ih in range(0,self.nh):
+            muhs.append(self.layer_muh[str(ih)](inputs))
+
+        cholvhs = []
+        for ih in range(0,self.nh):
+            for iv in range(0,self.nv):
+                cholvhs.append(self.layer_cholvh[str(iv) + "_" + str(ih)](inputs))
+        
+        cholhs = []
+        for ih in range(0,self.nh):
+            for jh in range(0,self.nh):
+                if jh <= ih:
+                    cholhs.append(self.layer_cholh[str(ih) + "_" + str(jh)](inputs))
+                else:
+                    cholhs.append(tf.zeros(shape=(batch_size)))
+
+        # Current size is (nh, batch_size)
+        # Transpose to get (batch_size, nh)
+        muh = tf.transpose(muhs)
+        cholvh_vec = tf.transpose(cholvhs)
+        cholh_vec = tf.transpose(cholhs)
+
+        # To matrix
+        cholvh = tf.map_fn(
+            lambda cholvh_vecL: tf.reshape(cholvh_vecL, shape=(self.nh,self.nv)), 
+            cholvh_vec)
+        cholh = tf.map_fn(
+            lambda cholh_vecL: tf.reshape(cholh_vecL, shape=(self.nh,self.nh)), 
+            cholh_vec)
+
+        inputs_convert = {
+            "mu_v1": inputs["mu_v"],
+            "chol_v1": inputs["chol_v"],
+            "mu_h2": muh,
+            "chol_vh2": cholvh,
+            "chol_h2": cholh
+            }
+        outputs_convert = self.convert_from_0(inputs_convert)
+
+        output = {
+            "mu": outputs_convert["mu2"],
+            "chol": outputs_convert["chol2"]
+        }
+
+        return output

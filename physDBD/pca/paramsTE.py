@@ -1,4 +1,4 @@
-from .helpers import dc_eq
+from ..helpers import dc_eq
 from dataclasses import dataclass
 import numpy as np
 

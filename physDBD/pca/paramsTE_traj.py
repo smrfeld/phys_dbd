@@ -1,10 +1,8 @@
 from .paramsTE import ParamsTE
-from .params import Params
-from .helpers import convert_np_to_pd
+from ..helpers import convert_np_to_pd
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from typing import List, Dict, Tuple
 

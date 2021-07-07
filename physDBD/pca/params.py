@@ -1,4 +1,4 @@
-from .helpers import dc_eq, normalize
+from ..helpers import dc_eq, normalize
 from .paramsTE import ParamsTE
 
 import numpy as np
