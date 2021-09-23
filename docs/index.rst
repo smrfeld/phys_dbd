@@ -32,9 +32,9 @@ About
 =====
 
 This package for TensorFlow implements modeling stochastic reaction networks 
-with a dynamic PCA model. Please see this paper for technical details:
+with a dynamic PCA model. `Please see this paper for technical details: <https://arxiv.org/abs/2109.05053>`_
 
-`O. K. Ernst, T. Bartol, T. Sejnowski and E. Mjolsness. Physics-based machine learning for modeling stochastic IP3-dependent calcium dynamics. In preparation.`
+`O. K. Ernst, T. Bartol, T. Sejnowski and E. Mjolsness. Physics-based machine learning for modeling stochastic IP3-dependent calcium dynamics. arXiv:2109.05053`
 
 The original implementation in the paper is written in 
 `Mathematica` and can be found `here <https://github.com/smrfeld/physics-based-ml-reaction-networks>`_. 
@@ -76,9 +76,9 @@ See the notebook in the example directory in `GitHub repo. <https://github.com/s
 Citing
 ======
 
-Please cite the following paper:
+`Please cite this paper: <https://arxiv.org/abs/2109.05053>`_
 
-`O. K. Ernst, T. Bartol, T. Sejnowski and E. Mjolsness. Physics-based machine learning for modeling stochastic IP3-dependent calcium dynamics. In preparation.`
+`O. K. Ernst, T. Bartol, T. Sejnowski and E. Mjolsness. Physics-based machine learning for modeling stochastic IP3-dependent calcium dynamics. arXiv:2109.05053`
 
 Indices and tables
 ==================

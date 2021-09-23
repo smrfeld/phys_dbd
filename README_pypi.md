@@ -15,4 +15,7 @@ This is the source repo. for the `physDBD` Python package. It allows the creatio
 
 ## Further information
 
-See the project's [GitHub page](https://github.com/smrfeld/phys_dbd).
+See the project's [GitHub page](https://github.com/smrfeld/phys_dbd) or [this paper for technical details](https://arxiv.org/abs/2109.05053):
+```
+O. K. Ernst, T. Bartol, T. Sejnowski and E. Mjolsness. Physics-based machine learning for modeling stochastic IP3-dependent calcium dynamics. arXiv:2109.05053
+```

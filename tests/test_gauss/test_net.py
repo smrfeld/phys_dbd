@@ -1,7 +1,7 @@
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
-            ConvertMomentsToNMomentsGaussLayer, ConvertParams0ToNMomentsGaussLayer
+            ConvertParams0ToNMomentsGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -378,38 +378,6 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    def test_moments_to_nmoments(self):
-
-        v = Vals()
-
-        lyr = ConvertMomentsToNMomentsGaussLayer()
-
-        # Input
-        x_in = {
-            "mu": tf.constant(v.mu(), dtype="float32"),
-            "cov": tf.constant(v.cov(), dtype="float32")
-            }   
-            
-        # Output
-        x_out = lyr(x_in)
-
-        print(x_out)
-
-        x_out_true = {
-            "mu": np.array([10., 8., 4., 20., 3.]),
-            "ncov": np.array([
-                [100.231, 79.9567, 40.0463, 200.011, 29.9982],
-                [79.9567, 64.0212, 31.9923, 160.002, 23.9991],
-                [40.0463, 31.9923, 16.0344, 80.0121, 11.995], 
-                [200.011, 160.002, 80.0121, 400.015, 59.9975], 
-                [29.9982, 23.9991, 11.995, 59.9975, 9.0025]
-            ])
-        }
-
-        self.assert_equal_dicts(x_out,x_out_true)
-
-        self.save_load_model(lyr, x_in)
-
     def test_params0_to_nmoments(self):
 
         v = Vals()
@@ -454,135 +422,6 @@ class TestNetGauss:
         self.save_load_model(lyr, x_in)
 
     '''
-    def test_death_rxn(self):
-
-        v = Vals()
-
-        lyr = DeathRxnLayer(nv=v.nv,nh=v.nh,i_sp=v.i_death)
-
-        # Input
-        x_in = {
-            "mu": tf.constant(v.mu(), dtype="float32"),
-            "nvar": tf.constant(v.nvar(), dtype="float32")
-            }
-            
-        # Output
-        x_out = lyr(x_in)
-
-        print(x_out)
-
-        x_out_true = {
-            "muTE": np.array([-19., 0., 0., 0., 0.]),
-            "nvarTE": np.array([
-                [-763., -922., -1285., -86., -161.], 
-                [-922., 0., 0., 0., 0.],
-                [-1285., 0., 0., 0., 0.], 
-                [-86., 0., 0., 0., 0.], 
-                [-161., 0., 0., 0., 0.]
-            ])
-        }
-
-        self.assert_equal_dicts(x_out,x_out_true)
-
-        self.save_load_model(lyr, x_in)
-
-    def test_birth_rxn(self):
-
-        v = Vals()
-
-        lyr = BirthRxnLayer(nv=v.nv,nh=v.nh,i_sp=v.i_birth)
-
-        # Input
-        x_in = {
-            "mu": tf.constant(v.mu(), dtype="float32"),
-            "nvar": tf.constant(v.nvar(), dtype="float32")
-            }
-            
-        # Output
-        x_out = lyr(x_in)
-
-        print(x_out)
-
-        x_out_true = {
-            "muTE": np.array([19., 0., 0., 0., 0.]),
-            "nvarTE": np.array([
-                [801., 922., 1285., 86., 161.], 
-                [922., 0., 0., 0., 0.], 
-                [1285., 0., 0., 0., 0.], 
-                [86., 0., 0., 0., 0.], 
-                [161., 0., 0., 0., 0.]
-            ])
-        }
-
-        self.assert_equal_dicts(x_out,x_out_true)
-
-        self.save_load_model(lyr, x_in)
-
-    def test_eat_rxn(self):
-
-        v = Vals()
-
-        lyr = EatRxnLayer(nv=v.nv,nh=v.nh,i_prey=v.i_prey,i_hunter=v.i_predator)
-
-        # Input
-        x_in = {
-            "mu": tf.constant(v.mu(), dtype="float32"),
-            "nvar": tf.constant(v.nvar(), dtype="float32")
-            }
-            
-        # Output
-        x_out = lyr(x_in)
-
-        print(x_out)
-
-        x_out_true = {
-            "muTE": np.array([-922., 922., 0., 0., 0.]),
-            "nvarTE": np.array([
-                [-39360., -28364., -66558., -4518., -8294.], 
-                [-28364., 96088., 66558., 4518., 8294.], 
-                [-66558., 66558., 0., 0., 0.], 
-                [-4518., 4518., 0., 0., 0.], 
-                [-8294., 8294., 0., 0., 0.]
-            ])
-        }
-
-        self.assert_equal_dicts(x_out,x_out_true)
-
-        self.save_load_model(lyr, x_in)
-
-    def test_convert_nmomentsTE_to_momentsTE(self):
-
-        v = Vals()
-
-        lyr = ConvertNMomentsTEtoMomentsTE()
-
-        # Input
-        x_in = {
-            "mu": tf.constant(v.mu(), dtype="float32"),
-            "muTE": tf.constant(v.mu_TE(), dtype="float32"),
-            "nvarTE": tf.constant(v.nvar_TE(), dtype="float32")
-            }
-            
-        # Output
-        x_out = lyr(x_in)
-
-        print(x_out)
-
-        x_out_true = {
-            "muTE": np.array([3., 5., 2., 1., 0.8]),
-            "varTE": np.array([
-                [-102., -224., -221., -29., -38.2], 
-                [-224., -432., -396., -62., -75.], 
-                [-221., -396., -232., -68., -64.6], 
-                [-29., -62., -68., 0., -10.7], 
-                [-38.2, -75., -64.6, -10.7, -6.8]
-            ])
-        }
-
-        self.assert_equal_dicts(x_out,x_out_true)
-
-        self.save_load_model(lyr, x_in)
-
     def test_convert_momentsTE_to_paramMomentsTE(self):
 
         v = Vals()

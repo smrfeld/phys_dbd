@@ -1,4 +1,4 @@
-from ..net_common import ConvertMomentsToNMomentsLayer
+from ..net_common import ConvertMomentsToNMomentsLayer, unit_mat
 
 import tensorflow as tf
 
@@ -238,9 +238,25 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
         layer_muh: Dict[str,FourierLatentGaussLayer],
         layer_cholvh: Dict[str,FourierLatentGaussLayer],
         layer_cholh: Dict[str,FourierLatentGaussLayer],
+        non_zero_idx_pairs_vv: List[Tuple[int,int]],
+        non_zero_idx_pairs_vh: List[Tuple[int,int]],
+        non_zero_idx_pairs_hh: List[Tuple[int,int]],
         **kwargs):
 
         super(ConvertParams0ToParamsGaussLayer, self).__init__(**kwargs)
+
+        # Check non-zero idx pairs
+        for iv in range(0,nv):
+            if not (iv,iv) in non_zero_idx_pairs_vv:
+                raise ValueError("All diagonal elements must be specified as non-zero.")
+        for ih in range(0,nh):
+            if not (ih,ih) in non_zero_idx_pairs_hh:
+                raise ValueError("All diagonal elements must be specified as non-zero.")
+
+        for idx_pairs in [non_zero_idx_pairs_vv,non_zero_idx_pairs_vh,non_zero_idx_pairs_hh]:
+            for pair in idx_pairs:
+                if pair[0] < pair[1]:
+                    raise ValueError("Only provide lower triangular indexes.")
 
         self.nv = nv
         self.nh = nh
@@ -248,6 +264,10 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
         self.layer_muh = layer_muh
         self.layer_cholvh = layer_cholvh
         self.layer_cholh = layer_cholh
+        
+        self.non_zero_idx_pairs_vv = non_zero_idx_pairs_vv
+        self.non_zero_idx_pairs_vh = non_zero_idx_pairs_vh
+        self.non_zero_idx_pairs_hh = non_zero_idx_pairs_hh
 
         self.convert_from_0 = ConvertParamsGaussLayerFrom0()
 
@@ -262,6 +282,9 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
         cholvh_cos_coeffs_init : np.array,
         cholh_sin_coeffs_init : np.array,
         cholh_cos_coeffs_init : np.array,
+        non_zero_idx_pairs_vv: List[Tuple[int,int]],
+        non_zero_idx_pairs_vh: List[Tuple[int,int]],
+        non_zero_idx_pairs_hh: List[Tuple[int,int]],
         **kwargs):
 
         layer_muh = {}
@@ -276,23 +299,24 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
         layer_cholvh = {}
         for ih in range(0,nh):
             for iv in range(0,nv):
-
-                layer_cholvh[str(iv) + "_" + str(ih)] = FourierLatentGaussLayer(
-                    freqs=freqs,
-                    offset=0.0,
-                    sin_coeff=cholvh_sin_coeffs_init,
-                    cos_coeff=cholvh_cos_coeffs_init
-                    )
+                if (iv,ih) in non_zero_idx_pairs_vv:
+                    layer_cholvh[str(iv) + "_" + str(ih)] = FourierLatentGaussLayer(
+                        freqs=freqs,
+                        offset=0.0,
+                        sin_coeff=cholvh_sin_coeffs_init,
+                        cos_coeff=cholvh_cos_coeffs_init
+                        )
 
         layer_cholh = {}
         for ih in range(0,nh):
             for jh in range(0,ih+1):
-                layer_cholh[str(ih) + "_" + str(jh)] = FourierLatentGaussLayer(
-                    freqs=freqs,
-                    offset=0.0,
-                    sin_coeff=cholh_sin_coeffs_init,
-                    cos_coeff=cholh_cos_coeffs_init
-                    )
+                if (ih,jh) in non_zero_idx_pairs_hh:
+                    layer_cholh[str(ih) + "_" + str(jh)] = FourierLatentGaussLayer(
+                        freqs=freqs,
+                        offset=0.0,
+                        sin_coeff=cholh_sin_coeffs_init,
+                        cos_coeff=cholh_cos_coeffs_init
+                        )
 
         return cls(
             nv=nv,
@@ -300,6 +324,9 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
             layer_muh=layer_muh,
             layer_cholvh=layer_cholvh,
             layer_cholh=layer_cholh,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv,
+            non_zero_idx_pairs_vh=non_zero_idx_pairs_vh,
+            non_zero_idx_pairs_hh=non_zero_idx_pairs_hh,
             **kwargs
             )
 
@@ -311,7 +338,10 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
             "nh": self.nh,
             "layer_muh": self.layer_muh,
             "layer_cholvh": self.layer_cholvh,
-            "layer_cholh": self.layer_cholh
+            "layer_cholh": self.layer_cholh,
+            "non_zero_idx_pairs_vv": self.non_zero_idx_pairs_vv,
+            "non_zero_idx_pairs_vh": self.non_zero_idx_pairs_vh,
+            "non_zero_idx_pairs_hh": self.non_zero_idx_pairs_hh
         })
         
         return config
@@ -349,12 +379,15 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
         cholvhs = []
         for ih in range(0,self.nh):
             for iv in range(0,self.nv):
-                cholvhs.append(self.layer_cholvh[str(iv) + "_" + str(ih)](inputs))
+                if (iv,ih) in self.non_zero_idx_pairs_vh:
+                    cholvhs.append(self.layer_cholvh[str(iv) + "_" + str(ih)](inputs))
+                else:
+                    cholvhs.append(tf.zeros(shape=(batch_size)))
         
         cholhs = []
         for ih in range(0,self.nh):
             for jh in range(0,self.nh):
-                if jh <= ih:
+                if jh <= ih and (ih,jh) in self.non_zero_idx_pairs_hh:
                     cholhs.append(self.layer_cholh[str(ih) + "_" + str(jh)](inputs))
                 else:
                     cholhs.append(tf.zeros(shape=(batch_size)))
@@ -373,9 +406,18 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
             lambda cholh_vecL: tf.reshape(cholh_vecL, shape=(self.nh,self.nh)), 
             cholh_vec)
 
+        # Ensure structure in chol v
+        chol_v_non_zero = inputs["chol_v_non_zero"]
+        for iv in range(0,self.nv):
+            for jv in range(0,iv+1):
+                if not (iv,jv) in self.non_zero_idx_pairs_vv:
+                    chol_v_non_zero -= tf.map_fn(
+                        lambda chols: unit_mat(self.nv,iv,jv) * chols[iv,jv],
+                        chol_v_non_zero)
+
         inputs_convert = {
             "mu_v1": inputs["mu_v"],
-            "chol_v1": inputs["chol_v"],
+            "chol_v1": inputs["chol_v_free"],
             "mu_h2": muh,
             "chol_vh2": cholvh,
             "chol_h2": cholh
@@ -520,8 +562,67 @@ class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
         moments = self.paramsToMomentsLayer(params)
         nmoments = self.momentsToNMomentsLayer(moments)
 
+        # Collect all parts
         dall = {}
         for d in [params,moments,nmoments]:
             dall.update(d)
         
         return dall
+
+'''
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ConvertMomentsTEtoParamMomentsTEGaussLayer(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int, **kwargs):
+        """Convert momentsTE = moments time evolution to paramMomentsTE = param moments time evolution
+            momentsTE = time evolution of (mean, cov_mat)
+            paramMomentsTE = time evolution of (
+                    mean visible species, 
+                    covvh = off diagonal matrix in cov mat, 
+                    trace of diagonal of visible part of cov matrix, 
+                    muh = mean of hidden species, 
+                    covh = diagonal of hidden part of cov matrix
+                    ) 
+                corresponding in dimensionality to (b,wt,sig2,muh,covh)
+        """
+        # Super
+        super(ConvertMomentsTEtoParamMomentsTEGaussLayer, self).__init__(**kwargs)
+    
+        self.nv = nv
+        self.nh = nh
+
+    def get_config(self):
+        config = super(ConvertMomentsTEtoParamMomentsTEGaussLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def call(self, inputs):
+        
+        muTE = inputs["muTE"]
+        covTE = inputs["covTE"]
+
+        muvTE = muTE[:,:self.nv]
+        muhTE = muTE[:,self.nv:]
+        covvhTE = covTE[:,self.nv:,:self.nv]
+        covvbarTE = tf.map_fn(
+            lambda covTEL: tf.linalg.trace(covTEL[:self.nv,:self.nv]), 
+            covTE)
+        covhTE = tf.map_fn(
+            lambda covTEL: covTEL[self.nv:,self.nv:],
+            covTE)
+
+        return {
+            "muvTE": muvTE,
+            "muhTE": muhTE,
+            "covvhTE": covvhTE,
+            "covvbarTE": covvbarTE,
+            "covhTE": covhTE
+        }
+'''
