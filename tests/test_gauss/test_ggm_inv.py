@@ -63,10 +63,14 @@ class TestGGMInv:
         non_zero_idx_pairs = [(0,0),(1,0),(1,1)]
         cov_mat = np.array([[0.1,0.0],[0.0,0.1]])
 
-        prec_mat = invert_ggm(
+        prec_mat, final_loss = invert_ggm(
             n=n,
             non_zero_idx_pairs=non_zero_idx_pairs,
             cov_mat=cov_mat
         )
 
+        print(final_loss)
         print(prec_mat)
+
+        assert final_loss < 1.e-10
+        self.assert_equal_arrs(prec_mat, np.array([10.0,0.0,10.0]))

@@ -111,7 +111,7 @@ def invert_ggm(
     epochs: int = 1000,
     learning_rate: float = 0.1,
     batch_size : int = 2
-    ) -> np.array:
+    ) -> Tuple[np.array,float]:
 
     if batch_size == 1:
         raise ValueError("Batch size = 1 leads to peculiar problems; try anything higher, e.g. 2")
@@ -149,5 +149,5 @@ def invert_ggm(
         )
 
     # Return
-    model
-    return model.mult_lyr.non_zero_vals.numpy()
+    final_loss = loss_fn(outputs, model(inputs)).numpy()
+    return (model.mult_lyr.non_zero_vals.numpy(),final_loss)
