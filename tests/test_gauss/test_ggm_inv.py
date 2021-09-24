@@ -1,5 +1,5 @@
 from helpers_test import SingleLayerModel
-from physDBD import GGMmultPrecCovLayer, invert_ggm
+from physDBD import GGMmultPrecCovLayer, invert_ggm, invert_ggm_chol, construct_mat
 
 import numpy as np
 import tensorflow as tf
@@ -57,20 +57,75 @@ class TestGGMInv:
 
         self.save_load_model(lyr, x_in)
 
-    def test_invert_ggm(self):
+    def test_invert_ggm_normal_n2(self):
 
         n = 2
         non_zero_idx_pairs = [(0,0),(1,0),(1,1)]
         cov_mat = np.array([[0.1,0.0],[0.0,0.1]])
 
-        prec_mat, final_loss = invert_ggm(
+        prec_mat_non_zero, final_loss = invert_ggm(
             n=n,
             non_zero_idx_pairs=non_zero_idx_pairs,
             cov_mat=cov_mat
         )
 
         print(final_loss)
+        assert final_loss < 1.e-10
+
+        prec_mat = construct_mat(n,non_zero_idx_pairs,prec_mat_non_zero)
+        identity_check = np.dot(prec_mat,cov_mat)
+
         print(prec_mat)
+        print(identity_check)
+
+        self.assert_equal_arrs(identity_check, np.eye(n))
+
+    def test_invert_ggm_normal_n3(self):
+
+        n = 3
+        non_zero_idx_pairs = [(0,0),(1,0),(1,1),(2,1),(2,2)]
+        cov_mat = np.array([
+            [10.0,5.0,2.0],
+            [5.0,20.0,4.0],
+            [2.0,4.0,30.0]
+            ])
+
+        prec_mat_non_zero, final_loss = invert_ggm(
+            n=n,
+            non_zero_idx_pairs=non_zero_idx_pairs,
+            cov_mat=cov_mat,
+            epochs=5000,
+            learning_rate=0.001
+        )
+
+        print(final_loss)
+        # assert final_loss < 1.e-10
+
+        prec_mat = construct_mat(n,non_zero_idx_pairs,prec_mat_non_zero)
+        print(prec_mat)
+        print(np.linalg.inv(prec_mat))
+        print("Should be")
+        print(cov_mat)
+        identity_check = np.dot(prec_mat,cov_mat)
+
+        print(identity_check)
+
+        self.assert_equal_arrs(identity_check, np.eye(n))
+
+    def test_invert_ggm_chol(self):
+
+        n = 2
+        non_zero_idx_pairs = [(0,0),(1,0),(1,1)]
+        cov_mat = np.array([[0.1,0.0],[0.0,0.1]])
+
+        chol, final_loss = invert_ggm_chol(
+            n=n,
+            non_zero_idx_pairs=non_zero_idx_pairs,
+            cov_mat=cov_mat
+        )
+
+        print(final_loss)
+        print(chol)
 
         assert final_loss < 1.e-10
-        self.assert_equal_arrs(prec_mat, np.array([10.0,0.0,10.0]))
+        # self.assert_equal_arrs(prec_mat, np.array([10.0,0.0,10.0]))

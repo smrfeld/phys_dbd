@@ -3,6 +3,24 @@ import pandas as pd
 from dataclasses import astuple
 from typing import List, Tuple
 
+def check_symmetric(a, rtol=1e-05, atol=1e-08):
+    return np.allclose(a, a.T, rtol=rtol, atol=atol)
+
+def construct_mat(n: int, non_zero_idx_pairs: List[Tuple[int,int]], mat_non_zero: np.array):
+    mat = np.zeros((n,n))
+    for i,pair in enumerate(non_zero_idx_pairs):
+        mat[pair[0],pair[1]] = mat_non_zero[i]
+        mat[pair[1],pair[0]] = mat_non_zero[i]
+    return mat
+
+def construct_mat_non_zero(n: int, non_zero_idx_pairs: List[Tuple[int,int]], mat: np.array):
+    assert(check_symmetric(mat))
+
+    mat_non_zero = np.zeros(len(non_zero_idx_pairs))
+    for i,pair in enumerate(non_zero_idx_pairs):
+        mat_non_zero[i] = mat[pair[0],pair[1]]
+    return mat_non_zero
+
 def check_non_zero_idx_pairs(n: int, non_zero_idx_pairs: List[Tuple[int,int]]):
     for i in range(0,n):
         if not (i,i) in non_zero_idx_pairs:
