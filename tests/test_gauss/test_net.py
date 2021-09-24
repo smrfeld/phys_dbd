@@ -1,3 +1,4 @@
+from helpers_test import SingleLayerModel
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
@@ -145,25 +146,6 @@ class Vals:
     @classmethod
     def cholvh_sin_coeffs_init(cls):
         return cls._cholvh_sin_coeffs_init
-
-@tf.keras.utils.register_keras_serializable(package="physDBD")
-class SingleLayerModel(tf.keras.Model):
-
-    def __init__(self, lyr, **kwargs):
-        super(SingleLayerModel, self).__init__(name='')
-        self.lyr = lyr
-
-    def get_config(self):
-        return {
-            "lyr": self.lyr
-            }
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)
-
-    def call(self, input_tensor, training=False):
-        return self.lyr(input_tensor)
 
 class TestNetGauss:
 

@@ -44,7 +44,7 @@ python setup.py install
 
 ## Documentation
 
-See the dedicatdd [documentation page](https://smrfeld.github.io/phys_dbd).
+See the dedicated [documentation page](https://smrfeld.github.io/phys_dbd).
 
 ## Example
 
