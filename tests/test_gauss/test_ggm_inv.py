@@ -1,5 +1,5 @@
 from helpers_test import SingleLayerModel
-from physDBD import GGMmultPrecCovLayer, invert_ggm, invert_ggm_chol, construct_mat
+from physDBD import GGMmultPrecCovLayer, invert_ggm, invert_ggm_chol, construct_mat, invert_ggm_bmlike, GGMInvPrecToCovMatLayer, GGMInvModelBMLike, construct_mat_non_zero
 
 import numpy as np
 import tensorflow as tf
@@ -80,6 +80,86 @@ class TestGGMInv:
 
         self.assert_equal_arrs(identity_check, np.eye(n))
 
+    def test_invert_ggm_bmlike_n2(self):
+
+        n = 3
+        non_zero_idx_pairs = [(0,0),(1,0),(1,1),(2,1),(2,2)]
+        cov_mat = np.array([
+            [10.0,5.0,2.0],
+            [5.0,20.0,4.0],
+            [2.0,4.0,30.0]
+            ])
+        
+        # Invert 
+        prec_mat_init = np.linalg.inv(cov_mat)
+        prec_mat_non_zero_init = construct_mat_non_zero(n,non_zero_idx_pairs,prec_mat_init)
+        print("Init prec mat: ", prec_mat_non_zero_init)
+
+        lyr = GGMInvPrecToCovMatLayer(
+            n=n,
+            non_zero_idx_pairs=non_zero_idx_pairs,
+            non_zero_vals=prec_mat_non_zero_init
+            )
+
+        model = GGMInvModelBMLike(inv_lyr=lyr)
+
+        print("Trying:")
+        batch_size = 2
+        inputs = np.random.rand(batch_size,1)
+        print(model(inputs))
+        print("Should be")
+        print(construct_mat_non_zero(n,non_zero_idx_pairs,cov_mat))
+
+        loss_fn = tf.keras.losses.MeanSquaredError()
+        opt = tf.keras.optimizers.Adam(learning_rate=0.01)
+        model.compile(optimizer=opt,
+                    loss=loss_fn,
+                    run_eagerly=False)
+
+        max_batch_size = 100
+        inputs = np.full(
+            shape=(max_batch_size,1),
+            fill_value=np.array([2])
+            )
+        
+        cov_mat_non_zero = construct_mat_non_zero(n,non_zero_idx_pairs,cov_mat)
+        outputs = np.full(
+            shape=(max_batch_size,len(cov_mat_non_zero)),
+            fill_value=cov_mat_non_zero
+            )
+
+        # Train!
+        model.fit(
+            inputs, 
+            outputs, 
+            epochs=100, 
+            batch_size=2
+            )
+
+        prec_mat_non_zero = model.inv_lyr.non_zero_vals.numpy()
+
+        prec_mat = construct_mat(n,non_zero_idx_pairs,prec_mat_non_zero)
+        print(prec_mat)
+        print(np.linalg.inv(prec_mat))
+        print("Should equal")
+        print(cov_mat)
+
+        '''
+        prec_mat_non_zero = invert_ggm_bmlike(
+            n=n,
+            non_zero_idx_pairs=non_zero_idx_pairs,
+            cov_mat=cov_mat,
+            epochs=4000,
+            learning_rate=0.1
+        )
+
+        prec_mat = construct_mat(n,non_zero_idx_pairs,prec_mat_non_zero)
+        print(prec_mat)
+        print(np.linalg.inv(prec_mat))
+        print("Should equal")
+        print(cov_mat)
+        '''
+    
     def test_invert_ggm_normal_n3(self):
 
         n = 3
