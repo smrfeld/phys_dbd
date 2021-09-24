@@ -1,6 +1,16 @@
 import numpy as np
 import pandas as pd
 from dataclasses import astuple
+from typing import List, Tuple
+
+def check_non_zero_idx_pairs(n: int, non_zero_idx_pairs: List[Tuple[int,int]]):
+    for i in range(0,n):
+        if not (i,i) in non_zero_idx_pairs:
+            raise ValueError("All diagonal elements must be specified as non-zero.")
+
+    for pair in non_zero_idx_pairs:
+        if pair[0] < pair[1]:
+            raise ValueError("Only provide lower triangular indexes.")
 
 def convert_np_to_pd(arr_with_times: np.array, nv: int, nh: int) -> pd.DataFrame:
     """Convert a numpy array of wt, b, sig2, muh, varh_diag to a pandas dataframe with named columns

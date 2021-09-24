@@ -1,4 +1,4 @@
-from physDBD.paramsTE_traj import ParamsTETraj
+from .paramsTE_traj import ParamsTETraj
 from .params_traj import ParamsTraj
 import numpy as np
 

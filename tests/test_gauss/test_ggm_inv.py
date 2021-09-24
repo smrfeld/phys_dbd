@@ -1,5 +1,5 @@
 from helpers_test import SingleLayerModel
-from physDBD import GGMInvPrecToCovMatLayer
+from physDBD import GGMmultPrecCovLayer, invert_ggm
 
 import numpy as np
 import tensorflow as tf
@@ -36,23 +36,37 @@ class TestGGMInv:
     def test_inv_prec_to_cov_mat(self):
 
         n = 2
-        non_zero_idx_pairs = [(0,0),(0,1),(1,1)]
+        non_zero_idx_pairs = [(0,0),(1,0),(1,1)]
 
         # Create layer
-        lyr = GGMInvPrecToCovMatLayer.construct(
+        lyr = GGMmultPrecCovLayer.construct(
             n=n,
             non_zero_idx_pairs=non_zero_idx_pairs,
             init_diag_val=10.0
         )
 
         # Output
-        x_in = {}
+        x_in = {"cov_mat": np.array([[0.1,0.0],[0.0,0.1]])}
         x_out = lyr(x_in)
 
         print("Outputs: ",x_out)
 
-        x_out_true = np.array([[0.1,0.0],[0.0,0.1]])
+        x_out_true = np.eye(n)
 
         self.assert_equal_arrs(x_out, x_out_true)
 
         self.save_load_model(lyr, x_in)
+
+    def test_invert_ggm(self):
+
+        n = 2
+        non_zero_idx_pairs = [(0,0),(1,0),(1,1)]
+        cov_mat = np.array([[0.1,0.0],[0.0,0.1]])
+
+        prec_mat = invert_ggm(
+            n=n,
+            non_zero_idx_pairs=non_zero_idx_pairs,
+            cov_mat=cov_mat
+        )
+
+        print(prec_mat)
