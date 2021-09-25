@@ -1,8 +1,9 @@
 from .net_common import unit_mat_sym
-from .helpers import check_non_zero_idx_pairs, construct_mat_non_zero
+from .helpers import check_non_zero_idx_pairs, construct_mat_non_zero, construct_mat
 
 import tensorflow as tf
 import numpy as np
+from dataclasses import dataclass
 
 from typing import List, Tuple
 
@@ -126,44 +127,107 @@ class GGMInvModelBMLike(tf.keras.Model):
 
         return cov_mat_non_zero
 
+@dataclass
+class Result:
+    target_cov_mat_non_zero : np.array
+    trained_model : GGMInvModelBMLike
+    init_prec_mat_non_zero : np.array
+    init_cov_mat_reconstructed_non_zero : np.array
+    learned_prec_mat_non_zero : np.array
+    learned_cov_mat_non_zero : np.array
+
+    def report(self):
+        print("Prec mat initial guess for non-zero elements:")
+        print(self.init_prec_mat_non_zero)
+
+        print("-> Learned prec mat non-zero elements:")
+        print(self.learned_prec_mat_non_zero)
+
+        print("Initial cov mat non-zero elements corresponding to initial prec mat guess:")
+        print(self.init_cov_mat_reconstructed_non_zero)
+
+        print("-> Learned cov mat non-zero elements:")
+        print(self.learned_cov_mat_non_zero)
+
+        print("--> Target cov mat non-zero elements:")
+        print(self.target_cov_mat_non_zero)
+
 def invert_ggm_bmlike(
     n: int,
     non_zero_idx_pairs: List[Tuple[int,int]],
-    cov_mat: np.array,
-    epochs: int,
-    learning_rate: float = 0.01
-    ) -> np.array:
+    cov_mat_non_zero: np.array,
+    epochs: int = 100,
+    learning_rate: float = 0.01,
+    batch_size = 2
+    ) -> Result:
 
-    # Invert 
-    prec_mat_init = np.linalg.inv(cov_mat)
-    prec_mat_non_zero_init = construct_mat_non_zero(n,non_zero_idx_pairs,prec_mat_init)
+    if batch_size == 1:
+        raise ValueError("Batch size = 1 leads to peculiar problems; try anything higher, e.g. 2")
+    
+    assert(batch_size > 0)
 
+    assert(cov_mat_non_zero.shape == (len(non_zero_idx_pairs),))
+
+    # Invert cov mat to get initial guess for precision matrix
+    cov_mat = construct_mat(n,non_zero_idx_pairs,cov_mat_non_zero)
+    init_prec_mat = np.linalg.inv(cov_mat)
+    init_prec_mat_non_zero = construct_mat_non_zero(n,non_zero_idx_pairs,init_prec_mat)
+    print("Prec mat initial guess for non-zero elements", init_prec_mat_non_zero)
+
+    init_prec_mat_reconstructed = construct_mat(n,non_zero_idx_pairs,init_prec_mat_non_zero)
+    init_cov_mat_reconstructed = np.linalg.inv(init_prec_mat_reconstructed)
+    init_cov_mat_reconstructed_non_zero = construct_mat_non_zero(n,non_zero_idx_pairs,init_cov_mat_reconstructed)
+    print("Initial cov mat corresponding non-zero elements", init_cov_mat_reconstructed_non_zero)
+
+    # Make layer and model
     lyr = GGMInvPrecToCovMatLayer(
         n=n,
         non_zero_idx_pairs=non_zero_idx_pairs,
-        non_zero_vals=prec_mat_non_zero_init
+        non_zero_vals=init_prec_mat_non_zero
         )
-
     model = GGMInvModelBMLike(inv_lyr=lyr)
 
+    # Compile
     loss_fn = tf.keras.losses.MeanSquaredError()
     opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     model.compile(optimizer=opt,
                 loss=loss_fn,
                 run_eagerly=False)
 
-    inputs = [{}]
+    # Inputs outputs
+    max_batch_size = 100
+    inputs = np.full(
+        shape=(max_batch_size,1),
+        fill_value=np.array([2])
+        )
 
-    cov_mat_non_zero = construct_mat_non_zero(n,non_zero_idx_pairs,cov_mat)
-    outputs = [cov_mat_non_zero]
-
+    outputs = np.full(
+        shape=(max_batch_size,len(cov_mat_non_zero)),
+        fill_value=cov_mat_non_zero
+        )
+    
     # Train!
+    # NOTE: Do NOT use batch_size=1, use anything greater like batch_size=2
     model.fit(
         inputs, 
         outputs, 
         epochs=epochs, 
-        batch_size=1
+        batch_size=2
         )
 
-    # Return
-    return model.inv_lyr.non_zero_vals.numpy()
+    # Return solution & model
+    learned_prec_mat_non_zero = model.inv_lyr.non_zero_vals.numpy()
+    learned_prec_mat = construct_mat(n,non_zero_idx_pairs,learned_prec_mat_non_zero)
+    learned_cov_mat = np.linalg.inv(learned_prec_mat)
+    learned_cov_mat_non_zero = construct_mat_non_zero(n,non_zero_idx_pairs,learned_cov_mat)
+
+    result = Result(
+        target_cov_mat_non_zero=cov_mat_non_zero,
+        trained_model=model,
+        init_prec_mat_non_zero=init_prec_mat_non_zero,
+        init_cov_mat_reconstructed_non_zero=init_cov_mat_reconstructed_non_zero,
+        learned_prec_mat_non_zero=learned_prec_mat_non_zero,
+        learned_cov_mat_non_zero=learned_cov_mat_non_zero
+        )
+
+    return result

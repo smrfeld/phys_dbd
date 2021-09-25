@@ -160,6 +160,75 @@ class TestGGMInv:
         print(cov_mat)
         '''
     
+    def test_invert_ggm_bmlike_n3(self):
+
+        n = 3
+        non_zero_idx_pairs = [(0,0),(1,0),(1,1),(2,1),(2,2)]
+        cov_mat_non_zero = np.array([10.0,5.0,20.0,4.0,30.0])
+
+        prec_mat_non_zero, model = invert_ggm_bmlike(
+            n=n,
+            non_zero_idx_pairs=non_zero_idx_pairs,
+            cov_mat_non_zero=cov_mat_non_zero,
+            epochs=100,
+            learning_rate=0.001
+        )
+
+        prec_mat = construct_mat(n,non_zero_idx_pairs,prec_mat_non_zero)
+        print("Precision mat found:", prec_mat)
+
+        cov_mat_found = np.linalg.inv(prec_mat)
+        print("Cov mat found:", cov_mat_found)
+
+        cov_mat_non_zero_found = construct_mat_non_zero(n,non_zero_idx_pairs,cov_mat_found)
+        print("Non-zero elements found:", cov_mat_non_zero_found)
+        print("Should equal given:")
+        print(cov_mat_non_zero)
+
+    def test_invert_ggm_bmlike_n10(self):
+
+        n = 10
+        
+        # Non zero elements
+        non_zero_idx_pairs = []
+        # All diagonal (required)
+        for i in range(0,n):
+            non_zero_idx_pairs.append((i,i))
+        # Some off diagonal < n choose 2
+        max_no_off_diagonal = int((n-1)*n/2)
+        no_off_diagonal = np.random.randint(low=0,high=max_no_off_diagonal)
+        print("No non-zero off-diagonal elements:",no_off_diagonal,"max possible:",max_no_off_diagonal)
+        idx = 0
+        while idx < no_off_diagonal:
+            i = np.random.randint(low=1,high=n)
+            j = np.random.randint(low=0,high=i)
+            if not (i,j) in non_zero_idx_pairs:
+                non_zero_idx_pairs.append((i,j))
+                idx += 1
+
+        print("Non-zero elements:",non_zero_idx_pairs)
+
+        # Random cov mat using chol decomposition
+        # Diagonal = positive => unique
+        chol = np.tril(np.random.rand(n,n))
+        cov_mat = np.dot(chol,np.transpose(chol))
+        
+        print("Cov mat:",cov_mat)
+
+        cov_mat_non_zero = construct_mat_non_zero(n,non_zero_idx_pairs,cov_mat)
+        
+        print("Non-zero constraints:",cov_mat_non_zero)
+
+        result = invert_ggm_bmlike(
+            n=n,
+            non_zero_idx_pairs=non_zero_idx_pairs,
+            cov_mat_non_zero=cov_mat_non_zero,
+            epochs=100,
+            learning_rate=0.01
+        )
+
+        result.report()
+
     def test_invert_ggm_normal_n3(self):
 
         n = 3
