@@ -152,13 +152,21 @@ class Result:
         print("--> Target cov mat non-zero elements:")
         print(self.target_cov_mat_non_zero)
 
+def custom_mse(class_weights):
+    def weighted_mse(gt, pred):
+        # Formula: 
+        # w_1*(y_1-y'_1)^2 + ... + w_100*(y_100-y'_100)^2 / sum(weights)
+        return tf.keras.backend.sum(class_weights * tf.keras.backend.square(gt - pred)) / tf.keras.backend.sum(class_weights)
+    return weighted_mse
+
 def invert_ggm_bmlike(
     n: int,
     non_zero_idx_pairs: List[Tuple[int,int]],
     cov_mat_non_zero: np.array,
     epochs: int = 100,
     learning_rate: float = 0.01,
-    batch_size = 2
+    batch_size : int = 2,
+    use_weighted_loss : bool = False
     ) -> Result:
 
     if batch_size == 1:
@@ -187,13 +195,6 @@ def invert_ggm_bmlike(
         )
     model = GGMInvModelBMLike(inv_lyr=lyr)
 
-    # Compile
-    loss_fn = tf.keras.losses.MeanSquaredError()
-    opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-    model.compile(optimizer=opt,
-                loss=loss_fn,
-                run_eagerly=False)
-
     # Inputs outputs
     max_batch_size = 100
     inputs = np.full(
@@ -205,6 +206,19 @@ def invert_ggm_bmlike(
         shape=(max_batch_size,len(cov_mat_non_zero)),
         fill_value=cov_mat_non_zero
         )
+
+    # Compile
+    opt = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    if use_weighted_loss:
+        weights_loss = 1.0 / pow(cov_mat_non_zero,2)
+        weights_loss = weights_loss.astype('float32')
+        print("Using weighted loss functing with weights:", weights_loss)
+        loss_fn = custom_mse(weights_loss)
+    else:
+        loss_fn = tf.keras.losses.MeanSquaredError()
+    model.compile(optimizer=opt,
+                loss=loss_fn,
+                run_eagerly=False)
     
     # Train!
     # NOTE: Do NOT use batch_size=1, use anything greater like batch_size=2
