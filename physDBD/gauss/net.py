@@ -524,21 +524,11 @@ class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
         cholhv_cos_coeffs_init : np.array,
         cholh_sin_coeffs_init : np.array,
         cholh_cos_coeffs_init : np.array,
+        non_zero_idx_pairs_vv: List[Tuple[int,int]],
+        non_zero_idx_pairs_hv: List[Tuple[int,int]],
+        non_zero_idx_pairs_hh: List[Tuple[int,int]],
         **kwargs
         ):
-        """Construct the layer including the Fourier latent representations.
-
-        Args:
-            nv (int): No. visible species
-            nh (int): No. hidden species
-            freqs (np.array): 1D arr of frequencies of length L
-            muh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
-            muh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
-            cholhv_sin_coeffs_init (np.array): 1D arr of coefficients of length L
-            cholhv_cos_coeffs_init (np.array): 1D arr of coefficients of length L
-            cholh_sin_coeffs_init (np.array): 1D arr of coefficients of length L
-            cholh_cos_coeffs_init (np.array): 1D arr of coefficients of length L
-        """
         params0ToParamsLayer = ConvertParams0ToParamsGaussLayer.construct(
             nv=nv, 
             nh=nh, 
@@ -548,7 +538,10 @@ class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
             cholhv_sin_coeffs_init=cholhv_sin_coeffs_init,
             cholhv_cos_coeffs_init=cholhv_cos_coeffs_init,
             cholh_sin_coeffs_init=cholh_sin_coeffs_init,
-            cholh_cos_coeffs_init=cholh_cos_coeffs_init
+            cholh_cos_coeffs_init=cholh_cos_coeffs_init,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv,
+            non_zero_idx_pairs_hv=non_zero_idx_pairs_hv,
+            non_zero_idx_pairs_hh=non_zero_idx_pairs_hh
             )
 
         return cls(

@@ -13,141 +13,6 @@ import copy
 import numpy as np
 import tensorflow as tf
 
-class Vals:
-
-    nv = 3
-    nh = 2
-    batch_size = 2
-    i_death = 0
-    i_birth = 0
-    i_predator = 1
-    i_prey = 0
-
-    _mu = np.array([10.0,8.0,4.0,20.0,3.0])
-
-    _mu_h2 = np.array([4.0,80.0])
-
-    _chol_v1_non_zero = np.array([3.0, 5.0, 8.0, 4.0, 7.0])
-
-    _chol_hv2_non_zero = np.array([-4.0, -5.0, -8.0, 9.0, 8.0])
-
-    _chol_h2_non_zero = np.array([15.0, 12.0, 30.0])
-
-    _freqs = np.array([1.,2.,3.])
-    _cos_coeffs_init = np.array([1.,2.,4.])
-    _sin_coeffs_init = np.array([1.,5.,4.])
-
-    _muh_cos_coeffs_init = np.array([2.,5.,3.])
-    _muh_sin_coeffs_init = np.array([3.,6.,1.])
-    _cholhv_cos_coeffs_init = np.array([1.,8.,4.])
-    _cholhv_sin_coeffs_init = np.array([4.,5.,4.])
-    _cholh_cos_coeffs_init = np.array([8.,10.,9.])
-    _cholh_sin_coeffs_init = np.array([3.,7.,8.])
-
-    @classmethod
-    def chol_v1_non_zero(cls):
-        return cls.tile_vec(cls._chol_v1_non_zero)
-
-    @classmethod
-    def non_zero_idx_pairs_vv(cls):
-        return [(0,0),(1,0),(1,1),(2,1),(2,2)]
-
-    @classmethod
-    def non_zero_idx_pairs_hv(cls):
-        return [(0,0),(0,1),(0,2),(1,1),(1,2)]
-
-    @classmethod
-    def non_zero_idx_pairs_hh(cls):
-        return [(0,0),(1,0),(1,1)]
-
-    @classmethod
-    def tpt(cls):
-        return np.full(cls.batch_size,3-1) # zero indexed
-    
-    @classmethod
-    def tile_vec(cls, vec: np.array) -> np.array:
-        return np.tile(vec, (cls.batch_size,1))
-
-    @classmethod
-    def tile_mat(cls, mat: np.array) -> np.array:
-        return np.tile(mat, (cls.batch_size,1,1))
-
-    @classmethod
-    def mu_v1(cls):
-        mu_v1 = cls._mu[:cls.nv]
-        return cls.tile_vec(mu_v1)
-
-    @classmethod
-    def mu(cls):
-        return cls.tile_vec(cls._mu)
-    
-    @classmethod
-    def mu_h2(cls):
-        return cls.tile_vec(cls._mu_h2)
-    
-    @classmethod
-    def chol_v1(cls):
-        return cls.tile_mat(cls._chol_v1)
-
-    @classmethod
-    def chol_hv2(cls):
-        return cls.tile_mat(cls._chol_hv2)
-
-    @classmethod
-    def chol_h2(cls):
-        return cls.tile_mat(cls._chol_h2)
-    
-    '''
-    @classmethod
-    def cov(cls):
-        prec = np.dot(cls._chol, np.transpose(cls._chol))
-        cov = np.linalg.inv(prec)
-        return cls.tile_mat(cov)
-    
-    @classmethod
-    def cov_v(cls):
-        prec = np.dot(cls._chol, np.transpose(cls._chol))
-        cov = np.linalg.inv(prec)
-        cov_v = cov[:cls.nv,:cls.nv]
-        return cls.tile_mat(cov_v)
-    '''
-
-    @classmethod
-    def freqs(cls):
-        return cls._freqs
-
-    @classmethod
-    def cos_coeffs_init(cls):
-        return cls._cos_coeffs_init
-
-    @classmethod
-    def sin_coeffs_init(cls):
-        return cls._sin_coeffs_init
-
-    @classmethod
-    def muh_cos_coeffs_init(cls):
-        return cls._muh_cos_coeffs_init
-
-    @classmethod
-    def muh_sin_coeffs_init(cls):
-        return cls._muh_sin_coeffs_init
-
-    @classmethod
-    def cholh_cos_coeffs_init(cls):
-        return cls._cholh_cos_coeffs_init
-
-    @classmethod
-    def cholh_sin_coeffs_init(cls):
-        return cls._cholh_sin_coeffs_init
-
-    @classmethod
-    def cholhv_cos_coeffs_init(cls):
-        return cls._cholhv_cos_coeffs_init
-
-    @classmethod
-    def cholhv_sin_coeffs_init(cls):
-        return cls._cholhv_sin_coeffs_init
-
 def tile_vec(vec: np.array, batch_size: int) -> np.array:
     return np.tile(vec, (batch_size,1))
 
@@ -466,25 +331,51 @@ class TestNetGauss:
 
     def test_params0_to_nmoments(self):
 
-        v = Vals()
+        nv = 3
+        nh = 2
+
+        freqs = np.array([1.,2.,3.])
+        muh_cos_coeffs_init = np.array([2.,5.,3.])
+        muh_sin_coeffs_init = np.array([3.,6.,1.])
+        cholhv_cos_coeffs_init = np.array([1.,8.,4.])
+        cholhv_sin_coeffs_init = np.array([4.,5.,4.])
+        cholh_cos_coeffs_init = np.array([8.,10.,9.])
+        cholh_sin_coeffs_init = np.array([3.,7.,8.])
+
+        batch_size = 2
+
+        non_zero_idx_pairs_vv = [(0,0),(1,0),(1,1),(2,1),(2,2)]
+        non_zero_idx_pairs_hv = [(0,0),(0,1),(0,2),(1,1),(1,2)]
+        non_zero_idx_pairs_hh = [(0,0),(1,0),(1,1)]
+        
+        tpt = np.full(batch_size,3-1) # zero indexed
+
+        mu_v1 = np.array([10.0,8.0,4.0])
+        mu_v1 = tile_vec(mu_v1,batch_size)
+
+        chol_v1_non_zero = np.array([3.0, 5.0, 8.0, 4.0, 7.0])
+        chol_v1_non_zero = tile_vec(chol_v1_non_zero,batch_size)
 
         lyr = ConvertParams0ToNMomentsGaussLayer.construct(
-            nv=v.nv,
-            nh=v.nh,
-            freqs=v.freqs(),
-            muh_sin_coeffs_init=v.muh_sin_coeffs_init(),
-            muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
-            cholhv_sin_coeffs_init=v.cholhv_sin_coeffs_init(),
-            cholhv_cos_coeffs_init=v.cholhv_cos_coeffs_init(),
-            cholh_sin_coeffs_init=v.cholh_sin_coeffs_init(),
-            cholh_cos_coeffs_init=v.cholh_cos_coeffs_init()
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            cholhv_sin_coeffs_init=cholhv_sin_coeffs_init,
+            cholhv_cos_coeffs_init=cholhv_cos_coeffs_init,
+            cholh_sin_coeffs_init=cholh_sin_coeffs_init,
+            cholh_cos_coeffs_init=cholh_cos_coeffs_init,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv,
+            non_zero_idx_pairs_hv=non_zero_idx_pairs_hv,
+            non_zero_idx_pairs_hh=non_zero_idx_pairs_hh
         )
 
         # Input
         x_in = {
-            "tpt": tf.constant(v.tpt(), dtype='float32'),
-            "mu_v": tf.constant(v.mu_v1(), dtype="float32"),
-            "chol_v": tf.constant(v.chol_v1(), dtype="float32")
+            "tpt": tf.constant(tpt, dtype='float32'),
+            "mu_v": tf.constant(mu_v1, dtype="float32"),
+            "chol_v_non_zero": tf.constant(chol_v1_non_zero, dtype="float32")
             }
              
         # Output
@@ -495,11 +386,11 @@ class TestNetGauss:
         x_out_true = {
             "mu": np.array([10., 8., 4., -3.31234, -3.31234]),
             "ncov": np.array([
-                [100.223, 79.9553, 40.0374, -33.0993, -33.1234], 
-                [79.9553, 64.0207, 31.9898, -26.4965, -26.4987], 
-                [40.0374, 31.9898, 16.0204, -13.2386, -13.2494], 
-                [-33.0993, -26.4965, -13.2386, 11.0266, 10.9441], 
-                [-33.1234, -26.4987, -13.2494, 10.9441, 10.9991]
+                [100.168686,  79.965454,  40.017006, -33.088116, -33.146927],
+                [ 79.965454,  64.02073 ,  31.989796, -26.496452, -26.49871 ],
+                [ 40.017006,  31.989796,  16.020409, -13.238606, -13.249355],
+                [-33.088116, -26.496452, -13.238606,  11.026608,  10.944078],
+                [-33.146927, -26.49871 , -13.249355,  10.944078,  10.999098]
             ])
         }
 
