@@ -27,23 +27,11 @@ class Vals:
 
     _mu_h2 = np.array([4.0,80.0])
 
-    _chol = np.array([
-        [3.0, 0.0, 0.0, 0.0, 0.0],
-        [5.0, 8.0, 0.0, 0.0, 0.0],
-        [-3.0, 4.0, 7.0, 0.0, 0.0],
-        [-1.0, -3.0, -4.0, 9.0, 0.0],
-        [-3.0, 8.0, 10.0, 9.0, 20.0]
-        ])
+    _chol_v1_non_zero = np.array([3.0, 5.0, 8.0, 4.0, 7.0])
 
-    _chol_vh2 = np.array([
-        [-4.0, -5.0, -8.0],
-        [-2.0, 9.0, 8.0]
-        ])
+    _chol_vh2_non_zero = np.array([-4.0, -5.0, -8.0, 9.0, 8.0])
 
-    _chol_h2 = np.array([
-        [15.0, 0.0],
-        [12.0, 30.0]
-        ])
+    _chol_h2_non_zero = np.array([15.0, 12.0, 30.0])
 
     _freqs = np.array([1.,2.,3.])
     _cos_coeffs_init = np.array([1.,2.,4.])
@@ -51,10 +39,26 @@ class Vals:
 
     _muh_cos_coeffs_init = np.array([2.,5.,3.])
     _muh_sin_coeffs_init = np.array([3.,6.,1.])
-    _cholvh_cos_coeffs_init = np.array([1.,8.,4.])
-    _cholvh_sin_coeffs_init = np.array([4.,5.,4.])
+    _cholhv_cos_coeffs_init = np.array([1.,8.,4.])
+    _cholhv_sin_coeffs_init = np.array([4.,5.,4.])
     _cholh_cos_coeffs_init = np.array([8.,10.,9.])
     _cholh_sin_coeffs_init = np.array([3.,7.,8.])
+
+    @classmethod
+    def chol_v1_non_zero(cls):
+        return cls.tile_vec(cls._chol_v1_non_zero)
+
+    @classmethod
+    def non_zero_idx_pairs_vv(cls):
+        return [(0,0),(1,0),(1,1),(2,1),(2,2)]
+
+    @classmethod
+    def non_zero_idx_pairs_hv(cls):
+        return [(0,0),(0,1),(0,2),(1,1),(1,2)]
+
+    @classmethod
+    def non_zero_idx_pairs_hh(cls):
+        return [(0,0),(1,0),(1,1)]
 
     @classmethod
     def tpt(cls):
@@ -82,13 +86,8 @@ class Vals:
         return cls.tile_vec(cls._mu_h2)
     
     @classmethod
-    def chol(cls):
-        return cls.tile_mat(cls._chol)
-
-    @classmethod
     def chol_v1(cls):
-        chol_v1 = cls._chol[:cls.nv,:cls.nv]
-        return cls.tile_mat(chol_v1)
+        return cls.tile_mat(cls._chol_v1)
 
     @classmethod
     def chol_vh2(cls):
@@ -98,6 +97,7 @@ class Vals:
     def chol_h2(cls):
         return cls.tile_mat(cls._chol_h2)
     
+    '''
     @classmethod
     def cov(cls):
         prec = np.dot(cls._chol, np.transpose(cls._chol))
@@ -110,6 +110,7 @@ class Vals:
         cov = np.linalg.inv(prec)
         cov_v = cov[:cls.nv,:cls.nv]
         return cls.tile_mat(cov_v)
+    '''
 
     @classmethod
     def freqs(cls):
@@ -140,12 +141,12 @@ class Vals:
         return cls._cholh_sin_coeffs_init
 
     @classmethod
-    def cholvh_cos_coeffs_init(cls):
-        return cls._cholvh_cos_coeffs_init
+    def cholhv_cos_coeffs_init(cls):
+        return cls._cholhv_cos_coeffs_init
 
     @classmethod
-    def cholvh_sin_coeffs_init(cls):
-        return cls._cholvh_sin_coeffs_init
+    def cholhv_sin_coeffs_init(cls):
+        return cls._cholhv_sin_coeffs_init
 
 class TestNetGauss:
 
@@ -281,7 +282,7 @@ class TestNetGauss:
         self.save_load_model(lyr, x_in)
 
     def test_convert_params0_to_params(self):
-        
+
         v = Vals()
 
         lyr = ConvertParams0ToParamsGaussLayer.construct(
@@ -292,15 +293,18 @@ class TestNetGauss:
             muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
             cholh_cos_coeffs_init=v.cholh_cos_coeffs_init(),
             cholh_sin_coeffs_init=v.cholh_sin_coeffs_init(),
-            cholvh_cos_coeffs_init=v.cholvh_cos_coeffs_init(),
-            cholvh_sin_coeffs_init=v.cholvh_sin_coeffs_init()
+            cholhv_cos_coeffs_init=v.cholhv_cos_coeffs_init(),
+            cholhv_sin_coeffs_init=v.cholhv_sin_coeffs_init(),
+            non_zero_idx_pairs_vv=v.non_zero_idx_pairs_vv(),
+            non_zero_idx_pairs_hv=v.non_zero_idx_pairs_hv(),
+            non_zero_idx_pairs_hh=v.non_zero_idx_pairs_hh()
         )
 
         # Input
         x_in = {
             "tpt": tf.constant(v.tpt(), dtype='float32'),
             "mu_v": tf.constant(v.mu_v1(), dtype="float32"),
-            "chol_v": tf.constant(v.chol_v1(), dtype="float32")
+            "chol_v_non_zero": tf.constant(v.chol_v1_non_zero(), dtype="float32")
             }   
         
         print("Inputs: ", x_in)
@@ -313,11 +317,11 @@ class TestNetGauss:
         x_out_true = {
             "mu": np.array([10., 8., 4., -3.31234, -3.31234]), 
             "chol": np.array([
-                [3.24593, 0., 0., 0, 0], 
-                [6.90921, 8.78471, 0., 0, 0], 
-                [-0.879767, 6.00886, 7.85476, 0, 0], 
-                [-3.0691, -3.0691, -3.0691, -6.02913, 0], 
-                [-3.0691, -3.0691, -3.0691, -6.02913, -6.02913]
+                [ 3.5872293,  0.       ,  0.       ,  0.       ,  0.       ],
+                [ 7.4780407,  8.784711 ,  0.       ,  0.       ,  0.       ],
+                [ 2.3661642,  6.0088573,  7.8547583,  0.       ,  0.       ],
+                [-3.0690994, -3.0690994, -3.0690994, -6.029127 ,  0.       ],
+                [ 0.       , -3.0690994, -3.0690994, -6.029127 , -6.029127 ]
             ])
         }
 
@@ -370,8 +374,8 @@ class TestNetGauss:
             freqs=v.freqs(),
             muh_sin_coeffs_init=v.muh_sin_coeffs_init(),
             muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
-            cholvh_sin_coeffs_init=v.cholvh_sin_coeffs_init(),
-            cholvh_cos_coeffs_init=v.cholvh_cos_coeffs_init(),
+            cholhv_sin_coeffs_init=v.cholhv_sin_coeffs_init(),
+            cholhv_cos_coeffs_init=v.cholhv_cos_coeffs_init(),
             cholh_sin_coeffs_init=v.cholh_sin_coeffs_init(),
             cholh_cos_coeffs_init=v.cholh_cos_coeffs_init()
         )
