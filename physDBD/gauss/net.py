@@ -102,15 +102,15 @@ class ConvertParamsGaussLayer(tf.keras.layers.Layer):
     def from_config(cls, config):
         return cls(**config)
     
-    def make_amat(self, chol_vh, chol_h):
-        chol_vh_t = tf.transpose(chol_vh,perm=[0,2,1])
+    def make_amat(self, chol_hv, chol_h):
+        chol_hv_t = tf.transpose(chol_hv,perm=[0,2,1])
         chol_h_t = tf.transpose(chol_h,perm=[0,2,1])
 
-        batch_size = tf.shape(chol_vh)[0]
+        batch_size = tf.shape(chol_hv)[0]
 
-        amat = tf.matmul(chol_h, chol_h_t) + tf.matmul(chol_vh, chol_vh_t)
+        amat = tf.matmul(chol_h, chol_h_t) + tf.matmul(chol_hv, chol_hv_t)
         amat = tf.linalg.inv(amat)
-        amat = tf.matmul(chol_vh_t, tf.matmul(amat, chol_vh))
+        amat = tf.matmul(chol_hv_t, tf.matmul(amat, chol_hv))
         return tf.eye(self.nv,batch_shape=[batch_size]) - amat
 
     def array_flatten_low_tri(self, matv, matvh, math):
@@ -128,7 +128,7 @@ class ConvertParamsGaussLayer(tf.keras.layers.Layer):
         chol1 = inputs["chol1"]
 
         mu_h2 = inputs["mu_h2"]
-        chol_vh2 = inputs["chol_vh2"]
+        chol_hv2 = inputs["chol_hv2"]
         chol_h2 = inputs["chol_h2"]
 
         # Mu
@@ -137,12 +137,12 @@ class ConvertParamsGaussLayer(tf.keras.layers.Layer):
 
         # Chol
         chol_v1 = chol1[:,:self.nv,:self.nv]
-        chol_vh1 = chol1[:,self.nv:,:self.nv]
+        chol_hv1 = chol1[:,self.nv:,:self.nv]
         chol_h1 = chol1[:,self.nv:,self.nv:]
 
         # A matrix
-        amat1 = self.make_amat(chol_vh1,chol_h1)
-        amat2 = self.make_amat(chol_vh2,chol_h2)
+        amat1 = self.make_amat(chol_hv1,chol_h1)
+        amat2 = self.make_amat(chol_hv2,chol_h2)
 
         # Chol
         chol_a1 = tf.linalg.cholesky(amat1)
@@ -152,7 +152,7 @@ class ConvertParamsGaussLayer(tf.keras.layers.Layer):
         chol_v2 = tf.matmul(chol_v1, tf.matmul(chol_a1, tf.linalg.inv(chol_a2)))
 
         # Array flatten to new cholesky
-        chol2 = self.array_flatten_low_tri(chol_v2, chol_vh2, chol_h2)
+        chol2 = self.array_flatten_low_tri(chol_v2, chol_hv2, chol_h2)
 
         return {
             "mu2": mu2,
@@ -176,17 +176,17 @@ class ConvertParamsGaussLayerFrom0(tf.keras.layers.Layer):
     def from_config(cls, config):
         return cls(**config)
     
-    def make_amat(self, chol_vh, chol_h):
-        chol_vh_t = tf.transpose(chol_vh,perm=[0,2,1])
+    def make_amat(self, chol_hv, chol_h):
+        chol_hv_t = tf.transpose(chol_hv,perm=[0,2,1])
         chol_h_t = tf.transpose(chol_h,perm=[0,2,1])
 
-        shape = tf.shape(chol_vh)
+        shape = tf.shape(chol_hv)
         batch_size = shape[0]
         nv = shape[2]
 
-        amat = tf.matmul(chol_h, chol_h_t) + tf.matmul(chol_vh, chol_vh_t)
+        amat = tf.matmul(chol_h, chol_h_t) + tf.matmul(chol_hv, chol_hv_t)
         amat = tf.linalg.inv(amat)
-        amat = tf.matmul(chol_vh_t, tf.matmul(amat, chol_vh))
+        amat = tf.matmul(chol_hv_t, tf.matmul(amat, chol_hv))
         return tf.eye(nv,batch_shape=[batch_size]) - amat
 
     def array_flatten_low_tri(self, matv, matvh, math):
@@ -208,21 +208,21 @@ class ConvertParamsGaussLayerFrom0(tf.keras.layers.Layer):
         chol_v1 = inputs["chol_v1"]
 
         mu_h2 = inputs["mu_h2"]
-        chol_vh2 = inputs["chol_vh2"]
+        chol_hv2 = inputs["chol_hv2"]
         chol_h2 = inputs["chol_h2"]
 
         # Concatenatu mu
         mu2 = tf.concat([mu_v1,mu_h2],1)
 
         # A matrix
-        amat2 = self.make_amat(chol_vh2,chol_h2)
+        amat2 = self.make_amat(chol_hv2,chol_h2)
         chol_a2 = tf.linalg.cholesky(amat2)
 
         # Chol v
         chol_v2 = tf.matmul(chol_v1, tf.linalg.inv(chol_a2))
 
         # Array flatten to new cholesky
-        chol2 = self.array_flatten_low_tri(chol_v2, chol_vh2, chol_h2)
+        chol2 = self.array_flatten_low_tri(chol_v2, chol_hv2, chol_h2)
 
         return {
             "mu2": mu2,
@@ -410,14 +410,14 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
         cholh_vec = tf.transpose(cholhs)
 
         # To matrix
-        chol_vh2 = tf.map_fn(
+        chol_hv2 = tf.map_fn(
             lambda cholhv_vecL: tf.reshape(cholhv_vecL, shape=(self.nh,self.nv)), 
             cholhv_vec)
         chol_h2 = tf.map_fn(
             lambda cholh_vecL: tf.reshape(cholh_vecL, shape=(self.nh,self.nh)), 
             cholh_vec)
 
-        print(chol_vh2)
+        print(chol_hv2)
         print(chol_h2)
 
         # Ensure structure in chol v
@@ -433,7 +433,7 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
             "mu_v1": inputs["mu_v"],
             "chol_v1": chol_v1,
             "mu_h2": mu_h2,
-            "chol_vh2": chol_vh2,
+            "chol_hv2": chol_hv2,
             "chol_h2": chol_h2
             }
         outputs_convert = self.convert_from_0(inputs_convert)

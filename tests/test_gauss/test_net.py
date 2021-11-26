@@ -29,7 +29,7 @@ class Vals:
 
     _chol_v1_non_zero = np.array([3.0, 5.0, 8.0, 4.0, 7.0])
 
-    _chol_vh2_non_zero = np.array([-4.0, -5.0, -8.0, 9.0, 8.0])
+    _chol_hv2_non_zero = np.array([-4.0, -5.0, -8.0, 9.0, 8.0])
 
     _chol_h2_non_zero = np.array([15.0, 12.0, 30.0])
 
@@ -90,8 +90,8 @@ class Vals:
         return cls.tile_mat(cls._chol_v1)
 
     @classmethod
-    def chol_vh2(cls):
-        return cls.tile_mat(cls._chol_vh2)
+    def chol_hv2(cls):
+        return cls.tile_mat(cls._chol_hv2)
 
     @classmethod
     def chol_h2(cls):
@@ -148,6 +148,12 @@ class Vals:
     def cholhv_sin_coeffs_init(cls):
         return cls._cholhv_sin_coeffs_init
 
+def tile_vec(vec: np.array, batch_size: int) -> np.array:
+    return np.tile(vec, (batch_size,1))
+
+def tile_mat(mat: np.array, batch_size: int) -> np.array:
+    return np.tile(mat, (batch_size,1,1))
+
 class TestNetGauss:
 
     def assert_equal_dicts(self, x_out, x_out_true):
@@ -179,23 +185,28 @@ class TestNetGauss:
 
     def test_fourier(self):
 
-        v = Vals()
+        freqs = np.array([1.,2.,3.])
+        cos_coeffs_init = np.array([1.,2.,4.])
+        sin_coeffs_init = np.array([1.,5.,4.])
+
+        batch_size = 2
+        tpt = np.full(batch_size,3-1) # zero indexed
 
         # Create layer
         fl = FourierLatentGaussLayer(
-            freqs=v.freqs(),
+            freqs=freqs,
             offset=0.0,
-            sin_coeff=v.sin_coeffs_init(),
-            cos_coeff=v.cos_coeffs_init()
+            sin_coeff=sin_coeffs_init,
+            cos_coeff=cos_coeffs_init
             )
 
-        print("Freqs: ", v.freqs())
-        print("Sin: ", v.sin_coeffs_init())
-        print("Cos: ", v.cos_coeffs_init())
+        print("Freqs: ", freqs)
+        print("Sin: ", sin_coeffs_init)
+        print("Cos: ", cos_coeffs_init)
 
         # Input
         x_in = {
-            "tpt": tf.constant(v.tpt(), dtype="float32")
+            "tpt": tf.constant(tpt, dtype="float32")
         }
 
         print("Inputs: ", x_in)
@@ -205,7 +216,7 @@ class TestNetGauss:
 
         print("Outputs: ",x_out)
 
-        x_out_true = np.full(v.batch_size,-1.8751299)
+        x_out_true = np.full(batch_size,-1.8751299)
 
         self.assert_equal_arrs(x_out, x_out_true)
 
@@ -213,16 +224,45 @@ class TestNetGauss:
 
     def test_convert_params_layer(self):
 
-        v = Vals()
+        nv = 3
+        nh = 2
+        batch_size = 2
 
-        lyr = ConvertParamsGaussLayer(nv=v.nv,nh=v.nh)
+        mu1 = np.array([10,3,4,6,8])
+        mu1 = tile_vec(mu1,batch_size)
+
+        chol1 = np.array([
+            [30,0,0,0,0],
+            [20,11,0,0,0],
+            [4,23,14,0,0],
+            [5,8,3,29,0],
+            [34,5,77,1,34]
+            ])
+        chol1 = tile_mat(chol1,batch_size)
+
+        chol_hv2 = np.array([
+            [5,3,7],
+            [1,5,7]
+            ])
+        chol_hv2 = tile_mat(chol_hv2,batch_size)
+
+        chol_h2 = np.array([
+            [3,0],
+            [4,2]
+            ])
+        chol_h2 = tile_mat(chol_h2,batch_size)
+
+        mu_h2 = np.array([7,32])
+        mu_h2 = tile_vec(mu_h2,batch_size)
+
+        lyr = ConvertParamsGaussLayer(nv=nv,nh=nh)
 
         x_in = {
-            "mu1": tf.constant(v.mu(), dtype="float32"),
-            "chol1": tf.constant(v.chol(), dtype="float32"),
-            "chol_vh2": tf.constant(v.chol_vh2(), dtype="float32"),
-            "chol_h2": tf.constant(v.chol_h2(), dtype="float32"),
-            "mu_h2": tf.constant(v.mu_h2(), dtype="float32")
+            "mu1": tf.constant(mu1, dtype="float32"),
+            "chol1": tf.constant(chol1, dtype="float32"),
+            "chol_hv2": tf.constant(chol_hv2, dtype="float32"),
+            "chol_h2": tf.constant(chol_h2, dtype="float32"),
+            "mu_h2": tf.constant(mu_h2, dtype="float32")
             }
         
         print("Inputs: ", x_in)
@@ -232,13 +272,13 @@ class TestNetGauss:
         print("Outputs: ",x_out)
 
         x_out_true = {
-            "mu2": np.array([10., 8., 4., 4., 80.]), 
+            "mu2": np.array([10., 3., 4., 7., 32.]), 
             "chol2": np.array([
-                [3.0437, 0., 0., 0, 0], 
-                [5.57349, 7.85566, 0., 0, 0],
-                [-2.13828, 3.44518, 6.63218, 0, 0], 
-                [-4., -5., -8., 15., 0.], 
-                [-2., 9., 8., 12., 30.]
+                [56.505, 0., 0., 0, 0], 
+                [25.9328, 14.4518, 0., 0, 0],
+                [-11.3685, 32.7313, 15.8033, 0, 0], 
+                [5., 3., 7., 3., 0.], 
+                [1., 5., 7., 4., 2.]
             ])
         }
 
@@ -256,7 +296,7 @@ class TestNetGauss:
             "mu_v1": tf.constant(v.mu_v1(), dtype="float32"),
             "chol_v1": tf.constant(v.chol_v1(), dtype="float32"),
             "mu_h2": tf.constant(v.mu_h2(), dtype="float32"),
-            "chol_vh2": tf.constant(v.chol_vh2(), dtype="float32"),
+            "chol_hv2": tf.constant(v.chol_hv2(), dtype="float32"),
             "chol_h2": tf.constant(v.chol_h2(), dtype="float32")
             }
 
@@ -282,29 +322,50 @@ class TestNetGauss:
         self.save_load_model(lyr, x_in)
 
     def test_convert_params0_to_params(self):
+        nv = 3
+        nh = 2
+        freqs = np.array([1.,2.,3.])
+        muh_cos_coeffs_init = np.array([2.,5.,3.])
+        muh_sin_coeffs_init = np.array([3.,6.,1.])
+        cholhv_cos_coeffs_init = np.array([1.,8.,4.])
+        cholhv_sin_coeffs_init = np.array([4.,5.,4.])
+        cholh_cos_coeffs_init = np.array([8.,10.,9.])
+        cholh_sin_coeffs_init = np.array([3.,7.,8.])
 
-        v = Vals()
+        batch_size = 2
+
+        tpt = np.full(batch_size,3-1) # zero indexed
+
+        mu_v1 = np.array([10.0,8.0,4.0])
+        mu_v1 = tile_vec(mu_v1,batch_size)
+
+        chol_v1_non_zero = np.array([3.0, 5.0, 8.0, 4.0, 7.0])
+        chol_v1_non_zero = tile_vec(chol_v1_non_zero,batch_size)
+
+        non_zero_idx_pairs_vv = [(0,0),(1,0),(1,1),(2,1),(2,2)]
+        non_zero_idx_pairs_hv = [(0,0),(0,1),(0,2),(1,1),(1,2)]
+        non_zero_idx_pairs_hh = [(0,0),(1,0),(1,1)]
 
         lyr = ConvertParams0ToParamsGaussLayer.construct(
-            nv=v.nv,
-            nh=v.nh,
-            freqs=v.freqs(),
-            muh_sin_coeffs_init=v.muh_sin_coeffs_init(),
-            muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
-            cholh_cos_coeffs_init=v.cholh_cos_coeffs_init(),
-            cholh_sin_coeffs_init=v.cholh_sin_coeffs_init(),
-            cholhv_cos_coeffs_init=v.cholhv_cos_coeffs_init(),
-            cholhv_sin_coeffs_init=v.cholhv_sin_coeffs_init(),
-            non_zero_idx_pairs_vv=v.non_zero_idx_pairs_vv(),
-            non_zero_idx_pairs_hv=v.non_zero_idx_pairs_hv(),
-            non_zero_idx_pairs_hh=v.non_zero_idx_pairs_hh()
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            cholh_cos_coeffs_init=cholh_cos_coeffs_init,
+            cholh_sin_coeffs_init=cholh_sin_coeffs_init,
+            cholhv_cos_coeffs_init=cholhv_cos_coeffs_init,
+            cholhv_sin_coeffs_init=cholhv_sin_coeffs_init,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv,
+            non_zero_idx_pairs_hv=non_zero_idx_pairs_hv,
+            non_zero_idx_pairs_hh=non_zero_idx_pairs_hh
         )
 
         # Input
         x_in = {
-            "tpt": tf.constant(v.tpt(), dtype='float32'),
-            "mu_v": tf.constant(v.mu_v1(), dtype="float32"),
-            "chol_v_non_zero": tf.constant(v.chol_v1_non_zero(), dtype="float32")
+            "tpt": tf.constant(tpt, dtype='float32'),
+            "mu_v": tf.constant(mu_v1, dtype="float32"),
+            "chol_v_non_zero": tf.constant(chol_v1_non_zero, dtype="float32")
             }   
         
         print("Inputs: ", x_in)
