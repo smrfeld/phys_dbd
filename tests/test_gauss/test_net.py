@@ -288,16 +288,41 @@ class TestNetGauss:
 
     def test_convert_from_0(self):
 
-        v = Vals()
+        batch_size = 2
+
+        mu_v1 = np.array([10,3,4])
+        mu_v1 = tile_vec(mu_v1,batch_size)
+
+        chol_v1 = np.array([
+            [10,0,0],
+            [4,6,0],
+            [8,4,34]
+            ])
+        chol_v1 = tile_mat(chol_v1,batch_size)
+
+        mu_h2 = np.array([35,77])
+        mu_h2 = tile_vec(mu_h2,batch_size)
+
+        chol_hv2 = np.array([
+            [135,46,32],
+            [42,1,34]
+            ])
+        chol_hv2 = tile_mat(chol_hv2,batch_size)
+
+        chol_h2 = np.array([
+            [15,0],
+            [4,35]
+            ])
+        chol_h2 = tile_mat(chol_h2,batch_size)
 
         lyr = ConvertParamsGaussLayerFrom0()
 
         x_in = {
-            "mu_v1": tf.constant(v.mu_v1(), dtype="float32"),
-            "chol_v1": tf.constant(v.chol_v1(), dtype="float32"),
-            "mu_h2": tf.constant(v.mu_h2(), dtype="float32"),
-            "chol_hv2": tf.constant(v.chol_hv2(), dtype="float32"),
-            "chol_h2": tf.constant(v.chol_h2(), dtype="float32")
+            "mu_v1": tf.constant(mu_v1, dtype="float32"),
+            "chol_v1": tf.constant(chol_v1, dtype="float32"),
+            "mu_h2": tf.constant(mu_h2, dtype="float32"),
+            "chol_hv2": tf.constant(chol_hv2, dtype="float32"),
+            "chol_h2": tf.constant(chol_h2, dtype="float32")
             }
 
         print("Input: ", x_in)
@@ -307,13 +332,13 @@ class TestNetGauss:
         print("Output: ", x_out)
 
         x_out_true = {
-            "mu2": np.array([10., 8., 4., 4., 80.]),
+            "mu2": np.array([10, 3, 4, 35, 77]),
             "chol2": np.array([
-                [3.07698, 0., 0., 0, 0], 
-                [5.6037, 8.76592, 0., 0, 0], 
-                [-1.92121, 6.57703, 8.61553, 0, 0], 
-                [-4., -5., -8., 15., 0.], 
-                [-2., 9., 8., 12., 30.]
+                [25.3647, 0., 0., 0, 0], 
+                [32.7391, 11.946045, 0., 0, 0], 
+                [301.80923, 94.94065, 83.8398, 0, 0], 
+                [135., 46., 32., 15., 0.], 
+                [42., 1., 34., 4., 35.]
                 ])
         }
 
