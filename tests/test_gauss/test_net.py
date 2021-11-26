@@ -2,7 +2,7 @@ from helpers_test import SingleLayerModel
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
-            ConvertParams0ToNMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer, \
+            ConvertParams0ToMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer, \
                 ConvertParamsTEtoParams0TEGaussLayer, ConvertMomentsTEtoParams0TEGaussLayer
 
 # Depreciation warnings
@@ -330,7 +330,7 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    def test_params0_to_nmoments(self):
+    def test_params0_to_moments(self):
 
         nv = 3
         nh = 2
@@ -354,10 +354,10 @@ class TestNetGauss:
         mu_v1 = np.array([10.0,8.0,4.0])
         mu_v1 = tile_vec(mu_v1,batch_size)
 
-        chol_v1_non_zero = np.array([3.0, 5.0, 8.0, 4.0, 7.0])
+        chol_v1_non_zero = np.array([3.0, 5.0, 8.0, -3.0, 4.0])
         chol_v1_non_zero = tile_vec(chol_v1_non_zero,batch_size)
 
-        lyr = ConvertParams0ToNMomentsGaussLayer.construct(
+        lyr = ConvertParams0ToMomentsGaussLayer.construct(
             nv=nv,
             nh=nh,
             freqs=freqs,
@@ -386,12 +386,12 @@ class TestNetGauss:
     
         x_out_true = {
             "mu": np.array([10., 8., 4., -3.31234, -3.31234]),
-            "ncov": np.array([
-                [100.168686,  79.965454,  40.017006, -33.088116, -33.146927],
-                [ 79.965454,  64.02073 ,  31.989796, -26.496452, -26.49871 ],
-                [ 40.017006,  31.989796,  16.020409, -13.238606, -13.249355],
-                [-33.088116, -26.496452, -13.238606,  11.026608,  10.944078],
-                [-33.146927, -26.49871 , -13.249355,  10.944078,  10.999098]
+            "cov": np.array([
+                [0.178928, -0.0406901, -0.0390625, 0.0145602, -0.0235366], 
+                [-0.0406901, 0.0244141, 0.0234375, 0.0146872, 0.0], 
+                [-0.0390625, 0.0234375, 0.0625, 0.0188108, 0.0],
+                [0.0145602, 0.0146872, 0.0188108, 0.0550201, -0.02751],
+                [-0.0235366, 0.0, 0.0, -0.02751, 0.02751]
             ])
         }
 

@@ -1,4 +1,4 @@
-from ..net_common import ConvertMomentsToNMomentsLayer, unit_mat
+from ..net_common import unit_mat
 
 import tensorflow as tf
 
@@ -486,7 +486,7 @@ class ConvertParamsToMomentsGaussLayer(tf.keras.layers.Layer):
         }
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
-class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
+class ConvertParams0ToMomentsGaussLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
         nv: int,
@@ -504,14 +504,13 @@ class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
             params0ToParamsLayer (ConvertParams0ToParamsGaussLayer): Conversion layer from params0 to params via latent Fourier representation
         """
         # Super
-        super(ConvertParams0ToNMomentsGaussLayer, self).__init__(**kwargs)
+        super(ConvertParams0ToMomentsGaussLayer, self).__init__(**kwargs)
 
         self.nv = nv
         self.nh = nh
 
         self.params0ToParamsLayer = params0ToParamsLayer
         self.paramsToMomentsLayer = ConvertParamsToMomentsGaussLayer(nv,nh)
-        self.momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
 
     @classmethod
     def construct(cls,
@@ -552,7 +551,7 @@ class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
             )
 
     def get_config(self):
-        config = super(ConvertParams0ToNMomentsGaussLayer, self).get_config()
+        config = super(ConvertParams0ToMomentsGaussLayer, self).get_config()
         config.update({
             "nv": self.nv,
             "nh": self.nh,
@@ -567,11 +566,10 @@ class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
     def call(self, inputs):
         params = self.params0ToParamsLayer(inputs)
         moments = self.paramsToMomentsLayer(params)
-        nmoments = self.momentsToNMomentsLayer(moments)
 
         # Collect all parts
         dall = {}
-        for d in [params,moments,nmoments]:
+        for d in [params,moments]:
             dall.update(d)
         
         return dall
@@ -758,61 +756,3 @@ class ConvertMomentsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
 
         outputs2 = self.paramsTEtoParams0TE(inputs2)
         return outputs2
-
-'''
-@tf.keras.utils.register_keras_serializable(package="physDBD")
-class ConvertMomentsTEtoParamMomentsTEGaussLayer(tf.keras.layers.Layer):
-
-    def __init__(self, nv: int, nh: int, **kwargs):
-        """Convert momentsTE = moments time evolution to paramMomentsTE = param moments time evolution
-            momentsTE = time evolution of (mean, cov_mat)
-            paramMomentsTE = time evolution of (
-                    mean visible species, 
-                    covvh = off diagonal matrix in cov mat, 
-                    trace of diagonal of visible part of cov matrix, 
-                    muh = mean of hidden species, 
-                    covh = diagonal of hidden part of cov matrix
-                    ) 
-                corresponding in dimensionality to (b,wt,sig2,muh,covh)
-        """
-        # Super
-        super(ConvertMomentsTEtoParamMomentsTEGaussLayer, self).__init__(**kwargs)
-    
-        self.nv = nv
-        self.nh = nh
-
-    def get_config(self):
-        config = super(ConvertMomentsTEtoParamMomentsTEGaussLayer, self).get_config()
-        config.update({
-            "nv": self.nv,
-            "nh": self.nh
-        })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)
-
-    def call(self, inputs):
-        
-        muTE = inputs["muTE"]
-        covTE = inputs["covTE"]
-
-        muvTE = muTE[:,:self.nv]
-        muhTE = muTE[:,self.nv:]
-        covvhTE = covTE[:,self.nv:,:self.nv]
-        covvbarTE = tf.map_fn(
-            lambda covTEL: tf.linalg.trace(covTEL[:self.nv,:self.nv]), 
-            covTE)
-        covhTE = tf.map_fn(
-            lambda covTEL: covTEL[self.nv:,self.nv:],
-            covTE)
-
-        return {
-            "muvTE": muvTE,
-            "muhTE": muhTE,
-            "covvhTE": covvhTE,
-            "covvbarTE": covvbarTE,
-            "covhTE": covhTE
-        }
-'''
