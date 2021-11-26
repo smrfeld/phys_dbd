@@ -705,6 +705,60 @@ class ConvertParamsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
             "muv_TE": mu_TE[:,:self.nv]
             }
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ConvertMomentsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int, **kwargs):
+
+        # Super
+        super(ConvertMomentsTEtoParams0TEGaussLayer, self).__init__(**kwargs)
+        
+        self.nv = nv
+        self.nh = nh
+
+        self.momentsTEtoParamsTE = ConvertMomentsTEtoParamsTEGaussLayer(nv,nh)
+        self.paramsTEtoParams0TE = ConvertParamsTEtoParams0TEGaussLayer(nv,nh)
+
+    def get_config(self):
+        config = super(ConvertMomentsTEtoParams0TEGaussLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def call(self, inputs):
+        outputs1 = self.momentsTEtoParamsTE(inputs)
+
+        chol_TE = outputs1["cholTE"]
+        chol_v_TE = chol_TE[:,:self.nv,:self.nv]
+        chol_h_TE = chol_TE[:,self.nv:,self.nv:]
+        chol_hv_TE = chol_TE[:,self.nv:,:self.nv]
+
+        chol = inputs["chol"]
+        chol_v = chol[:,:self.nv,:self.nv]
+        chol_h = chol[:,self.nv:,self.nv:]
+        chol_hv = chol[:,self.nv:,:self.nv]
+
+        inputs2 = {
+            "mu_TE": outputs1["muTE"],
+            "prec_h": inputs["prec_h"],
+            "chol_v": chol_v,
+            "chol_h": chol_h,
+            "chol_hv": chol_hv,
+            "chol_v_TE": chol_v_TE,
+            "chol_h_TE": chol_h_TE,
+            "chol_hv_TE": chol_hv_TE,
+            "chol_amat": inputs["chol_amat"]
+            }
+
+        outputs2 = self.paramsTEtoParams0TE(inputs2)
+        return outputs2
+
 '''
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertMomentsTEtoParamMomentsTEGaussLayer(tf.keras.layers.Layer):

@@ -3,7 +3,7 @@ from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
             ConvertParams0ToNMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer, \
-                ConvertParamsTEtoParams0TEGaussLayer
+                ConvertParamsTEtoParams0TEGaussLayer, ConvertMomentsTEtoParams0TEGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -538,113 +538,68 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
+    def test_convert_momentsTE_to_params0TE(self):
 
-    '''
-    def test_convert_paramsTE_to_params0TE(self):
+        nv = 3
+        nh = 2
+        batch_size = 2
 
-        v = Vals()
+        chol = np.array([
+            [3,0,0,0,0],
+            [1,2,0,0,0],
+            [2,4,3,0,0],
+            [1,1,1,2,0],
+            [3,5,8,3,1]
+        ])
+        prec = np.dot(chol,np.transpose(chol))
+        prec_h = prec[nv:,nv:]
+        prec_h_inv = np.linalg.inv(prec_h)
 
-        lyr = ConvertParamsTEtoParams0TE()
+        muTE = np.array([4,2,3,3,1])
 
+        covTE = np.array([
+            [4,6,2,8,9],
+            [6,7,4,3,9],
+            [2,4,6,8,9],
+            [8,3,8,2,6],
+            [9,9,9,6,3]
+        ])
+
+        chol_hv = chol[nv:,:nv]
+        amat = np.eye(nv) - np.dot(np.transpose(chol_hv),np.dot(prec_h_inv,chol_hv))
+        chol_amat = np.linalg.cholesky(amat)
+
+        chol = tile_mat(chol,batch_size)
+        prec_h = tile_mat(prec_h,batch_size)
+        muTE = tile_vec(muTE,batch_size)
+        covTE = tile_mat(covTE,batch_size)
+        chol_amat = tile_mat(chol_amat,batch_size)
+
+        lyr = ConvertMomentsTEtoParams0TEGaussLayer(nv=nv, nh=nh)
+
+        # Input
         x_in = {
-            "bTE1": tf.constant(v.b_TE(), dtype="float32"),
-            "wtTE1": tf.constant(v.wt_TE(), dtype="float32"),
-            "muh1": tf.constant(v.muh(), dtype="float32"),
-            "wt1": tf.constant(v.wt(), dtype="float32"),
-            "muhTE1": tf.constant(v.muh_TE(), dtype="float32"),
-            "varh_diag1": tf.constant(v.varh_diag(), dtype="float32"),
-            "varhTE1": tf.constant(v.varh_TE(), dtype="float32"),
-            "sig2TE": tf.constant(v.sig2_TE(), dtype="float32")
-        }
-                
+            "prec_h": tf.constant(prec_h, dtype="float32"),
+            "chol_amat": tf.constant(chol_amat, dtype="float32"),
+            "muTE": tf.constant(muTE, dtype="float32"),
+            "covTE": tf.constant(covTE, dtype="float32"),
+            "chol": tf.constant(chol, dtype="float32")
+            }
+
         # Output
         x_out = lyr(x_in)
 
         print(x_out)
 
         x_out_true = {
-            "bTE2": np.array([29.7, 36., 41.6]),
-            "sig2TE": 0.3,
-            "wtTE2": np.array([
-                [2.63856, 5.27712, 8.31817],
-                [9.11667, 9.35, 9.35]
+            "muv_TE": np.array([4,2,3]),
+            "cholv_TE_std": np.array([
+                [-101.285706, 0., 0.], 
+                [-143.94946, -65.553345, 0.], 
+                [-179.96094, -83.13623, -0.28163147]
                 ])
-        }
+            }
 
         self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
-
-    def test_convert_nmomentsTE_to_params0TE(self):
-
-        v = Vals()
-
-        lyr = ConvertNMomentsTEtoParams0TE(v.nv,v.nh)
-
-        # Input
-        x_in = {
-            "mu": tf.constant(v.mu(), dtype="float32"),
-            "muTE": tf.constant(v.mu_TE(), dtype="float32"),
-            "nvarTE": tf.constant(v.nvar_TE(), dtype="float32"),
-            "varh_diag": tf.constant(v.varh_diag(), dtype="float32"),
-            "muh": tf.constant(v.muh(), dtype="float32"),
-            "var": tf.constant(v.var(), dtype="float32"),
-            "wt": tf.constant(v.wt(), dtype="float32")
-            }
-
-        print(x_in)
-        
-        # Output
-        x_out = lyr(x_in)
-
-        print(x_out)
-
-        x_out_true = {
-            "bTE": np.array([3., 5., 2.00002]),
-            "sig2TE": 301.86667,
-            "wtTE": np.array([
-                [-10.5766, -20.5495, -23.2327],
-                [-8.03333, -14.4667, -3.86667]
-                ])
-        }
-
-        self.assert_equal_dicts(x_out,x_out_true)
-
-        self.save_load_model(lyr, x_in)
-
-    def test_rxn_inputs(self):
-
-        v = Vals()
-
-        rxn_specs = [
-            ("BIRTH",v.i_birth),
-            ("DEATH",v.i_death),
-            ("EAT",v.i_predator,v.i_prey)
-        ]
-
-        lyr = RxnInputsLayer.construct(
-            nv=v.nv,
-            nh=v.nh,
-            freqs=v.freqs(),
-            muh_sin_coeffs_init=v.muh_sin_coeffs_init(),
-            muh_cos_coeffs_init=v.muh_cos_coeffs_init(),
-            varh_sin_coeffs_init=v.varh_sin_coeffs_init(),
-            varh_cos_coeffs_init=v.varh_cos_coeffs_init(),
-            rxn_specs=rxn_specs
-            )
-
-        # Input
-        x_in = {
-            "tpt": tf.constant(v.tpt(), dtype='float32'),
-            "b": tf.constant(v.b(), dtype="float32"),
-            "wt": tf.constant(v.wt(), dtype="float32"),
-            "sig2": tf.constant(v.sig2(), dtype='float32')
-            }
-             
-        # Output
-        x_out = lyr(x_in)
-        
-        print(x_out)
-
-        self.save_load_model(lyr, x_in)
-    '''
