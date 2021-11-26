@@ -1,0 +1,270 @@
+\documentclass[11pt]{article}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Packages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{oke-header-math}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mathematics
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\abf}{\boldsymbol{a}}
+\newcommand{\bbf}{\boldsymbol{b}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Title
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{Test Gauss Part}
+\author{Oliver K. Ernst}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin document
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Chosen values}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%---------------
+\begin{equation}
+\begin{split}
+n_v &= 3 \\
+n_h &= 2 \\
+\text{batch size} = n_b &= 2 \\
+i_\text{death} &= 0 \\
+i_\text{birth} &= 0 \\
+i_\text{predator} &= 1 \\
+i_\text{prey} &= 0 \\
+\mu &= \begin{pmatrix}
+	10 & 8 & 4 & 20 & 3
+\end{pmatrix}
+\end{split}
+\end{equation}
+%---------------
+
+Cholesky decomposition of precision matrix $B = L L^\intercal$:
+%---------------
+\begin{equation}
+\begin{split}
+L = \begin{pmatrix}
+	3 & 0 & 0 & 0 & 0 \\
+	5 & 8 & 0 & 0 & 0 \\
+	-3 & 4 & 7 & 0 & 0 \\
+	-1 & -3 & -4 & 9 & 0 \\
+	-3 & 8 & 10 & 9 & 20
+\end{pmatrix}
+\end{split}
+\end{equation}
+%---------------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{FourierLatentGaussLayer}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%---------------
+\begin{equation}
+\begin{split}
+\text{Freqs} = \boldsymbol{f}
+&=
+\begin{pmatrix}
+	1 & 2 & 3
+\end{pmatrix}
+\\
+%%%
+\text{No freqs} = L &= 3 
+\\
+%%%
+\text{Offset} = c
+&=
+0
+\\
+%%%
+\text{Cos coeffs} = \boldsymbol{a}
+&=
+\begin{pmatrix}
+	1 & 2 & 4
+\end{pmatrix}
+\\
+%%%
+\text{Sin coeffs} = \boldsymbol{b}
+&=
+\begin{pmatrix}
+	1 & 5 & 4
+\end{pmatrix}
+\\
+%%%
+\text{Timepoint (zero indexed)} = t
+&=
+2
+\end{split}
+\end{equation}
+%---------------
+Fourier equation:
+%---------------
+\begin{equation}
+s(\abf, \bbf, t) = c + \frac{
+\sum_{l=1}^L \left ( a_l \cos(f_l t) + b_l \sin(f_l t) \right )
+}{
+\max \left ( \sum_{l=1}^L (|a_l| + |b_l|), 1 \right ) + \epsilon
+}
+\end{equation}
+%---------------
+Evaluated:
+%---------------
+\begin{equation}
+s(\abf, \bbf, t) = -1.8751299
+\end{equation}
+%---------------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{ConvertParams0ToParamsGaussLayer}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+
+\item Layer constructor:
+	%---------------
+	\begin{equation}
+	\begin{split}
+	\text{Freqs} = \boldsymbol{f}
+	&=
+	\begin{pmatrix}
+		1 & 2 & 3
+	\end{pmatrix}
+	\\
+	%%%
+	\text{No freqs} = L &= 3 
+	\\
+	%%%
+	\bbf_{\mu h, \text{init}} = \begin{pmatrix}
+		3 & 6 & 1
+	\end{pmatrix}
+	\\
+	%%%
+	\abf_{\mu h, \text{init}} = \begin{pmatrix}
+		2 & 5 & 3
+	\end{pmatrix}
+	\\
+	%%%
+	\bbf_{Lhv, \text{init}} = \begin{pmatrix}
+		1 & 8 & 4
+	\end{pmatrix}
+	\\
+	%%%
+	\abf_{Lhv, \text{init}} = \begin{pmatrix}
+		4 & 5 & 4
+	\end{pmatrix}
+	\\
+	%%%
+	\bbf_{Lh, \text{init}} = \begin{pmatrix}
+		8 & 10 & 9
+	\end{pmatrix}
+	\\
+	%%%
+	\abf_{Lh, \text{init}} = \begin{pmatrix}
+		3 & 7 & 8
+	\end{pmatrix}
+	%%%
+	\end{split}
+	\end{equation}
+	%---------------
+	Here $Lh$ and $Lhv$ refer to decomposing the Cholesky decomposition into block matrices:
+	%---------------
+	\begin{equation}
+	L = \begin{pmatrix}
+		Lv & 0 \\
+		Lhv & Lh
+	\end{pmatrix}
+	\end{equation}
+	%---------------
+	
+	The Fourier equations are
+	%---------------
+	\begin{equation}
+	s(\abf_{\mu h}, \bbf_{\mu h}, t) = \frac{
+	\sum_{l=1}^L \left ( a_{\mu h,l} \cos(f_l t) + b_{\mu h,l} \sin(f_l t) \right )
+	}{
+	\max \left ( \sum_{l=1}^L (|a_{\mu h,l}| + |b_{\mu h,l}|), 1 \right ) + \epsilon
+	}
+	\end{equation}
+	%---------------
+	and similarly for $Lhv, Lh$ (offsets are zero).
+
+\item Layer inputs:
+	%---------------
+	\begin{equation}
+	\begin{split}
+	\text{Timepoint} &= 2 \\
+	\mu_v &= \begin{pmatrix}
+		10 & 8 & 4
+	\end{pmatrix} \\
+	L_v &= \begin{pmatrix}
+		3 & 0 & 0 \\
+		5 & 8 & 0 \\
+		0 & 4 & 7
+	\end{pmatrix}
+	\end{split}
+	\end{equation}
+	%---------------
+
+\item Layer actions:
+	\begin{enumerate}
+	\item The layer first constructs the Cholesky decomposition in the standard space:
+		%---------------
+		\begin{equation}
+		\begin{split}
+		\hat{L}_v &= \begin{pmatrix}
+			...
+		\end{pmatrix} \\
+		\hat{L}_{hv} &= 0 \\
+		\hat{L}_h &= I \\
+		\hat{L} &= \begin{pmatrix}
+			\hat{L}_v & 0 \\
+			\hat{L}_{hv} & \hat{L}_h
+		\end{pmatrix}
+		\end{split}
+		\end{equation}
+		%---------------
+		Also, $\hat{\mu}_h = 0$.
+	
+	\item Next, from the Fourier equations, $L_h$ and $L_hv$ and $\mu_h$ are constructed.
+	
+	\item Next, $L_v$ is calculated to keep the observed covariances $\Sigma_v$ the same.
+	
+	\item Finally, $\mu = (\mu_v, \mu_h)$ and $L$ are returned.
+	\end{enumerate}
+
+\end{itemize}
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+

@@ -1,3 +1,4 @@
+.texpadtmp
 .gitignore~
 trained_compare/
 logs_compare/
@@ -7,7 +8,6 @@ logs/
 cache*/
 cache/
 trained/
-mathematica/
 *.egg-info/
 dist/
 saved_models/
