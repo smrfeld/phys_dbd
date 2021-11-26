@@ -2,7 +2,7 @@ from helpers_test import SingleLayerModel
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
-            ConvertParams0ToNMomentsGaussLayer
+            ConvertParams0ToNMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -284,7 +284,7 @@ class TestNetGauss:
 
         nv = 3
         nh = 2
-        batch_size = 3
+        batch_size = 2
 
         mu = np.array([23,53,34,66,12])
         mu = tile_vec(mu,batch_size)
@@ -398,58 +398,40 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    '''
-    def test_convert_momentsTE_to_paramMomentsTE(self):
+    def test_convert_momentsTE_to_paramsTE(self):
 
-        v = Vals()
+        nv = 3
+        nh = 2
+        batch_size = 2
 
-        lyr = ConvertMomentsTEtoParamMomentsTE(nv=v.nv,nh=v.nh)
+        chol = np.array([
+            [3,0,0,0,0],
+            [1,2,0,0,0],
+            [2,4,3,0,0],
+            [1,1,1,2,0],
+            [3,5,8,3,1]
+        ])
+        chol = tile_mat(chol,batch_size)
 
-        # Input
-        x_in = {
-            "muTE": tf.constant(v.mu_TE(), dtype="float32"),
-            "varTE": tf.constant(v.var_TE(), dtype="float32")
-            }
-            
-        # Output
-        x_out = lyr(x_in)
+        muTE = np.array([4,2,3,3,1])
+        muTE = tile_vec(muTE,batch_size)
 
-        print(x_out)
+        covTE = np.array([
+            [4,6,2,8,9],
+            [6,7,4,3,9],
+            [2,4,6,8,9],
+            [8,3,8,2,6],
+            [9,9,9,6,3]
+        ])
+        covTE = tile_mat(covTE,batch_size)
 
-        x_out_true = {
-            "muhTE": np.array([1.0, 0.8]),
-            "muvTE": np.array([3., 5., 2.]),
-            "varhTE": np.array([
-                [0., -10.7],
-                [-10.7, -6.8]
-                ]),
-            "varvbarTE": -766.,
-            "varvhTE": np.array([
-                [-29., -62., -68.], 
-                [-38.2, -75., -64.6]
-                ])
-        }
-
-        self.assert_equal_dicts(x_out,x_out_true)
-
-        self.save_load_model(lyr, x_in)
-
-    def test_convert_paramMomentsTE_to_paramsTE(self):
-
-        v = Vals()
-
-        lyr = ConvertParamMomentsTEtoParamsTE(nv=v.nv,nh=v.nh)
+        lyr = ConvertMomentsTEtoParamsTEGaussLayer(nv=nv,nh=nh)
 
         # Input
         x_in = {
-            "muvTE": tf.constant(v.muv_TE(), dtype="float32"),
-            "varvhTE": tf.constant(v.varvh_TE(), dtype="float32"),
-            "varhTE": tf.constant(v.varh_TE(), dtype="float32"),
-            "varh_diag": tf.constant(v.varh_diag(), dtype="float32"),
-            "muh": tf.constant(v.muh(), dtype="float32"),
-            "varvh": tf.constant(v.varvh(), dtype="float32"),
-            "muhTE": tf.constant(v.muh_TE(), dtype="float32"),
-            "varvbarTE": tf.constant(v.varvbar_TE(), dtype="float32")
+            "muTE": tf.constant(muTE, dtype="float32"),
+            "covTE": tf.constant(covTE, dtype="float32"),
+            "chol": tf.constant(chol, dtype="float32")
             }
         
         # Output
@@ -458,23 +440,21 @@ class TestNetGauss:
         print(x_out)
 
         x_out_true = {
-            "bTE": np.array([60.81777, 122.41333, 116.64888]),
-            "muhTE": np.array([0.3, 0.8]),
-            "varhTE": np.array([
-                [0.9, 0],
-                [0, 0.7],
-                ]),
-            "sig2TE": 645.63333,
-            "wtTE": np.array([
-                [-6.16, -13.12, -15.04], 
-                [-4.32222, -8.56667, -7.41111]
-                ])
+            "muTE": np.array([4,2,3,3,1]),
+            "cholTE": np.array([
+                [-927., 0., 0., 0., 0.],
+                [-1833., -941., 0., 0., 0.],
+                [-6024., -4657., -1236., 0., 0.],
+                [-2523., -2125.5, -1050., -107., 0.],
+                [-12093., -10922.5, -4310., -181.5, -1.5]
+            ])
         }
 
         self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
 
+    '''
     def test_convert_paramsTE_to_params0TE(self):
 
         v = Vals()

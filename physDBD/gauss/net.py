@@ -576,6 +576,57 @@ class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
         
         return dall
 
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ConvertMomentsTEtoParamsTEGaussLayer(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int, **kwargs):
+        # Super
+        super(ConvertMomentsTEtoParamsTEGaussLayer, self).__init__(**kwargs)
+    
+        self.nv = nv
+        self.nh = nh
+
+    def get_config(self):
+        config = super(ConvertMomentsTEtoParamsTEGaussLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def call(self, inputs):
+        muTE = inputs["muTE"]
+        covTE = inputs["covTE"]
+
+        chol = inputs["chol"]
+        cholT = tf.transpose(chol,perm=[0,2,1])
+
+        batch_size = tf.shape(inputs["muTE"])[0]
+
+        phi_mat = tf.matmul(cholT,tf.matmul(covTE,chol))
+
+        n = self.nv + self.nh
+        cholTE = tf.zeros((batch_size,n,n))
+        for i in range(0,n):
+            for j in range(0,n):
+                if i > j:
+                    cholTE += tf.map_fn(lambda phi_matL: unit_mat(n,i,j)*phi_matL[i,j],
+                        phi_mat)
+                elif i == j:
+                    cholTE += tf.map_fn(lambda phi_matL: 0.5*unit_mat(n,i,j)*phi_matL[i,j],
+                        phi_mat)
+
+        cholTE = -1.0 * tf.matmul(chol, cholTE)
+
+        return {
+            "muTE": muTE,
+            "cholTE": cholTE
+        }
+
 '''
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class ConvertMomentsTEtoParamMomentsTEGaussLayer(tf.keras.layers.Layer):
