@@ -610,22 +610,100 @@ class ConvertMomentsTEtoParamsTEGaussLayer(tf.keras.layers.Layer):
         phi_mat = tf.matmul(cholT,tf.matmul(covTE,chol))
 
         n = self.nv + self.nh
-        cholTE = tf.zeros((batch_size,n,n))
-        for i in range(0,n):
-            for j in range(0,n):
-                if i > j:
-                    cholTE += tf.map_fn(lambda phi_matL: unit_mat(n,i,j)*phi_matL[i,j],
-                        phi_mat)
-                elif i == j:
-                    cholTE += tf.map_fn(lambda phi_matL: 0.5*unit_mat(n,i,j)*phi_matL[i,j],
-                        phi_mat)
-
-        cholTE = -1.0 * tf.matmul(chol, cholTE)
+        cholTE = -1.0 * tf.matmul(chol, apply_phi_mat(phi_mat, n, batch_size))
 
         return {
             "muTE": muTE,
             "cholTE": cholTE
         }
+
+def apply_phi_mat(arg_mat, n: int, batch_size: int):
+    res = tf.zeros((batch_size,n,n))
+    for i in range(0,n):
+        for j in range(0,n):
+            if i > j:
+                res += tf.map_fn(
+                    lambda arg_matL: unit_mat(n,i,j)*arg_matL[i,j],
+                    arg_mat)
+            elif i == j:
+                res += tf.map_fn(
+                    lambda arg_matL: 0.5*unit_mat(n,i,j)*arg_matL[i,j],
+                    arg_mat)
+    return res
+
+def make_chol_mat_TE(matTE, chol_mat, n: int, batch_size: int):
+    chol_mat_inv = tf.linalg.inv(chol_mat)
+    chol_mat_inv_T = tf.transpose(chol_mat_inv,perm=[0,2,1])
+    arg_mat = tf.matmul(chol_mat_inv, tf.matmul(matTE, chol_mat_inv_T))
+    phi_mat = apply_phi_mat(arg_mat, n, batch_size)
+    return tf.matmul(chol_mat, phi_mat)
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class ConvertParamsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
+
+    def __init__(self, nv: int, nh: int, **kwargs):
+        # Super
+        super(ConvertParamsTEtoParams0TEGaussLayer, self).__init__(**kwargs)
+
+        self.nv = nv
+        self.nh = nh
+
+    def get_config(self):
+        config = super(ConvertParamsTEtoParams0TEGaussLayer, self).get_config()
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+    
+    def call(self, inputs):
+
+        # Inputs in the non-std space
+        mu_TE = inputs["mu_TE"]
+
+        batch_size = tf.shape(inputs["mu_TE"])[0]
+
+        prec_h = inputs["prec_h"]
+        prec_h_inv = tf.linalg.inv(prec_h)
+
+        chol_v = inputs["chol_v"]
+        chol_h = inputs["chol_h"]
+        chol_hv = inputs["chol_hv"]
+
+        chol_v_TE = inputs["chol_v_TE"]
+        chol_h_TE = inputs["chol_h_TE"]
+        chol_hv_TE = inputs["chol_hv_TE"]
+
+        chol_h_T = tf.transpose(chol_h,perm=[0,2,1])
+        chol_hv_T = tf.transpose(chol_hv,perm=[0,2,1])
+
+        chol_h_TE_T = tf.transpose(chol_h_TE,perm=[0,2,1])
+        chol_hv_TE_T = tf.transpose(chol_hv_TE,perm=[0,2,1])
+
+        prec_h_inv_TE_int = tf.matmul(chol_h_TE, chol_h_T) \
+            + tf.matmul(chol_h, chol_h_TE_T) \
+            + tf.matmul(chol_hv_TE, chol_hv_T) \
+            + tf.matmul(chol_hv, chol_hv_TE_T)
+        prec_h_inv_TE = - tf.matmul(prec_h_inv, tf.matmul(prec_h_inv_TE_int, prec_h_inv))
+
+        amat_TE = - tf.matmul(chol_hv_TE_T, tf.matmul(prec_h_inv, chol_hv))
+        amat_TE += - tf.matmul(chol_hv_T, tf.matmul(prec_h_inv_TE, chol_hv))
+        amat_TE += - tf.matmul(chol_hv_T, tf.matmul(prec_h_inv, chol_hv_TE))
+
+        chol_amat = inputs["chol_amat"]
+        chol_amat_TE = make_chol_mat_TE(amat_TE, chol_amat, self.nv, batch_size)
+        
+        cholv_TE_std = tf.matmul(chol_v_TE,chol_amat) + tf.matmul(chol_v, chol_amat_TE)
+        muv_TE = mu_TE
+
+        return {
+            "cholv_TE_std": cholv_TE_std,
+            "muv_TE": mu_TE[:,:self.nv]
+            }
 
 '''
 @tf.keras.utils.register_keras_serializable(package="physDBD")

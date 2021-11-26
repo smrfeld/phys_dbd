@@ -2,7 +2,8 @@ from helpers_test import SingleLayerModel
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
-            ConvertParams0ToNMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer
+            ConvertParams0ToNMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer, \
+                ConvertParamsTEtoParams0TEGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -453,6 +454,90 @@ class TestNetGauss:
         self.assert_equal_dicts(x_out,x_out_true)
 
         self.save_load_model(lyr, x_in)
+
+    def test_convert_momentsTE_to_paramsTE(self):
+
+        nv = 3
+        nh = 2
+        batch_size = 2
+
+        mu_TE = np.array([3,5,7,3,2])
+
+        chol = np.array([
+            [3,0,0,0,0],
+            [1,2,0,0,0],
+            [2,4,3,0,0],
+            [1,1,1,2,0],
+            [3,5,8,3,1]
+            ])
+
+        chol_TE = np.array([
+            [2,0,0,0,0],
+            [3,4,0,0,0],
+            [1,2,3,0,0],
+            [5,7,3,9,0],
+            [2,3,5,4,8]
+            ])
+
+        prec = np.dot(chol,np.transpose(chol))
+        prec_h = prec[nv:,nv:]
+        prec_h_inv = np.linalg.inv(prec_h)
+
+        chol_v = chol[:nv,:nv]
+        chol_h = chol[nv:,nv:]
+        chol_hv = chol[nv:,:nv]
+
+        chol_v_TE = chol_TE[:nv,:nv]
+        chol_h_TE = chol_TE[nv:,nv:]
+        chol_hv_TE = chol_TE[nv:,:nv]
+
+        amat = np.eye(nv) - np.dot(np.transpose(chol_hv),np.dot(prec_h_inv,chol_hv))
+        chol_amat = np.linalg.cholesky(amat)
+
+        lyr = ConvertParamsTEtoParams0TEGaussLayer(nv=nv,nh=nh)
+
+        # Tile inputs
+        mu_TE = tile_vec(mu_TE,batch_size)
+        prec_h = tile_mat(prec_h,batch_size)
+        chol_v = tile_mat(chol_v,batch_size)
+        chol_h = tile_mat(chol_h,batch_size)
+        chol_hv = tile_mat(chol_hv,batch_size)
+        chol_v_TE = tile_mat(chol_v_TE,batch_size)
+        chol_h_TE = tile_mat(chol_h_TE,batch_size)
+        chol_hv_TE = tile_mat(chol_hv_TE,batch_size)
+        chol_amat = tile_mat(chol_amat,batch_size)
+
+        # Input
+        x_in = {
+            "mu_TE": tf.constant(mu_TE, dtype="float32"),
+            "prec_h": tf.constant(prec_h, dtype="float32"),
+            "chol_v": tf.constant(chol_v, dtype="float32"),
+            "chol_h": tf.constant(chol_h, dtype="float32"),
+            "chol_hv": tf.constant(chol_hv, dtype="float32"),
+            "chol_v_TE": tf.constant(chol_v_TE, dtype="float32"),
+            "chol_h_TE": tf.constant(chol_h_TE, dtype="float32"),
+            "chol_hv_TE": tf.constant(chol_hv_TE, dtype="float32"),
+            "chol_amat": tf.constant(chol_amat, dtype="float32")
+            }
+
+        # Output
+        x_out = lyr(x_in)
+
+        print(x_out)
+
+        x_out_true = {
+            "muv_TE": np.array([3,5,7]),
+            "cholv_TE_std": np.array([
+                [1.70733, 0., 0.],
+                [1.36787, 3.44805, 0.], 
+                [-0.336917, 2.82135, 3.63626]
+                ])
+        }
+
+        self.assert_equal_dicts(x_out,x_out_true)
+
+        self.save_load_model(lyr, x_in)
+
 
     '''
     def test_convert_paramsTE_to_params0TE(self):
