@@ -417,9 +417,6 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
             lambda cholh_vecL: tf.reshape(cholh_vecL, shape=(self.nh,self.nh)), 
             cholh_vec)
 
-        print(chol_hv2)
-        print(chol_h2)
-
         # Ensure structure in chol v
         chol_v1 = tf.zeros((batch_size,self.nv,self.nv))
         chol_v_non_zero = inputs["chol_v_non_zero"]
@@ -672,7 +669,6 @@ class ConvertParamsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
         batch_size = tf.shape(inputs["mu_TE"])[0]
 
         prec_h = inputs["prec_h"]
-        print(prec_h)
         prec_h_inv = tf.linalg.inv(prec_h)
 
         chol_v = inputs["chol_v"]
@@ -895,8 +891,6 @@ class RxnInputsGaussLayer(tf.keras.layers.Layer):
 
             # Convert nMomentsTE to params0TE
             momentsTE.update(moments)
-            print("Inputs to momentsTEtoParams0TE:")
-            print(momentsTE)
             params0TE = self.momentsTEtoParams0TE(momentsTE)
 
             # Flatten
