@@ -83,8 +83,6 @@ class FourierLatentGaussLayer(tf.keras.layers.Layer):
 class ConvertParamsGaussLayer(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, **kwargs):
-        """Convert params latent space to different muh,varh_diag
-        """
         # Super
         super(ConvertParamsGaussLayer, self).__init__(**kwargs)
         
@@ -227,7 +225,8 @@ class ConvertParamsGaussLayerFrom0(tf.keras.layers.Layer):
 
         return {
             "mu2": mu2,
-            "chol2": chol2
+            "chol2": chol2,
+            "chol_a2": chol_a2
         }
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
@@ -441,7 +440,8 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
 
         output = {
             "mu": outputs_convert["mu2"],
-            "chol": outputs_convert["chol2"]
+            "chol": outputs_convert["chol2"],
+            "chol_amat": outputs_convert["chol_a2"]
         }
 
         return output
@@ -479,9 +479,12 @@ class ConvertParamsToMomentsGaussLayer(tf.keras.layers.Layer):
         cholt = tf.transpose(chol, perm=[0,2,1])
 
         prec = tf.matmul(chol,cholt)
+        prec_h = prec[:,self.nv:,self.nv:]
         cov = tf.linalg.inv(prec)
 
         return {
+            "prec": prec,
+            "prec_h": prec_h,
             "mu": mu,
             "cov": cov
         }
@@ -669,6 +672,7 @@ class ConvertParamsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
         batch_size = tf.shape(inputs["mu_TE"])[0]
 
         prec_h = inputs["prec_h"]
+        print(prec_h)
         prec_h_inv = tf.linalg.inv(prec_h)
 
         chol_v = inputs["chol_v"]
@@ -870,9 +874,17 @@ class RxnInputsGaussLayer(tf.keras.layers.Layer):
     def from_config(cls, config):
         return cls(**config)
 
+    def make_tril_bool_mask(self, batch_size):
+        mask = np.tril(np.ones((self.nv, self.nv), dtype=np.bool_))
+        # Repeat mask into batch size
+        # Size then is (batch_size,nv,nv)
+        mask = np.repeat(mask[np.newaxis, :, :], batch_size, axis=0)
+        return mask
+
     def call(self, inputs):
         moments = self.params0toMoments(inputs)
         batch_size = tf.shape(moments["cov"])[0]
+        tril_mask = self.make_tril_bool_mask(batch_size)
 
         # Compute reactions
         params0TEforRxns = []
@@ -883,14 +895,15 @@ class RxnInputsGaussLayer(tf.keras.layers.Layer):
 
             # Convert nMomentsTE to params0TE
             momentsTE.update(moments)
+            print("Inputs to momentsTEtoParams0TE:")
+            print(momentsTE)
             params0TE = self.momentsTEtoParams0TE(momentsTE)
 
             # Flatten
             # Reshape (batch_size, a, b) into (batch_size, a*b) for each thing in the dict
-            idxs = np.triu_indices(self.nv)
-            cholv_TE_std_vec = params0TE["cholv_TE_std"][:,idxs]
+            cholv_TE_std_vec = tf.boolean_mask(params0TE["cholv_TE_std"], tril_mask)
             params0TEarr = [
-                tf.reshape(cholv_TE_std_vec, (batch_size, self.nv*(self.nv+1)/2)),
+                tf.reshape(cholv_TE_std_vec, (batch_size, int(self.nv*(self.nv+1)/2))),
                 tf.reshape(params0TE["muv_TE"], (batch_size, self.nv))
                 ]
 
