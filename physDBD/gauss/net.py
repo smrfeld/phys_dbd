@@ -1,4 +1,5 @@
-from ..net_common import unit_mat
+from ..net_common import unit_mat, BirthRxnLayer, DeathRxnLayer, \
+    EatRxnLayer, ConvertMomentsToNMomentsLayer
 
 import tensorflow as tf
 
@@ -486,7 +487,7 @@ class ConvertParamsToMomentsGaussLayer(tf.keras.layers.Layer):
         }
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
-class ConvertParams0ToMomentsGaussLayer(tf.keras.layers.Layer):
+class ConvertParams0ToNMomentsGaussLayer(tf.keras.layers.Layer):
 
     def __init__(self, 
         nv: int,
@@ -504,13 +505,14 @@ class ConvertParams0ToMomentsGaussLayer(tf.keras.layers.Layer):
             params0ToParamsLayer (ConvertParams0ToParamsGaussLayer): Conversion layer from params0 to params via latent Fourier representation
         """
         # Super
-        super(ConvertParams0ToMomentsGaussLayer, self).__init__(**kwargs)
+        super(ConvertParams0ToNMomentsGaussLayer, self).__init__(**kwargs)
 
         self.nv = nv
         self.nh = nh
 
         self.params0ToParamsLayer = params0ToParamsLayer
         self.paramsToMomentsLayer = ConvertParamsToMomentsGaussLayer(nv,nh)
+        self.momentsToNMomentsLayer = ConvertMomentsToNMomentsLayer()
 
     @classmethod
     def construct(cls,
@@ -551,7 +553,7 @@ class ConvertParams0ToMomentsGaussLayer(tf.keras.layers.Layer):
             )
 
     def get_config(self):
-        config = super(ConvertParams0ToMomentsGaussLayer, self).get_config()
+        config = super(ConvertParams0ToNMomentsGaussLayer, self).get_config()
         config.update({
             "nv": self.nv,
             "nh": self.nh,
@@ -566,10 +568,11 @@ class ConvertParams0ToMomentsGaussLayer(tf.keras.layers.Layer):
     def call(self, inputs):
         params = self.params0ToParamsLayer(inputs)
         moments = self.paramsToMomentsLayer(params)
+        nmoments = self.momentsToNMomentsLayer(moments)
 
         # Collect all parts
         dall = {}
-        for d in [params,moments]:
+        for d in [params,moments,nmoments]:
             dall.update(d)
         
         return dall
@@ -756,3 +759,147 @@ class ConvertMomentsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
 
         outputs2 = self.paramsTEtoParams0TE(inputs2)
         return outputs2
+
+@tf.keras.utils.register_keras_serializable(package="physDBD")
+class RxnInputsGaussLayer(tf.keras.layers.Layer):
+
+    def __init__(self, 
+        nv: int, 
+        nh: int, 
+        params0toMoments: ConvertParams0ToNMomentsGaussLayer,
+        rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
+        **kwargs
+        ):
+        """Calculate inputs from different reaction approximations in a single layer. 
+
+        Args:
+            nv (int): No. visible species
+            nh (int): No. hidden species
+            params0toMoments (Convertparams0toMomentsLayer): Layer that converts params0 to moments
+            rxn_specs (List[Union[Tuple[str,int],Tuple[str,int,int]]]): List of reaction specifications of tuples.
+                First arguments is one of "BIRTH", "DEATH" or "EAT"
+                Second/third argument are the index of the species undergoing the reaction
+                e.g. ("EAT",3,2) is the Predator-Prey reaction for species #3 being the huner, species #2 the prey
+
+        Raises:
+            ValueError: If reaaction string is not recognized
+        """
+        # Super
+        super(RxnInputsGaussLayer, self).__init__(**kwargs)
+        
+        self.nv = nv
+        self.nh = nh
+
+        self.params0toMoments = params0toMoments
+        self.momentsTEtoParams0TE = ConvertMomentsTEtoParams0TEGaussLayer(nv=nv,nh=nh)
+
+        self.rxn_specs = rxn_specs
+        self.rxns = []
+        for spec in rxn_specs:
+            if spec[0] == "EAT":
+                rtype, i_hunter, i_prey = spec
+            else:
+                rtype, i_sp = spec
+
+            if rtype == "BIRTH":
+                self.rxns.append(BirthRxnLayer(nv, nh, i_sp))
+            elif rtype == "DEATH":
+                self.rxns.append(DeathRxnLayer(nv, nh, i_sp))
+            elif rtype == "EAT":
+                self.rxns.append(EatRxnLayer(nv,nh,i_hunter,i_prey))
+            else:
+                raise ValueError("Rxn type: %s not recognized" % rtype)
+    
+    @classmethod
+    def construct(cls, 
+        nv: int, 
+        nh: int,
+        freqs : np.array,
+        muh_sin_coeffs_init : np.array,
+        muh_cos_coeffs_init : np.array,
+        cholhv_sin_coeffs_init : np.array,
+        cholhv_cos_coeffs_init : np.array,
+        cholh_sin_coeffs_init : np.array,
+        cholh_cos_coeffs_init : np.array,
+        non_zero_idx_pairs_vv: List[Tuple[int,int]],
+        non_zero_idx_pairs_hv: List[Tuple[int,int]],
+        non_zero_idx_pairs_hh: List[Tuple[int,int]],
+        rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
+        **kwargs
+        ):
+        
+        params0toMoments = ConvertParams0ToNMomentsGaussLayer.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            cholhv_sin_coeffs_init=cholhv_sin_coeffs_init,
+            cholhv_cos_coeffs_init=cholhv_cos_coeffs_init,
+            cholh_sin_coeffs_init=cholh_sin_coeffs_init,
+            cholh_cos_coeffs_init=cholh_cos_coeffs_init,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv,
+            non_zero_idx_pairs_hv=non_zero_idx_pairs_hv,
+            non_zero_idx_pairs_hh=non_zero_idx_pairs_hh
+            )
+
+        return cls(
+            nv=nv,
+            nh=nh,
+            params0toMoments=params0toMoments,
+            rxn_specs=rxn_specs,
+            **kwargs
+            )
+
+    def get_config(self):
+        config = super(RxnInputsGaussLayer, self).get_config()
+
+        config.update({
+            "nv": self.nv,
+            "nh": self.nh,
+            "params0toMoments": self.params0toMoments,
+            "rxn_specs": self.rxn_specs
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+    def call(self, inputs):
+        moments = self.params0toMoments(inputs)
+        batch_size = tf.shape(moments["cov"])[0]
+
+        # Compute reactions
+        params0TEforRxns = []
+        for i in range(0,len(self.rxns)):
+            # print("--- Rxn idx: %d ---" % i)
+
+            momentsTE = self.rxns[i](moments)
+
+            # Convert nMomentsTE to params0TE
+            momentsTE.update(moments)
+            params0TE = self.momentsTEtoParams0TE(momentsTE)
+
+            # Flatten
+            # Reshape (batch_size, a, b) into (batch_size, a*b) for each thing in the dict
+            idxs = np.triu_indices(self.nv)
+            cholv_TE_std_vec = params0TE["cholv_TE_std"][:,idxs]
+            params0TEarr = [
+                tf.reshape(cholv_TE_std_vec, (batch_size, self.nv*(self.nv+1)/2)),
+                tf.reshape(params0TE["muv_TE"], (batch_size, self.nv))
+                ]
+
+            # Combine different tensors of size (batch_size, a), (batch_size, b), ... 
+            # into one of (batch_size, a+b+...)
+            params0TEflat = tf.concat(params0TEarr, 1)
+
+            # Store
+            params0TEforRxns.append(params0TEflat)
+
+        # Flatten all reactions
+        # Combine different tensors of size (batch_size, a), (batch_size, b), ... 
+        # into one of (batch_size, a+b+...)
+        params0TE = tf.concat(params0TEforRxns, 1)
+
+        return params0TE

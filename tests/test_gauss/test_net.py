@@ -2,8 +2,9 @@ from helpers_test import SingleLayerModel
 from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
-            ConvertParams0ToMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer, \
-                ConvertParamsTEtoParams0TEGaussLayer, ConvertMomentsTEtoParams0TEGaussLayer
+            ConvertParams0ToNMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer, \
+                ConvertParamsTEtoParams0TEGaussLayer, ConvertMomentsTEtoParams0TEGaussLayer, \
+                    RxnInputsGaussLayer
 
 # Depreciation warnings
 import warnings
@@ -330,7 +331,7 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    def test_params0_to_moments(self):
+    def test_params0_to_nmoments(self):
 
         nv = 3
         nh = 2
@@ -357,7 +358,7 @@ class TestNetGauss:
         chol_v1_non_zero = np.array([3.0, 5.0, 8.0, -3.0, 4.0])
         chol_v1_non_zero = tile_vec(chol_v1_non_zero,batch_size)
 
-        lyr = ConvertParams0ToMomentsGaussLayer.construct(
+        lyr = ConvertParams0ToNMomentsGaussLayer.construct(
             nv=nv,
             nh=nh,
             freqs=freqs,
@@ -386,12 +387,12 @@ class TestNetGauss:
     
         x_out_true = {
             "mu": np.array([10., 8., 4., -3.31234, -3.31234]),
-            "cov": np.array([
-                [0.178928, -0.0406901, -0.0390625, 0.0145602, -0.0235366], 
-                [-0.0406901, 0.0244141, 0.0234375, 0.0146872, 0.0], 
-                [-0.0390625, 0.0234375, 0.0625, 0.0188108, 0.0],
-                [0.0145602, 0.0146872, 0.0188108, 0.0550201, -0.02751],
-                [-0.0235366, 0.0, 0.0, -0.02751, 0.02751]
+            "ncov": np.array([
+                [100.179, 79.9593, 39.9609, -33.1088, -33.1469], 
+                [79.9593, 64.0244, 32.0234, -26.484, -26.4987], 
+                [39.9609, 32.0234, 16.0625, -13.2305, -13.2494], 
+                [-33.1088, -26.484, -13.2305, 11.0266, 10.9441], 
+                [-33.1469, -26.4987, -13.2494, 10.9441, 10.9991]
             ])
         }
 
@@ -601,5 +602,73 @@ class TestNetGauss:
             }
 
         self.assert_equal_dicts(x_out,x_out_true)
+
+        self.save_load_model(lyr, x_in)
+
+    def test_rxn_inputs(self):
+
+        nv = 3
+        nh = 2
+
+        i_birth = 0
+        i_death = 1
+        i_predator = 1
+        i_prey = 0
+
+        freqs = np.array([1.,2.,3.])
+        muh_cos_coeffs_init = np.array([2.,5.,3.])
+        muh_sin_coeffs_init = np.array([3.,6.,1.])
+        cholhv_cos_coeffs_init = np.array([1.,8.,4.])
+        cholhv_sin_coeffs_init = np.array([4.,5.,4.])
+        cholh_cos_coeffs_init = np.array([8.,10.,9.])
+        cholh_sin_coeffs_init = np.array([3.,7.,8.])
+
+        batch_size = 2
+
+        non_zero_idx_pairs_vv = [(0,0),(1,0),(1,1),(2,1),(2,2)]
+        non_zero_idx_pairs_hv = [(0,0),(0,1),(0,2),(1,1),(1,2)]
+        non_zero_idx_pairs_hh = [(0,0),(1,0),(1,1)]
+        
+        mu_v1 = np.array([10,3,4])
+        mu_v1 = tile_vec(mu_v1,batch_size)
+
+        chol_v1_non_zero = np.array([3.0, 5.0, 8.0, 4.0, 7.0])
+        chol_v1_non_zero = tile_vec(chol_v1_non_zero,batch_size)
+
+        tpt = np.full(batch_size,3-1) # zero indexed
+
+        rxn_specs = [
+            ("BIRTH",i_birth),
+            ("DEATH",i_death),
+            ("EAT",i_predator,i_prey)
+        ]
+
+        lyr = RxnInputsGaussLayer.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=muh_sin_coeffs_init,
+            muh_cos_coeffs_init=muh_cos_coeffs_init,
+            cholhv_cos_coeffs_init=cholhv_cos_coeffs_init,
+            cholhv_sin_coeffs_init=cholhv_sin_coeffs_init,
+            cholh_cos_coeffs_init=cholh_cos_coeffs_init,
+            cholh_sin_coeffs_init=cholh_sin_coeffs_init,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv,
+            non_zero_idx_pairs_hv=non_zero_idx_pairs_hv,
+            non_zero_idx_pairs_hh=non_zero_idx_pairs_hh,
+            rxn_specs=rxn_specs
+            )
+
+        # Input
+        x_in = {
+            "tpt": tf.constant(tpt, dtype='float32'),
+            "mu_v": tf.constant(mu_v1, dtype="float32"),
+            "chol_v_non_zero": tf.constant(chol_v1_non_zero, dtype="float32")
+            }
+    
+        # Output
+        x_out = lyr(x_in)
+        
+        print(x_out)
 
         self.save_load_model(lyr, x_in)
