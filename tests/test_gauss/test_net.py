@@ -3,7 +3,7 @@ from physDBD.gauss import FourierLatentGaussLayer, \
     ConvertParamsGaussLayer, ConvertParamsGaussLayerFrom0, \
         ConvertParams0ToParamsGaussLayer, ConvertParamsToMomentsGaussLayer, \
             ConvertParams0ToNMomentsGaussLayer, ConvertMomentsTEtoParamsTEGaussLayer, \
-                ConvertParamsTEtoParams0TEGaussLayer, ConvertMomentsTEtoParams0TEGaussLayer, \
+                ConvertParamsTEtoParams0TEGaussLayer, ConvertNMomentsTEtoParams0TEGaussLayer, \
                     RxnInputsGaussLayer
 
 # Depreciation warnings
@@ -539,7 +539,7 @@ class TestNetGauss:
 
         self.save_load_model(lyr, x_in)
 
-    def test_convert_momentsTE_to_params0TE(self):
+    def test_convert_nmomentsTE_to_params0TE(self):
 
         nv = 3
         nh = 2
@@ -558,7 +558,7 @@ class TestNetGauss:
 
         muTE = np.array([4,2,3,3,1])
 
-        covTE = np.array([
+        ncovTE = np.array([
             [4,6,2,8,9],
             [6,7,4,3,9],
             [2,4,6,8,9],
@@ -566,24 +566,28 @@ class TestNetGauss:
             [9,9,9,6,3]
         ])
 
+        mu = np.array([1,2,5,4,2])
+
         chol_hv = chol[nv:,:nv]
         amat = np.eye(nv) - np.dot(np.transpose(chol_hv),np.dot(prec_h_inv,chol_hv))
         chol_amat = np.linalg.cholesky(amat)
 
+        mu = tile_vec(mu,batch_size)
         chol = tile_mat(chol,batch_size)
         prec_h = tile_mat(prec_h,batch_size)
         muTE = tile_vec(muTE,batch_size)
-        covTE = tile_mat(covTE,batch_size)
+        ncovTE = tile_mat(ncovTE,batch_size)
         chol_amat = tile_mat(chol_amat,batch_size)
 
-        lyr = ConvertMomentsTEtoParams0TEGaussLayer(nv=nv, nh=nh)
+        lyr = ConvertNMomentsTEtoParams0TEGaussLayer(nv=nv, nh=nh)
 
         # Input
         x_in = {
+            "mu": tf.constant(mu, dtype="float32"),
             "prec_h": tf.constant(prec_h, dtype="float32"),
             "chol_amat": tf.constant(chol_amat, dtype="float32"),
             "muTE": tf.constant(muTE, dtype="float32"),
-            "covTE": tf.constant(covTE, dtype="float32"),
+            "ncovTE": tf.constant(ncovTE, dtype="float32"),
             "chol": tf.constant(chol, dtype="float32")
             }
 
@@ -595,9 +599,9 @@ class TestNetGauss:
         x_out_true = {
             "muv_TE": np.array([4,2,3]),
             "cholv_TE_std": np.array([
-                [-101.285706, 0., 0.], 
-                [-143.94946, -65.553345, 0.], 
-                [-179.96094, -83.13623, -0.28163147]
+                [244.34082, 0., 0.], 
+                [433.17188, 167.59253, 0.], 
+                [549.1118, 216.91577, 1.1309357]
                 ])
             }
 

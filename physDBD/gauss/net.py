@@ -1,5 +1,5 @@
 from ..net_common import unit_mat, BirthRxnLayer, DeathRxnLayer, \
-    EatRxnLayer, ConvertMomentsToNMomentsLayer
+    EatRxnLayer, ConvertMomentsToNMomentsLayer, ConvertNMomentsTEtoMomentsTE
 
 import tensorflow as tf
 
@@ -707,21 +707,22 @@ class ConvertParamsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
             }
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
-class ConvertMomentsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
+class ConvertNMomentsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
 
     def __init__(self, nv: int, nh: int, **kwargs):
 
         # Super
-        super(ConvertMomentsTEtoParams0TEGaussLayer, self).__init__(**kwargs)
+        super(ConvertNMomentsTEtoParams0TEGaussLayer, self).__init__(**kwargs)
         
         self.nv = nv
         self.nh = nh
 
+        self.nMomentsTEtoMomentsTE = ConvertNMomentsTEtoMomentsTE()
         self.momentsTEtoParamsTE = ConvertMomentsTEtoParamsTEGaussLayer(nv,nh)
         self.paramsTEtoParams0TE = ConvertParamsTEtoParams0TEGaussLayer(nv,nh)
 
     def get_config(self):
-        config = super(ConvertMomentsTEtoParams0TEGaussLayer, self).get_config()
+        config = super(ConvertNMomentsTEtoParams0TEGaussLayer, self).get_config()
         config.update({
             "nv": self.nv,
             "nh": self.nh
@@ -733,7 +734,10 @@ class ConvertMomentsTEtoParams0TEGaussLayer(tf.keras.layers.Layer):
         return cls(**config)
 
     def call(self, inputs):
-        outputs1 = self.momentsTEtoParamsTE(inputs)
+        outputs0 = self.nMomentsTEtoMomentsTE(inputs)
+
+        outputs0.update(inputs)
+        outputs1 = self.momentsTEtoParamsTE(outputs0)
 
         chol_TE = outputs1["cholTE"]
         chol_v_TE = chol_TE[:,:self.nv,:self.nv]
@@ -791,7 +795,7 @@ class RxnInputsGaussLayer(tf.keras.layers.Layer):
         self.nh = nh
 
         self.params0toMoments = params0toMoments
-        self.momentsTEtoParams0TE = ConvertMomentsTEtoParams0TEGaussLayer(nv=nv,nh=nh)
+        self.momentsTEtoParams0TE = ConvertNMomentsTEtoParams0TEGaussLayer(nv=nv,nh=nh)
 
         self.rxn_specs = rxn_specs
         self.rxns = []
