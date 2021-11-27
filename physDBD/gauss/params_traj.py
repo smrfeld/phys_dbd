@@ -4,7 +4,7 @@ from ..helpers import convert_np_to_pd
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 import tensorflow as tf
 
 class ParamsGaussTETraj:
@@ -30,16 +30,6 @@ class ParamsGaussTraj:
         no_steps: int,
         constant_vals_lf: Dict[str,float]
         ):
-        """Construct the trajectory by integrating
-
-        Args:
-            paramsTE_traj (ParamsGaussTETraj): Time evolution of the params to integrate
-            params_init (ParamsGauss): Initial params
-            tpt_start (int): Timepoint to start at (index in paramsTE_traj, NOT real time)
-            no_steps (int): No. steps to integrate for
-            constant_vals_lf: Dict[str,float]: Values that are constant. Keys are in the long form format, i.e.
-                wt00, wt01, ..., b0, b1, ..., sig2, muh0, muh1, ..., varh_diag0, varh_diag1, ...
-        """
 
         assert no_steps > 0
 
@@ -85,40 +75,9 @@ class ParamsGaussTraj:
             times=times,
             params_traj=params_traj
             )
-            
-    def get_tf_inputs_assuming_params0(self) -> Dict[str, np.array]:
-        """Get TF inputs assuming these are params0 objects that have muh=0,varh_diag=1
-
-        Returns:
-            Dict[str, np.array]: Keys are "wt", "b", "sig2", values are arrays of the corresponding values.
-        """
-        inputs = {}
-        for tpt in range(0,len(self.params_traj)-1): # Take off one to match derivatives
-
-            # Get input
-            input0 = self.params_traj[tpt].get_tf_input_assuming_params0(tpt)
-            
-            # Put into dict
-            for key, val in input0.items():
-                if not key in inputs:
-                    inputs[key] = []
-                inputs[key].append(val[0])
-
-        # Convert lists to np arrays
-        for key, val in inputs.items():
-            inputs[key] = np.array(val)
-
-        return inputs
 
     @classmethod
     def fromDataStd(cls, data: np.array, times: np.array, nh: int):
-        """Construct from applying PCA to data array
-
-        Args:
-            data (np.array): Data array of size (no_times, no_seeds, no_species)
-            times (np.array): 1D array of times (real-time)
-            nh (int): No. hidden species
-        """
         params_traj = []
         for data0 in data:
             params = ParamsGauss.fromDataStd(data0, nh)
@@ -162,12 +121,6 @@ class ParamsGaussTraj:
         return self.params_traj[0].nh
 
     def convert_to_lf_dict(self) -> Dict[str,np.array]:
-        """Convert to long form dictionary.
-
-        Returns:
-            Dict[str,np.array]: Keys are wt00, wt01, ..., b0, b1, ..., sig2, muh0, muh1, ..., varh_diag0, varh_diag1, ...
-                Values are the arrays of length T = no. timepoints
-        """
         lf_dict = {}
         for params in self.params_traj:
             lf = params.to_lf_dict()
@@ -273,18 +226,7 @@ class ParamsGaussTraj:
         no_opt_steps: int, 
         non_zero_vals: List[str] = []
         ) -> ParamsGaussTETraj:
-        """Differentiate the trajectory using TVR = total variation regularization
 
-        Args:
-            alphas (Dict[str,float]): Dictionary of alpha values = regularizatin values. 
-                Keys = long form = wt00, wt11, ..., b0, b1, ..., sig2, muh0, muh1, ..., varh_diag0, varh_diag1, ...
-            no_opt_steps (int): No opt. steps to run for each
-            non_zero_vals (List[str], optional): If provided, only these long form values (wt00,wt01,etc) will be 
-                differentiated and the others will be zero; otherwise, all will be differentiated. Defaults to [].
-
-        Returns:
-            ParamsGaussTETraj: [description]
-        """
         n = len(self.params_traj)
 
         diff_tvr = DiffTVR(n=n,dx=1.0)

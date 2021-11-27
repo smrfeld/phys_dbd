@@ -1,7 +1,7 @@
 from ..helpers import dc_eq
 
 import numpy as np
-from typing import Dict
+from typing import Dict, List, Tuple
 
 from dataclasses import dataclass
 
@@ -177,21 +177,6 @@ class ParamsGauss:
     @property
     def cov(self) -> np.array:
         return np.linalg.inv(self.prec)
-
-    def get_tf_input_assuming_params0(self, tpt: int) -> Dict[str, np.array]:
-        """Get TF input assuming these are std. params with muh=0, varh = I
-
-        Args:
-            tpt (int): Timepoint (not real time)
-
-        Returns:
-            Dict[str, np.array]: Keys = "tpt", "mu", "chol"; values are the arrays/floats
-        """
-        return {
-            "tpt": np.array([tpt]).astype(float),
-            "mu": np.array([self.mu]),
-            "chol": np.array([self.chol])
-            }
 
     @classmethod
     def addParamsGaussLF(cls, params, paramsLF: ParamsGaussLF):

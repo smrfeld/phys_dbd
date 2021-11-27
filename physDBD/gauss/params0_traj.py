@@ -4,7 +4,7 @@ from ..diff_tvr import DiffTVR
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 import tensorflow as tf
 
 class Params0GaussTraj:
@@ -27,16 +27,6 @@ class Params0GaussTraj:
         no_steps: int,
         constant_vals_lf: Dict[str,float]
         ):
-        """Construct the trajectory by integrating
-
-        Args:
-            dparams0_traj (DParams0GaussTraj): Time evolution of the params to integrate
-            params0_init (Params0Gauss): Initial params
-            tpt_start (int): Timepoint to start at (index in params0TE_traj, NOT real time)
-            no_steps (int): No. steps to integrate for
-            constant_vals_lf: Dict[str,float]: Values that are constant. Keys are in the long form format, i.e.
-                wt00, wt01, ..., b0, b1, ..., sig2, muh0, muh1, ..., varh_diag0, varh_diag1, ...
-        """
 
         assert no_steps > 0
 
@@ -76,17 +66,15 @@ class Params0GaussTraj:
             params0_traj=params0_traj
             )
             
-    def get_tf_inputs(self) -> Dict[str, np.array]:
-        """Get TF inputs assuming these are params0 objects that have muh=0,varh_diag=1
-
-        Returns:
-            Dict[str, np.array]: Keys are "wt", "b", "sig2", values are arrays of the corresponding values.
-        """
+    def get_tf_inputs(self, non_zero_idxs_vv: List[Tuple[int,int]]) -> Dict[str, np.array]:
         inputs = {}
         for tpt in range(0,len(self.params0_traj)-1): # Take off one to match derivatives
 
             # Get input
-            input0 = self.params0_traj[tpt].get_tf_input(tpt)
+            input0 = self.params0_traj[tpt].get_tf_input(
+                tpt=tpt, 
+                non_zero_idxs_vv=non_zero_idxs_vv
+                )
             
             # Put into dict
             for key, val in input0.items():
@@ -200,18 +188,6 @@ class Params0GaussTraj:
         no_opt_steps: int, 
         non_zero_vals: List[str] = []
         ) -> DParams0GaussTraj:
-        """Differentiate the trajectory using TVR = total variation regularization
-
-        Args:
-            alphas (Dict[str,float]): Dictionary of alpha values = regularizatin values. 
-                Keys = long form = wt00, wt11, ..., b0, b1, ..., sig2, muh0, muh1, ..., varh_diag0, varh_diag1, ...
-            no_opt_steps (int): No opt. steps to run for each
-            non_zero_vals (List[str], optional): If provided, only these long form values (wt00,wt01,etc) will be 
-                differentiated and the others will be zero; otherwise, all will be differentiated. Defaults to [].
-
-        Returns:
-            Params0GaussTETraj: [description]
-        """
         n = len(self.params0_traj)
 
         diff_tvr = DiffTVR(n=n,dx=1.0)
