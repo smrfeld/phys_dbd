@@ -27,10 +27,10 @@ class RxnGaussModel(tf.keras.Model):
             non_zero_outputs_use = []
             for i in range(0,nv):
                 for j in range(0,i+1):
-                    s = "chol_v_%d_%d_TE" % (i,j)
+                    s = "dchol_v_%d_%d" % (i,j)
                     non_zero_outputs_use.append(s)
             for i in range(0,nv):
-                s = "mu_v_%d" % i
+                s = "dmu_v_%d" % i
                 non_zero_outputs_use.append(s)
         else:
             non_zero_outputs_use = non_zero_outputs
