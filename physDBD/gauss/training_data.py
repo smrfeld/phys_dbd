@@ -20,7 +20,7 @@ def join_dicts(existing_dict, new_dict):
             existing_dict[key] = np.concatenate((existing_dict[key],val))
     return existing_dict
 
-class DataType(Enum):
+class DataTypeGauss(Enum):
     TRAINING = 0
     VALIDATION = 1
 
@@ -56,7 +56,7 @@ class TrainingGaussData:
 
     def reap_params0_traj_for_inputs(self, 
         params0_traj: Params0GaussTraj, 
-        data_type: DataType,
+        data_type: DataTypeGauss,
         non_zero_idx_pairs_vv: List[Tuple[int,int]]
         ):
         """Reap inputs from a ParamTraj at all timepoints by calling get_tf_inputs_assuming_params0
@@ -68,14 +68,14 @@ class TrainingGaussData:
             non_zero_idx_pairs_vv (List[Tuple[int,int]]): Non-zero idx pairs in visible part of precision matrix
         """
         inputs0 = params0_traj.get_tf_inputs(non_zero_idx_pairs_vv)
-        if data_type == DataType.TRAINING:
+        if data_type == DataTypeGauss.TRAINING:
             self.train_inputs = join_dicts(self.train_inputs, inputs0)
-        elif data_type == DataType.VALIDATION:
+        elif data_type == DataTypeGauss.VALIDATION:
             self.valid_inputs = join_dicts(self.valid_inputs, inputs0)
 
-    def reap_dparams0_traj_for_ouputs(self, 
+    def reap_dparams0_traj_for_outputs(self, 
         dparams0_traj: DParams0GaussTraj, 
-        data_type: DataType, 
+        data_type: DataTypeGauss, 
         non_zero_outputs: List[str] = []
         ):
         """Reap outputs from a DParams0GaussTraj at all timepoints by calling get_tf_outputs_assuming_params0
@@ -86,10 +86,9 @@ class TrainingGaussData:
             non_zero_outputs (List[str]): See DParams0GaussTraj.get_tf_outputs. Defaults to [].
         """
         outputs0 = dparams0_traj.get_tf_outputs(non_zero_outputs=non_zero_outputs)
-        print(outputs0)
-        if data_type == DataType.TRAINING:
+        if data_type == DataTypeGauss.TRAINING:
             self.train_outputs_not_stdrd = join_dicts(self.train_outputs_not_stdrd, outputs0)
-        elif data_type == DataType.VALIDATION:
+        elif data_type == DataTypeGauss.VALIDATION:
             self.valid_outputs_not_stdrd = join_dicts(self.valid_outputs_not_stdrd, outputs0)
 
     def calculate_output_standardizations_and_apply(self, percent: float):

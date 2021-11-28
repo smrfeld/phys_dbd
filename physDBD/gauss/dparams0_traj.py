@@ -18,6 +18,16 @@ class DParams0GaussTraj:
         self.dparams0_traj = dparams0_traj
         self.times = times
 
+    def __eq__(self, other):
+        if self.nt != other.nt: 
+            return False
+
+        for i in range(0,self.nt):
+            if self.dparams0_traj[i] != other.dparams0_traj[i]:
+                return False
+
+        return True
+    
     @property
     def nt(self) -> int:
         """No. timepoints

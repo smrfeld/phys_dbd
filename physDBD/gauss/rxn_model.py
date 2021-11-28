@@ -1,6 +1,6 @@
 from .net import RxnInputsGaussLayer
-from .params import ParamsGauss
-from .params_traj import ParamsGaussTraj
+from .params0 import Params0Gauss
+from .params0_traj import Params0GaussTraj
 
 import tensorflow as tf
 import numpy as np
@@ -101,31 +101,31 @@ class RxnGaussModel(tf.keras.Model):
         return cls(**config)
 
     def integrate(self, 
-        params_start: ParamsGauss, 
+        params0_start: Params0Gauss, 
         tpt_start: int, 
         no_steps: int,
         time_interval: float,
         output_mean : np.array,
         output_std_dev : np.array
-        ) -> ParamsGaussTraj:
+        ) -> Params0GaussTraj:
         """Integrate starting from initial params
 
         Args:
-            params_start (ParamsGauss): Initial params (should be params0 = std. params)
+            params0_start (Params0Gauss): Initial params (should be params0 = std. params)
             tpt_start (int): Initial timepoint (index, NOT real time)
             no_steps (int): No. steps to integrate for.
-            time_interval (float): Time interval (real time). Only used to construct the list of times in the ParamsGaussTraj returned.
+            time_interval (float): Time interval (real time). Only used to construct the list of times in the Params0GaussTraj returned.
             output_mean (np.array): Output means to undo the normalization.
             output_std_dev (np.array): Output std. devs. to undo the normalization.
 
         Returns:
-            ParamsGaussTraj: Parameter trajectory integrated.
+            Params0GaussTraj: Parameter trajectory integrated.
         """
 
         interval_print = int(no_steps / 10.0)
 
         tpts_traj = [tpt_start]
-        params_traj = [params_start]
+        params_traj = [params0_start]
         for step in range(0,no_steps):
             if step % interval_print == 0:
                 print("%d / %d ..." % (step,no_steps))
@@ -143,7 +143,7 @@ class RxnGaussModel(tf.keras.Model):
             
             # Add to params
             tpt_new = tpt_curr + 1
-            params_new = ParamsGauss.addLFdict(
+            params_new = Params0Gauss.addLFdict(
                 params=params_traj[-1],
                 lf_dict=output0
                 )
@@ -151,12 +151,16 @@ class RxnGaussModel(tf.keras.Model):
             params_traj.append(params_new)
             tpts_traj.append(tpt_new)
 
-        return ParamsGaussTraj(
+        return Params0GaussTraj(
             times=time_interval*np.array(tpts_traj),
             params_traj=params_traj
             )
 
-    def calculate_rxn_normalization(self, rxn_lyr: RxnInputsGaussLayer, inputs, percent: float):
+    def calculate_rxn_normalization(self, 
+        rxn_lyr: RxnInputsGaussLayer, 
+        inputs, 
+        percent: float
+        ):
         """Calculate reaction normalization. 
             If there are a lot of reactions, this can take a while.
             To speed it up, use a smaller percent value.

@@ -41,7 +41,6 @@ class TestDParams0Gauss:
         assert lf_dict["dchol_v_1_0"] == 0.8
         assert lf_dict["dchol_v_1_1"] == 0.9
 
-
     def test_fromLFdict(self):
         dp = DParams0Gauss(
             nv=2,
