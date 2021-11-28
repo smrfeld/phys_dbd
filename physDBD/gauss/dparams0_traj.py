@@ -103,7 +103,7 @@ class DParams0GaussTraj:
         data["t"] = self.times
 
         lf_dicts = [params0.to_lf_dict() for params0 in self.dparams0_traj]
-        for key in lf_dicts[0].lf.keys():
+        for key in lf_dicts[0].keys():
             data[key] = [lf[key] for lf in lf_dicts]
         
         return pd.DataFrame.from_dict(data)
@@ -150,3 +150,17 @@ class DParams0GaussTraj:
             dparams0_traj.append(dparams0)
 
         return cls(times,dparams0_traj)
+
+    @classmethod
+    def fromLFdict(cls, times: np.array, lf_dict: Dict[str,np.array], nv: int):
+        # Iterate, create
+        paramsTE_traj = []
+        for i in range(0,len(times)):
+            lf = {}
+            for key,vals in lf_dict.items():
+                lf[key] = vals[i]
+            
+            paramsTE = DParams0Gauss.fromLFdict(lf, nv)
+            paramsTE_traj.append(paramsTE)
+
+        return cls(times, paramsTE_traj)

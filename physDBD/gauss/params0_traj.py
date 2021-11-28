@@ -198,12 +198,12 @@ class Params0GaussTraj:
 
         lf_derivs = {}
         
-        for key in params0LF_traj[0].lf.keys():
+        for key in params0LF_traj[0].keys():
             if len(non_zero_vals) == 0 or key in non_zero_vals:
                 
-                arr = np.array([p0.lf[key] for p0 in params0LF_traj])
+                arr = np.array([p0[key] for p0 in params0LF_traj])
 
-                lf_derivs[key] = diff_tvr.get_deriv_tvr(
+                lf_derivs["d"+key] = diff_tvr.get_deriv_tvr(
                     data=arr,
                     deriv_guess=deriv_guess,
                     alpha=alphas[key],
@@ -214,10 +214,10 @@ class Params0GaussTraj:
             else:
 
                 # Zero
-                lf_derivs[key] = np.zeros(n-1)
+                lf_derivs["d"+key] = np.zeros(n-1)
 
         return DParams0GaussTraj.fromLFdict(
             times=self.times[:-1], 
-            lf=lf_derivs, 
+            lf_dict=lf_derivs, 
             nv=self.nv
             )

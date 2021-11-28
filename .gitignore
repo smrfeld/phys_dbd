@@ -1,3 +1,5 @@
+data/
+data_gillespie/
 .texpadtmp
 .gitignore~
 trained_compare/

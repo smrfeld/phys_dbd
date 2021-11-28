@@ -29,7 +29,7 @@ class DParams0Gauss:
         for i in range(0,self.nv):
             for j in range(0,i+1):
                 s = "dchol_v_%d_%d" % (i,j)
-                lf[s] = self.chol_v[i,j]
+                lf[s] = self.dchol_v[i,j]
         
         return lf
 

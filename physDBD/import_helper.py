@@ -11,22 +11,25 @@ class ImportHelper:
     @staticmethod
     def create_fnames(
         data_dir: str,
-        no_seeds: int
+        no_seeds: int,
+        zero_padding: int
         ) -> List[str]:
         """Create fnames for different seeds with zero padding 4
 
         Args:
             data_dir (str): Data directory
             no_seeds (int): No seeds
+            zero_padding (int): Zero padding for fnames
 
         Returns:
             List[str]: List of filenames
         """
 
         # Construct fnames
+        fstr = "%0" + str(zero_padding) + "d.txt"
         fnames = []
         for seed in range(0,no_seeds):
-            fname = os.path.join(data_dir,"%04d.txt" % seed)
+            fname = os.path.join(data_dir,fstr % seed)
             fnames.append(fname)
 
         return fnames
@@ -34,19 +37,21 @@ class ImportHelper:
     @staticmethod
     def import_gillespie_ssa_from_data_desc(
         data_desc: DataDesc, 
-        data_dir: str
+        data_dir: str,
+        zero_padding: int
         ) -> np.array:
         """Import Gillespie SSA data
 
         Args:
             data_desc (DataDesc): Data description
             data_dir (str): Data directory
+            zero_padding (int): Zero padding for fnames
 
         Returns:
             np.array: Numpy array of size (no_times, no_seeds, no_species)
         """
 
-        fnames = ImportHelper.create_fnames(data_dir,data_desc.no_seeds)
+        fnames = ImportHelper.create_fnames(data_dir,data_desc.no_seeds,zero_padding)
 
         no_tpts = len(data_desc.times)
 
