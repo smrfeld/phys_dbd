@@ -1,7 +1,7 @@
 from ..helpers import dc_eq
 
 import numpy as np
-from typing import Dict
+from typing import Dict, List
 
 from dataclasses import dataclass
 
@@ -19,6 +19,29 @@ class DParams0Gauss:
         self.dmu_v = dmu_v
         self.dchol_v = dchol_v
 
+    def get_tf_output(self, 
+        non_zero_outputs : List[str] = []
+        ) -> Dict[str, np.array]:
+        out = {}
+        if len(non_zero_outputs) == 0:
+            for i in range(0,self.nv):
+                out["dmu_v_%d" % i] = self.dmu_v[i]
+            for i in range(0,self.nv):
+                for j in range(0,i+1):
+                    out["dchol_v_%d_%d" % (i,j)] = self.dchol_v[i,j]
+        
+        else:
+            for s in non_zero_outputs:
+                if s[:6] == "chol_v":
+                    i = int(s[7])
+                    j = int(s[9])
+                    out[s] = self.dchol_v[i,j]
+                elif s[:4] == "mu_v":
+                    i = int(s[5])
+                    out[s] = self.dmu_v[i]
+
+        return out
+    
     def to_lf_dict(self):
         lf = {}
         

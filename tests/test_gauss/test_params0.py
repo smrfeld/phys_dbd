@@ -1,73 +1,140 @@
-from physDBD import Params0Gauss, ImportHelper, Params0GaussTraj
+from physDBD import Params0Gauss, ImportHelper, DParams0Gauss
 import numpy as np
 import os
 import tensorflow as tf
 
+# Depreciation warnings
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
 class TestParams0Gauss:
 
-    fnames = [
-        "../data_test/0000.txt",
-        "../data_test/0001.txt",
-        "../data_test/0002.txt",
-        "../data_test/0003.txt",
-        "../data_test/0004.txt"
-        ]
-    species = ["ca2i","ip3"]
     nv = 2
 
+    def assert_equal_arrs(self, x_out, x_out_true):
+        tol = 5.e-4
+        assert np.max(abs(x_out-x_out_true)) < tol
+
     def import_params(self, time: float) -> Params0Gauss:
+        fnames = [
+            "../data_test/0000.txt",
+            "../data_test/0001.txt",
+            "../data_test/0002.txt",
+            "../data_test/0003.txt",
+            "../data_test/0004.txt"
+            ]
+        species = ["ca2i","ip3"]
+
         data = ImportHelper.import_gillespie_ssa_at_time(
-            fnames=self.fnames,
+            fnames=fnames,
             time=time,
-            species=self.species
+            species=species
         )
 
         params = Params0Gauss.fromData(data)
         return params
 
-    def create_params_traj(self) -> Params0GaussTraj:
-        return Params0GaussTraj(
-            times=np.array([0.2,0.3,0.4,0.5,0.6,0.7]),
-            params0_traj=[
-                self.import_params(0.2),
-                self.import_params(0.3),
-                self.import_params(0.4),
-                self.import_params(0.5),
-                self.import_params(0.6),
-                self.import_params(0.7)
-                ]
+    def test_fromData(self):
+        params = self.import_params(0.4)
+        self.assert_equal_arrs(params.mu_v, np.array([698.2, 601.6]))
+        self.assert_equal_arrs(params.chol_v, np.array([
+            [39.92117233,  0.        ],
+            [ 5.20651043,  5.49474742]
+            ]))
+
+    def test_to_lf_dict(self):
+        params = self.import_params(0.4)
+        lf_dict = params.to_lf_dict()
+        assert lf_dict["mu_v_0"] == 698.2
+        assert lf_dict["mu_v_1"] == 601.6
+        assert lf_dict["chol_v_0_0"] == 39.92117232747555
+        assert lf_dict["chol_v_1_0"] == 5.206510427474302
+        assert lf_dict["chol_v_1_1"] == 5.494747416269592
+
+    def test_fromLFdict(self):
+        params = self.import_params(0.4)
+        lf_dict = params.to_lf_dict()
+        params1 = Params0Gauss.fromLFdict(lf_dict, nv=self.nv)
+        assert params == params1
+
+    def test_nv(self):
+        params = self.import_params(0.4)
+        assert params.nv == self.nv
+
+    def test_chol_v_non_zero(self):
+        params = self.import_params(0.4)
+        non_zero_idx_pairs_vv = [(0,0),(1,0),(1,1)]
+        chol_v_non_zero = params.chol_v_non_zero(non_zero_idx_pairs_vv)
+        self.assert_equal_arrs(
+            chol_v_non_zero,
+            np.array([39.92117233,  5.20651043,  5.49474742])
             )
 
-    def test_params(self):
+    def test_prec_v(self):
         params = self.import_params(0.4)
-
-    def test_export(self):
-        pt = self.create_params_traj()
-        fname = "cache_params.txt"
-        pt.export(fname)
-
-        # import back
-        pt_back = Params0GaussTraj.fromFile(fname,nv=self.nv)
-
-        # Check
-        assert len(pt.params0_traj) == len(pt_back.params0_traj)
-        for i in range(0,len(pt.params0_traj)):
-            assert pt.params0_traj[i] == pt_back.params0_traj[i]
-
-        if os.path.exists(fname):
-            os.remove(fname)
-
-    def test_tf_input(self):
+        self.assert_equal_arrs(params.prec_v, np.array([
+            [1593.7,   207.85],
+            [ 207.85,   57.3 ]
+            ]))
+    
+    def test_cov_v(self):
         params = self.import_params(0.4)
-        input0 = params.get_tf_input(tpt=0)
-        
-        tf.debugging.assert_equal(tf.constant(params.mu_v, dtype="float32"), input0["mu_v"].astype("float32"))
-        tf.debugging.assert_equal(tf.constant(params.chol_v, dtype="float32"), input0["chol_v"].astype("float32"))
+        self.assert_equal_arrs(params.cov_v, np.array([
+            [0.00119084, -0.00431964],
+            [-0.00431964,  0.03312108]
+            ]))
 
-        pt = self.create_params_traj()
-        inputs = pt.get_tf_inputs()
-        
-        assert len(inputs["mu_v"]) == len(pt.times)-1
-        for i in range(0,len(inputs["mu_v"])):
-            tf.debugging.assert_equal(tf.constant(pt.params0_traj[i].mu_v, dtype="float32"), inputs["mu_v"][i].astype("float32"))
-            tf.debugging.assert_equal(tf.constant(pt.params0_traj[i].chol_v, dtype="float32"), inputs["chol_v"][i].astype("float32"))
+    def test_get_tf_input(self):
+        params = self.import_params(0.4)
+        non_zero_idx_pairs_vv = [(0,0),(1,0),(1,1)]
+        input0 = params.get_tf_input(
+            tpt=0,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv
+            )
+
+        tf.debugging.assert_equal(
+            tf.constant(params.mu_v, dtype="float32"), 
+            input0["mu_v"].astype("float32")
+            )
+        chol_v_non_zero = params.chol_v_non_zero(non_zero_idx_pairs_vv)
+        tf.debugging.assert_equal(
+            tf.constant(chol_v_non_zero, dtype="float32"), 
+            input0["chol_v_non_zero"].astype("float32")
+            )
+    
+    def test_addParams0Gauss(self):
+        params1 = self.import_params(0.4)
+        params2 = self.import_params(0.4)
+        params3 = Params0Gauss.addParams0Gauss(params1,params2)
+        self.assert_equal_arrs(params3.mu_v, np.array([1396.4, 1203.2]))
+        self.assert_equal_arrs(params3.chol_v, np.array([
+            [79.84234465,  0.        ],
+            [10.41302085,  10.98949483]
+            ]))
+
+    def test_addLFdict(self):
+        params = self.import_params(0.4)
+        lf_dict = params.to_lf_dict()
+        params3 = Params0Gauss.addLFdict(params,lf_dict)
+        self.assert_equal_arrs(params3.mu_v, np.array([1396.4, 1203.2]))
+        self.assert_equal_arrs(params3.chol_v, np.array([
+            [79.84234465,  0.        ],
+            [10.41302085,  10.98949483]
+            ]))
+
+    def test_addDeriv(self):
+        params = self.import_params(0.4)
+        dparams = DParams0Gauss(
+            nv=2,
+            dmu_v=np.array([1.0,2.0]),
+            dchol_v=np.array([
+                [2.0,0.0],
+                [4.0,8.0]
+                ])
+        )
+        params1 = Params0Gauss.addDeriv(params,dparams)
+        self.assert_equal_arrs(params1.mu_v, np.array([699.2, 603.6]))
+        self.assert_equal_arrs(params1.chol_v, np.array([
+            [41.92117233,  0.        ],
+            [ 9.20651043,  13.49474742]
+            ]))

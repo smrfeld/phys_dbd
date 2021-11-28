@@ -69,6 +69,9 @@ class Params0Gauss:
     def __eq__(self, other):
         return dc_eq(self, other)
 
+    def chol_v_non_zero(self, non_zero_idx_pairs_vv: List[Tuple[int,int]]) -> np.array:
+        return np.array([self.chol_v[i,j] for i,j in non_zero_idx_pairs_vv])
+
     @property
     def prec_v(self) -> np.array:
         return np.dot(self.chol_v, np.transpose(self.chol_v))
@@ -111,8 +114,8 @@ class Params0Gauss:
             )
 
     @classmethod
-    def addLFdict(cls, params0: Params0Gauss, lf: Dict[str, float], nv: int):
-        params0_to_add = Params0Gauss.fromLFdict(lf=lf, nv=nv)
+    def addLFdict(cls, params0: Params0Gauss, lf: Dict[str, float]):
+        params0_to_add = Params0Gauss.fromLFdict(lf=lf, nv=params0.nv)
         return cls.addParams0Gauss(params0, params0_to_add)
 
     @classmethod

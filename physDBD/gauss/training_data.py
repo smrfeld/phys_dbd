@@ -2,7 +2,7 @@ from .dparams0_traj import DParams0GaussTraj
 from .params0_traj import Params0GaussTraj
 import numpy as np
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from dataclasses import dataclass
 
@@ -56,32 +56,37 @@ class TrainingGaussData:
 
     def reap_params0_traj_for_inputs(self, 
         params0_traj: Params0GaussTraj, 
-        data_type: DataType):
+        data_type: DataType,
+        non_zero_idx_pairs_vv: List[Tuple[int,int]]
+        ):
         """Reap inputs from a ParamTraj at all timepoints by calling get_tf_inputs_assuming_params0
             Fills out train_inputs, valid_inputs
 
         Args:
             params0_traj (Params0GaussTraj): The param trajectory
             data_type (DataType): Training vs validation
+            non_zero_idx_pairs_vv (List[Tuple[int,int]]): Non-zero idx pairs in visible part of precision matrix
         """
-        inputs0 = params0_traj.get_tf_inputs()
+        inputs0 = params0_traj.get_tf_inputs(non_zero_idx_pairs_vv)
         if data_type == DataType.TRAINING:
             self.train_inputs = join_dicts(self.train_inputs, inputs0)
         elif data_type == DataType.VALIDATION:
             self.valid_inputs = join_dicts(self.valid_inputs, inputs0)
 
-    def reap_paramsTE_traj_for_ouputs(self, 
+    def reap_dparams0_traj_for_ouputs(self, 
         dparams0_traj: DParams0GaussTraj, 
         data_type: DataType, 
-        non_zero_outputs: List[str]):
+        non_zero_outputs: List[str] = []
+        ):
         """Reap outputs from a DParams0GaussTraj at all timepoints by calling get_tf_outputs_assuming_params0
 
         Args:
             dparams0_traj (DParams0GaussTraj): The derivatives trajectory
             data_type (DataType): Training vs validation
-            non_zero_outputs (List[str]): See DParams0GaussTraj.get_tf_outputs
+            non_zero_outputs (List[str]): See DParams0GaussTraj.get_tf_outputs. Defaults to [].
         """
         outputs0 = dparams0_traj.get_tf_outputs(non_zero_outputs=non_zero_outputs)
+        print(outputs0)
         if data_type == DataType.TRAINING:
             self.train_outputs_not_stdrd = join_dicts(self.train_outputs_not_stdrd, outputs0)
         elif data_type == DataType.VALIDATION:
@@ -97,7 +102,7 @@ class TrainingGaussData:
         """
 
         # Normalization size
-        norm_size = int(percent * len(self.train_outputs_not_stdrd["wt00_TE"]))
+        norm_size = int(percent * len(self.train_outputs_not_stdrd["dmu_v_0"]))
         print("Calculating output normalization from: %d samples" % norm_size)
 
         # Normalize training

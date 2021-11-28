@@ -69,7 +69,9 @@ class Params0GaussTraj:
             params0_traj=params0_traj
             )
             
-    def get_tf_inputs(self, non_zero_idx_pairs_vv: List[Tuple[int,int]]) -> Dict[str, np.array]:
+    def get_tf_inputs(self, 
+        non_zero_idx_pairs_vv: List[Tuple[int,int]]
+        ) -> Dict[str, np.array]:
         inputs = {}
         for tpt in range(0,len(self.params0_traj)-1): # Take off one to match derivatives
 
