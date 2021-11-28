@@ -19,13 +19,23 @@ class Params0GaussTraj:
         self.params0_traj = params0_traj
         self.times = times
 
+    def __eq__(self, other):
+        if self.nt != other.nt: 
+            return False
+
+        for i in range(0,self.nt):
+            if self.params0_traj[i] != other.params0_traj[i]:
+                return False
+
+        return True
+
     @classmethod
     def fromIntegrating(cls, 
         dparams0_traj: DParams0GaussTraj, 
         params0_init: Params0Gauss, 
         tpt_start: int, 
         no_steps: int,
-        constant_vals_lf: Dict[str,float]
+        constant_vals_lf: Dict[str,float] = {}
         ):
 
         assert no_steps > 0

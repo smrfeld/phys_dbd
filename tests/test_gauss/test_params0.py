@@ -31,8 +31,7 @@ class TestParams0Gauss:
             species=species
         )
 
-        params = Params0Gauss.fromData(data)
-        return params
+        return Params0Gauss.fromData(data)
 
     def test_fromData(self):
         params = self.import_params(0.4)
