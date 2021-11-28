@@ -11,10 +11,10 @@ class DParams0Gauss:
     dmu_v: np.array
     dchol_v: np.array
     
-    _nv: int
+    nv: int
     
     def __init__(self, nv: int, dmu_v: np.array, dchol_v: np.array):
-        self._nv = nv
+        self.nv = nv
 
         self.dmu_v = dmu_v
         self.dchol_v = dchol_v
@@ -75,15 +75,6 @@ class DParams0Gauss:
             dmu_v=dmu_v,
             dchol_v=dchol_v
             )
-
-    @property
-    def nv(self) -> int:
-        """No. visible species
-
-        Returns:
-            int: No. visible species
-        """
-        return self._nv
 
     def __eq__(self, other):
         return dc_eq(self, other)
