@@ -43,7 +43,10 @@ class Params0GaussTraj:
                 times.append(times[-1] + (times[-1] - times[-2]))
 
             # Add to previous and store
-            params = Params0Gauss.addTE(params0_traj[-1], dparams0_traj.dparams0TE_traj[tpt_curr])
+            params = Params0Gauss.addDeriv(
+                params0=params0_traj[-1], 
+                dparams0=dparams0_traj.dparams0_traj[tpt_curr]
+                )
 
             params0_traj.append(params)
         
@@ -66,14 +69,14 @@ class Params0GaussTraj:
             params0_traj=params0_traj
             )
             
-    def get_tf_inputs(self, non_zero_idxs_vv: List[Tuple[int,int]]) -> Dict[str, np.array]:
+    def get_tf_inputs(self, non_zero_idx_pairs_vv: List[Tuple[int,int]]) -> Dict[str, np.array]:
         inputs = {}
         for tpt in range(0,len(self.params0_traj)-1): # Take off one to match derivatives
 
             # Get input
             input0 = self.params0_traj[tpt].get_tf_input(
                 tpt=tpt, 
-                non_zero_idxs_vv=non_zero_idxs_vv
+                non_zero_idx_pairs_vv=non_zero_idx_pairs_vv
                 )
             
             # Put into dict

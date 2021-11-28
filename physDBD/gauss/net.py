@@ -815,6 +815,33 @@ class RxnInputsGaussLayer(tf.keras.layers.Layer):
                 raise ValueError("Rxn type: %s not recognized" % rtype)
     
     @classmethod
+    def construct_zero_init(cls, 
+        nv: int, 
+        nh: int, 
+        freqs : np.array,
+        non_zero_idx_pairs_vv: List[Tuple[int,int]],
+        non_zero_idx_pairs_hv: List[Tuple[int,int]],
+        non_zero_idx_pairs_hh: List[Tuple[int,int]],
+        rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
+        **kwargs
+        ):
+        return cls.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=np.full(len(freqs),0.0),
+            muh_cos_coeffs_init=np.full(len(freqs),0.0),
+            cholhv_sin_coeffs_init=np.full(len(freqs),0.0),
+            cholhv_cos_coeffs_init=np.full(len(freqs),0.0),
+            cholh_sin_coeffs_init=np.full(len(freqs),0.0),
+            cholh_cos_coeffs_init=np.full(len(freqs),0.0),
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv,
+            non_zero_idx_pairs_hv=non_zero_idx_pairs_hv,
+            non_zero_idx_pairs_hh=non_zero_idx_pairs_hh,
+            rxn_specs=rxn_specs
+            )
+
+    @classmethod
     def construct(cls, 
         nv: int, 
         nh: int,

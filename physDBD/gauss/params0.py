@@ -79,19 +79,19 @@ class Params0Gauss:
 
     def get_tf_input(self, 
         tpt: int, 
-        non_zero_idxs_vv: List[Tuple[int,int]]
+        non_zero_idx_pairs_vv: List[Tuple[int,int]]
         ) -> Dict[str, np.array]:
         """Get TF input assuming these are std. params with muh=0, varh = I
 
         Args:
             tpt (int): Timepoint (not real time)
-            non_zero_idxs_vv (List[Tuple[int,int]]): Non-zero elements in the visible part
+            non_zero_idx_pairs_vv (List[Tuple[int,int]]): Non-zero elements in the visible part
                 of the precision matrix
 
         Returns:
             Dict[str, np.array]: Keys = "tpt", "mu_v", "chol_v"; values are the arrays/floats
         """
-        chol_v_non_zero = [self.chol_v[i,j] for i,j in non_zero_idxs_vv]
+        chol_v_non_zero = [self.chol_v[i,j] for i,j in non_zero_idx_pairs_vv]
         return {
             "tpt": np.array([tpt]).astype(float),
             "mu_v": np.array([self.mu_v]),
