@@ -47,12 +47,14 @@ class DParams0GaussTraj:
         return self.dparams0_traj[0].nv
 
     def get_tf_outputs(self,
+        tpt_start_inc: int,
+        tpt_end_exc: int,
         non_zero_outputs : List[str] = []
         ) -> Dict[str, np.array]:
 
         outputs = {}
-        for i in range(0,len(self.dparams0_traj)):
-            output0 = self.dparams0_traj[i].get_tf_output(non_zero_outputs)
+        for tpt in range(tpt_start_inc,tpt_end_exc):
+            output0 = self.dparams0_traj[tpt].get_tf_output(non_zero_outputs)
 
             # Put into dict
             for key, val in output0.items():
@@ -67,6 +69,8 @@ class DParams0GaussTraj:
         return outputs
     
     def get_tf_outputs_normalized(self,
+        tpt_start_inc: int,
+        tpt_end_exc: int,
         percent: float,
         non_zero_outputs : List[str] = []
         ) -> Tuple[Dict[str, np.array],Dict[str, np.array],Dict[str, np.array]]:
@@ -74,7 +78,11 @@ class DParams0GaussTraj:
         assert (percent > 0)
         assert (percent <= 1)
 
-        outputs = self.get_tf_outputs(non_zero_outputs)
+        outputs = self.get_tf_outputs(
+            tpt_start_inc=tpt_start_inc,
+            tpt_end_exc=tpt_end_exc,
+            non_zero_outputs=non_zero_outputs
+            )
 
         mean = {}
         std_dev = {}

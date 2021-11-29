@@ -37,7 +37,7 @@ for seed in range(0,no_seeds):
         rxn_list=[rxn1,rxn2,rxn3],
         counts=counts,
         dt_st_every=0.1,
-        t_max=50,
+        t_max=100,
         verbose=False
         )
 

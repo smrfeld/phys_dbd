@@ -56,6 +56,8 @@ class TrainingGaussData:
 
     def reap_params0_traj_for_inputs(self, 
         params0_traj: Params0GaussTraj, 
+        tpt_start_inc: int,
+        tpt_end_exc: int,
         data_type: DataTypeGauss,
         non_zero_idx_pairs_vv: List[Tuple[int,int]]
         ):
@@ -67,7 +69,11 @@ class TrainingGaussData:
             data_type (DataType): Training vs validation
             non_zero_idx_pairs_vv (List[Tuple[int,int]]): Non-zero idx pairs in visible part of precision matrix
         """
-        inputs0 = params0_traj.get_tf_inputs(non_zero_idx_pairs_vv)
+        inputs0 = params0_traj.get_tf_inputs(
+            tpt_start_inc=tpt_start_inc,
+            tpt_end_exc=tpt_end_exc,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv
+            )
         if data_type == DataTypeGauss.TRAINING:
             self.train_inputs = join_dicts(self.train_inputs, inputs0)
         elif data_type == DataTypeGauss.VALIDATION:
@@ -75,6 +81,8 @@ class TrainingGaussData:
 
     def reap_dparams0_traj_for_outputs(self, 
         dparams0_traj: DParams0GaussTraj, 
+        tpt_start_inc: int,
+        tpt_end_exc: int,
         data_type: DataTypeGauss, 
         non_zero_outputs: List[str] = []
         ):
@@ -85,7 +93,11 @@ class TrainingGaussData:
             data_type (DataType): Training vs validation
             non_zero_outputs (List[str]): See DParams0GaussTraj.get_tf_outputs. Defaults to [].
         """
-        outputs0 = dparams0_traj.get_tf_outputs(non_zero_outputs=non_zero_outputs)
+        outputs0 = dparams0_traj.get_tf_outputs(
+            tpt_start_inc=tpt_start_inc,
+            tpt_end_exc=tpt_end_exc,
+            non_zero_outputs=non_zero_outputs
+            )
         if data_type == DataTypeGauss.TRAINING:
             self.train_outputs_not_stdrd = join_dicts(self.train_outputs_not_stdrd, outputs0)
         elif data_type == DataTypeGauss.VALIDATION:

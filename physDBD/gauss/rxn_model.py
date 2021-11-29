@@ -5,7 +5,7 @@ from .params0_traj import Params0GaussTraj
 import tensorflow as tf
 import numpy as np
 
-from typing import List
+from typing import List, Tuple
 
 @tf.keras.utils.register_keras_serializable(package="physDBD")
 class RxnGaussModel(tf.keras.Model):
@@ -106,7 +106,8 @@ class RxnGaussModel(tf.keras.Model):
         no_steps: int,
         time_interval: float,
         output_mean : np.array,
-        output_std_dev : np.array
+        output_std_dev : np.array,
+        non_zero_idx_pairs_vv: List[Tuple[int,int]]
         ) -> Params0GaussTraj:
         """Integrate starting from initial params
 
@@ -131,7 +132,10 @@ class RxnGaussModel(tf.keras.Model):
                 print("%d / %d ..." % (step,no_steps))
 
             tpt_curr = tpts_traj[-1]
-            input0 = params_traj[-1].get_tf_input_assuming_params0(tpt=tpt_curr)
+            input0 = params_traj[-1].get_tf_input(
+                tpt=tpt_curr,
+                non_zero_idx_pairs_vv=non_zero_idx_pairs_vv
+                )
             output0 = self.call(input0)
 
             # Undo normalization on outputs
