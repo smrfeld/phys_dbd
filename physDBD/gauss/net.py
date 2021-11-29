@@ -322,9 +322,15 @@ class ConvertParams0ToParamsGaussLayer(tf.keras.layers.Layer):
         for ih in range(0,nh):
             for jh in range(0,ih+1):
                 if (ih,jh) in non_zero_idx_pairs_hh:
+
+                    if ih == jh:
+                        offset = 1.00001
+                    else:
+                        offset = 0.0
+
                     layer_cholh[str(ih) + "_" + str(jh)] = FourierLatentGaussLayer(
                         freqs=freqs,
-                        offset=0.0,
+                        offset=offset,
                         sin_coeff=cholh_sin_coeffs_init,
                         cos_coeff=cholh_cos_coeffs_init
                         )
@@ -842,6 +848,33 @@ class RxnInputsGaussLayer(tf.keras.layers.Layer):
             )
 
     @classmethod
+    def construct_one_init(cls, 
+        nv: int, 
+        nh: int, 
+        freqs : np.array,
+        non_zero_idx_pairs_vv: List[Tuple[int,int]],
+        non_zero_idx_pairs_hv: List[Tuple[int,int]],
+        non_zero_idx_pairs_hh: List[Tuple[int,int]],
+        rxn_specs : List[Union[Tuple[str,int],Tuple[str,int,int]]],
+        **kwargs
+        ):
+        return cls.construct(
+            nv=nv,
+            nh=nh,
+            freqs=freqs,
+            muh_sin_coeffs_init=np.full(len(freqs),1.0),
+            muh_cos_coeffs_init=np.full(len(freqs),1.0),
+            cholhv_sin_coeffs_init=np.full(len(freqs),1.0),
+            cholhv_cos_coeffs_init=np.full(len(freqs),1.0),
+            cholh_sin_coeffs_init=np.full(len(freqs),1.0),
+            cholh_cos_coeffs_init=np.full(len(freqs),1.0),
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv,
+            non_zero_idx_pairs_hv=non_zero_idx_pairs_hv,
+            non_zero_idx_pairs_hh=non_zero_idx_pairs_hh,
+            rxn_specs=rxn_specs
+            )
+
+    @classmethod
     def construct(cls, 
         nv: int, 
         nh: int,
@@ -897,11 +930,22 @@ class RxnInputsGaussLayer(tf.keras.layers.Layer):
     def from_config(cls, config):
         return cls(**config)
 
+    '''
     def make_tril_bool_mask(self, batch_size):
         mask = np.tril(np.ones((self.nv, self.nv), dtype=np.bool_))
         # Repeat mask into batch size
         # Size then is (batch_size,nv,nv)
         mask = np.repeat(mask[np.newaxis, :, :], batch_size, axis=0)
+        return mask
+    '''
+
+    def make_tril_bool_mask(self, batch_size):
+        ones = tf.ones((self.nv, self.nv), dtype=tf.dtypes.int32)
+        mask = tf.experimental.numpy.tril(ones)
+        mask = tf.dtypes.cast(mask, tf.dtypes.bool)
+        # Repeat mask into batch size
+        # Size then is (batch_size,nv,nv)
+        mask = tf.repeat(mask[tf.newaxis, :, :], batch_size, axis=0)
         return mask
 
     def call(self, inputs):
