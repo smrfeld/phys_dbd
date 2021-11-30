@@ -37,18 +37,18 @@ class TestParams0Gauss:
         params = self.import_params(0.4)
         self.assert_equal_arrs(params.mu_v, np.array([698.2, 601.6]))
         self.assert_equal_arrs(params.chol_v, np.array([
-            [39.92117233,  0.        ],
-            [ 5.20651043,  5.49474742]
+            [ 0.03450852,  0.        ],
+            [-0.12517618,  0.13210604]
             ]))
 
     def test_to_lf_dict(self):
         params = self.import_params(0.4)
         lf_dict = params.to_lf_dict()
-        assert lf_dict["mu_v_0"] == 698.2
-        assert lf_dict["mu_v_1"] == 601.6
-        assert lf_dict["chol_v_0_0"] == 39.92117232747555
-        assert lf_dict["chol_v_1_0"] == 5.206510427474302
-        assert lf_dict["chol_v_1_1"] == 5.494747416269592
+        assert abs(lf_dict["mu_v_0"] - 698.2) < 1.e-6
+        assert abs(lf_dict["mu_v_1"] - 601.6) < 1.e-6
+        assert abs(lf_dict["chol_v_0_0"] - 0.034508516623074144) < 1.e-6
+        assert abs(lf_dict["chol_v_1_0"] - -0.12517618115368168) < 1.e-6
+        assert abs(lf_dict["chol_v_1_1"] - 0.13210604445218546) < 1.e-6
 
     def test_fromLFdict(self):
         params = self.import_params(0.4)
@@ -66,21 +66,21 @@ class TestParams0Gauss:
         chol_v_non_zero = params.chol_v_non_zero(non_zero_idx_pairs_vv)
         self.assert_equal_arrs(
             chol_v_non_zero,
-            np.array([39.92117233,  5.20651043,  5.49474742])
+            np.array([0.03450852,  -0.12517618,  0.13210604])
             )
 
     def test_prec_v(self):
         params = self.import_params(0.4)
         self.assert_equal_arrs(params.prec_v, np.array([
-            [1593.7,   207.85],
-            [ 207.85,   57.3 ]
+            [0.00119084,   -0.00431964],
+            [ -0.00431964,   0.03312108 ]
             ]))
     
     def test_cov_v(self):
         params = self.import_params(0.4)
         self.assert_equal_arrs(params.cov_v, np.array([
-            [0.00119084, -0.00431964],
-            [-0.00431964,  0.03312108]
+            [1593.7, 207.85],
+            [207.85,  57.3]
             ]))
 
     def test_get_tf_input(self):
@@ -107,8 +107,8 @@ class TestParams0Gauss:
         params3 = Params0Gauss.addParams0Gauss(params1,params2)
         self.assert_equal_arrs(params3.mu_v, np.array([1396.4, 1203.2]))
         self.assert_equal_arrs(params3.chol_v, np.array([
-            [79.84234465,  0.        ],
-            [10.41302085,  10.98949483]
+            [ 0.06901703,  0.        ],
+            [-0.25035236,  0.26421209]
             ]))
 
     def test_addLFdict(self):
@@ -117,8 +117,8 @@ class TestParams0Gauss:
         params3 = Params0Gauss.addLFdict(params,lf_dict)
         self.assert_equal_arrs(params3.mu_v, np.array([1396.4, 1203.2]))
         self.assert_equal_arrs(params3.chol_v, np.array([
-            [79.84234465,  0.        ],
-            [10.41302085,  10.98949483]
+            [ 0.06901703,  0.        ],
+            [-0.25035236,  0.26421209]
             ]))
 
     def test_addDeriv(self):
@@ -134,6 +134,6 @@ class TestParams0Gauss:
         params1 = Params0Gauss.addDeriv(params,dparams)
         self.assert_equal_arrs(params1.mu_v, np.array([699.2, 603.6]))
         self.assert_equal_arrs(params1.chol_v, np.array([
-            [41.92117233,  0.        ],
-            [ 9.20651043,  13.49474742]
+            [ 2.03450852,  0.        ],
+            [ 3.87482382,  8.13210604]
             ]))

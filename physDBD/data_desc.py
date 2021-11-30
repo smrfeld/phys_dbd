@@ -6,7 +6,8 @@ from typing import List
 @dataclass
 class DataDesc:
 
-    no_seeds: int
+    seed_start_inc: int
+    seed_end_exc: int
 
     time_start: float
     time_end: float
@@ -17,7 +18,8 @@ class DataDesc:
     species: List[str]
 
     def __init__(self, 
-        no_seeds: int, 
+        seed_start_inc: int, 
+        seed_end_exc: int,
         time_start: float, 
         time_end: float, 
         time_interval: float, 
@@ -26,13 +28,15 @@ class DataDesc:
         """Data description
 
         Args:
-            no_seeds (int): no. seeds
+            seed_start_inc (int): starting seed index inclusive 
+            seed_end_exc (int): end seed index exclusive
             time_start (float): time start (real time)
             time_end (float): time end (real time)
             time_interval (float): time interval (real time)
             species (List[str]): list of species
         """
-        self.no_seeds = no_seeds
+        self.seed_start_inc = seed_start_inc
+        self.seed_end_exc = seed_end_exc
 
         self.time_start = time_start
         self.time_end = time_end

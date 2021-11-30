@@ -100,7 +100,11 @@ class TestRxnGaussModel:
 
         # Calculate normalizations
         pt = self.create_params_traj()
-        inputs = pt.get_tf_inputs(non_zero_idx_pairs_vv)
+        inputs = pt.get_tf_inputs(
+            tpt_start_inc=0,
+            tpt_end_exc=pt.nt-1,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv
+            )
         # rxn_model.calculate_rxn_normalization(inputs, percent=0.8)
 
         # Compile

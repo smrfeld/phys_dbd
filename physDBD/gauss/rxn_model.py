@@ -1,5 +1,6 @@
 from .net import RxnInputsGaussLayer
 from .params0 import Params0Gauss
+from .dparams0 import DParams0Gauss
 from .params0_traj import Params0GaussTraj
 
 import tensorflow as tf
@@ -126,13 +127,13 @@ class RxnGaussModel(tf.keras.Model):
         interval_print = int(no_steps / 10.0)
 
         tpts_traj = [tpt_start]
-        params_traj = [params0_start]
+        params0_traj = [params0_start]
         for step in range(0,no_steps):
             if step % interval_print == 0:
                 print("%d / %d ..." % (step,no_steps))
 
             tpt_curr = tpts_traj[-1]
-            input0 = params_traj[-1].get_tf_input(
+            input0 = params0_traj[-1].get_tf_input(
                 tpt=tpt_curr,
                 non_zero_idx_pairs_vv=non_zero_idx_pairs_vv
                 )
@@ -145,19 +146,22 @@ class RxnGaussModel(tf.keras.Model):
                 output0[key] *= output_std_dev[key]
                 output0[key] += output_mean[key]
             
+            # Deriv
+            dparams0 = DParams0Gauss.fromLFdict(output0,nv=self.nv)
+
             # Add to params
             tpt_new = tpt_curr + 1
-            params_new = Params0Gauss.addLFdict(
-                params=params_traj[-1],
-                lf_dict=output0
+            params0_new = Params0Gauss.addDeriv(
+                params0=params0_traj[-1],
+                dparams0=dparams0
                 )
 
-            params_traj.append(params_new)
+            params0_traj.append(params0_new)
             tpts_traj.append(tpt_new)
 
         return Params0GaussTraj(
             times=time_interval*np.array(tpts_traj),
-            params_traj=params_traj
+            params0_traj=params0_traj
             )
 
     def calculate_rxn_normalization(self, 

@@ -40,7 +40,10 @@ class TestDParams0GaussTraj:
 
     def test_get_tf_outputs(self):
         dt = self.create_dparams0_traj()
-        outputs = dt.get_tf_outputs()
+        outputs = dt.get_tf_outputs(
+            tpt_start_inc=0,
+            tpt_end_exc=dt.nt
+            )
         
         self.assert_equal_arrs(outputs["dmu_v_0"], np.array([0.1,0.4]))
         self.assert_equal_arrs(outputs["dmu_v_1"], np.array([0.2,0.7]))
@@ -51,7 +54,11 @@ class TestDParams0GaussTraj:
     def test_get_tf_outputs_normalized(self):
         dt = self.create_dparams0_traj()
         # Percent must be 1 to be deterministic
-        outputs, mean, std_dev = dt.get_tf_outputs_normalized(percent=1.0)
+        outputs, mean, std_dev = dt.get_tf_outputs_normalized(
+            tpt_start_inc=0,
+            tpt_end_exc=dt.nt,
+            percent=1.0
+            )
 
         self.assert_equal_arrs(outputs["dmu_v_0"], np.array([-1.0,1.0]))
         self.assert_equal_arrs(outputs["dmu_v_1"], np.array([-1.0,1.0]))

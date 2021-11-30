@@ -67,6 +67,8 @@ class TestTrainingGaussData:
         td.reap_params0_traj_for_inputs(
             params0_traj=pt, 
             data_type=DataTypeGauss.TRAINING,
+            tpt_start_inc=0,
+            tpt_end_exc=pt.nt-1,
             non_zero_idx_pairs_vv=non_zero_idx_pairs_vv
             )
 
@@ -82,6 +84,8 @@ class TestTrainingGaussData:
         dt = self.create_dparams0_traj()
         td.reap_dparams0_traj_for_outputs(
             dparams0_traj=dt, 
+            tpt_start_inc=0,
+            tpt_end_exc=dt.nt,
             data_type=DataTypeGauss.TRAINING
             )
 
@@ -101,6 +105,8 @@ class TestTrainingGaussData:
         dt = self.create_dparams0_traj()
         td.reap_dparams0_traj_for_outputs(
             dparams0_traj=dt, 
+            tpt_start_inc=0,
+            tpt_end_exc=dt.nt,
             data_type=DataTypeGauss.TRAINING
             )
 
@@ -122,7 +128,9 @@ class TestTrainingGaussData:
         td = TrainingGaussData()
         dt = self.create_dparams0_traj()
         td.reap_dparams0_traj_for_outputs(
-            dparams0_traj=dt, 
+            dparams0_traj=dt,
+            tpt_start_inc=0,
+            tpt_end_exc=dt.nt,
             data_type=DataTypeGauss.TRAINING
             )
 
@@ -139,6 +147,8 @@ class TestTrainingGaussData:
         dt = self.create_dparams0_traj()
         td2.reap_dparams0_traj_for_outputs(
             dparams0_traj=dt, 
+            tpt_start_inc=0,
+            tpt_end_exc=dt.nt,
             data_type=DataTypeGauss.TRAINING
             )
 

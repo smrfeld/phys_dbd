@@ -74,7 +74,11 @@ class TestParams0GaussTraj:
     def test_get_tf_inputs(self):
         pt = self.create_params_traj()
         non_zero_idx_pairs_vv = [(0,0),(1,0),(1,1)]
-        inputs = pt.get_tf_inputs(non_zero_idx_pairs_vv)
+        inputs = pt.get_tf_inputs(
+            tpt_start_inc=0,
+            tpt_end_exc=pt.nt-1,
+            non_zero_idx_pairs_vv=non_zero_idx_pairs_vv
+            )
         
         assert len(inputs["mu_v"]) == pt.nt-1
         assert len(inputs["chol_v_non_zero"]) == pt.nt-1
@@ -90,18 +94,18 @@ class TestParams0GaussTraj:
                 )
     
     def test_fromData(self):
-        data1 = np.array([[3.0,5.0],[5.0,7.0]])
-        data2 = np.array([[2.0,4.0],[4.0,6.0]])
+        data1 = np.array([[3.,4.],[6.,10.],[3.,11.]])
+        data2 = np.array([[2.,4.],[4.,6.],[8.,3.]])
         data = np.array([data1,data2])
         times = np.array([0.1,0.2])
         pt = Params0GaussTraj.fromData(data,times)
         self.assert_equal_arrs(
             pt.params0_traj[0].mu_v,
-            np.array([4.0,6.0])
+            np.array([4.,8.333333333])
             )
         self.assert_equal_arrs(
             pt.params0_traj[1].mu_v,
-            np.array([3.0,5.0])
+            np.array([4.666666666,4.3333333333])
             )
 
     def test_nt(self):

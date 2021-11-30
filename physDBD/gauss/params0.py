@@ -128,6 +128,11 @@ class Params0Gauss:
         """
         mu_v = params0.mu_v + dparams0.dmu_v
         chol_v = params0.chol_v + dparams0.dchol_v
+
+        # Maintain positive diagonal
+        for i in range(0,len(chol_v)):
+            chol_v[i,i] = np.max([1.e-6,chol_v[i,i]])
+
         return cls(
             nv=params0.nv,
             mu_v=mu_v,
@@ -146,9 +151,10 @@ class Params0Gauss:
 
         mu_v = np.mean(data,axis=0)
         cov_v = np.cov(data,rowvar=False)
+        prec_v = np.linalg.inv(cov_v)
 
-        # Visible part of chol is same as cholesky decomp. of visible part of cov
-        chol_v = np.linalg.cholesky(cov_v)
+        # Visible part of chol is same as cholesky decomp. of visible part of prec
+        chol_v = np.linalg.cholesky(prec_v)
 
         return cls(
             nv=nv,

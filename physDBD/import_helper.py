@@ -11,14 +11,16 @@ class ImportHelper:
     @staticmethod
     def create_fnames(
         data_dir: str,
-        no_seeds: int,
+        seed_start_inc: int,
+        seed_end_exc: int,
         zero_padding: int
         ) -> List[str]:
         """Create fnames for different seeds with zero padding 4
 
         Args:
             data_dir (str): Data directory
-            no_seeds (int): No seeds
+            seed_start_inc (int): Start seed index inclusive
+            seed_end_exc (int): End seed index exclusive
             zero_padding (int): Zero padding for fnames
 
         Returns:
@@ -28,7 +30,7 @@ class ImportHelper:
         # Construct fnames
         fstr = "%0" + str(zero_padding) + "d.txt"
         fnames = []
-        for seed in range(0,no_seeds):
+        for seed in range(seed_start_inc,seed_end_exc):
             fname = os.path.join(data_dir,fstr % seed)
             fnames.append(fname)
 
@@ -51,9 +53,12 @@ class ImportHelper:
             np.array: Numpy array of size (no_times, no_seeds, no_species)
         """
 
-        fnames = ImportHelper.create_fnames(data_dir,data_desc.no_seeds,zero_padding)
-
-        no_tpts = len(data_desc.times)
+        fnames = ImportHelper.create_fnames(
+            data_dir=data_dir,
+            seed_start_inc=data_desc.seed_start_inc,
+            seed_end_exc=data_desc.seed_end_exc,
+            zero_padding=zero_padding
+            )
 
         ret = ImportHelper.import_gillespie_ssa_whole_file(fnames, data_desc.times, data_desc.species)
         ret = np.transpose(ret, axes=[1,0,2])
@@ -79,7 +84,8 @@ class ImportHelper:
 
         fnames = ImportHelper.create_fnames(
             data_dir=data_dir,
-            no_seeds=data_desc.no_seeds
+            seed_start_inc=data_desc.seed_start_inc,
+            seed_end_exc=data_desc.seed_end_exc
             )
         return ImportHelper.import_gillespie_ssa_at_time(fnames, time, data_desc.species)
 
